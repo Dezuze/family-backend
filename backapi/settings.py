@@ -37,9 +37,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'easy_thumbnails',
-    'image_cropping',
+    'rest_framework',
+'accounts',
+'profiles',
+'news',]
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
+CORS_ALLOW_CREDENTIALS = True
+
+AUTHENTICATION_BACKENDS = [
+    'accounts.auth_backend.MultiFieldAuthBackend',
 ]
+
+AUTH_USER_MODEL = 'accounts.User'
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 MIDDLEWARE = [
