@@ -14,7 +14,16 @@ services:
     networks:
       - app_network
 
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 60 --cleanup
+    networks:
+      - app_network
+
   backend:
+    image: ghcr.io/dezuze/family-backend:latest
     build: 
       context: ./Backend
     volumes:
@@ -26,10 +35,12 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`localhost`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/media`) || PathPrefix(`/static`))"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
+      - "com.centurylinklabs.watchtower.enable=true"
     networks:
       - app_network
 
   frontend:
+    image: ghcr.io/dezuze/family-frontend:latest
     build:
       context: ./Frontend
     environment:
@@ -38,6 +49,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`localhost`)"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
       - backend
     networks:
