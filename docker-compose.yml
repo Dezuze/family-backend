@@ -28,9 +28,8 @@ services:
       context: ./Backend
     volumes:
       - ./Backend:/app
-    environment:
-      - DEBUG=1
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,backend
+    env_file:
+      - .env
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`localhost`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/media`) || PathPrefix(`/static`))"
@@ -43,8 +42,8 @@ services:
     image: ghcr.io/dezuze/family-frontend:latest
     build:
       context: ./Frontend
-    environment:
-      - NUXT_PUBLIC_API_BASE=http://localhost
+    env_file:
+      - .env
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`localhost`)"
