@@ -1,0 +1,28 @@
+<template>
+  <div class="min-h-screen bg-slate-800 flex flex-col items-center justify-center px-2 pt-32 pb-16 text-gray-100 font-sans overflow-x-hidden">
+    <div class="w-full">
+        <h1 class="text-3xl md:text-5xl font-serif font-bold mb-4 text-center text-white">Family History</h1>
+        <div class="h-1 w-24 bg-amber-500 mx-auto rounded-full mb-8"></div>
+        
+        <div class="bg-black/20 rounded-xl p-4 md:p-8 backdrop-blur-sm border border-white/10 shadow-2xl w-full">
+            <client-only>
+            <div class="w-full h-[70vh]">
+                <PdfViewer :src="pdfUrl" />
+            </div>
+            </client-only>
+        </div>
+
+        <p class="text-sm text-gray-400 mt-6 text-center">Use swipe or arrow keys to navigate pages.</p>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import PdfViewer from '~/components/PdfViewer.vue'
+
+const pdfUrl = '/Document/history.pdf'
+</script>
+
+<style scoped>
+/* center page content */
+</style>

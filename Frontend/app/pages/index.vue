@@ -1,0 +1,331 @@
+```
+<template>
+  <div class="min-h-screen bg-slate-800 font-sans text-gray-100 overflow-x-hidden">
+    <!-- Hero Section -->
+    <div class="relative w-full h-[110vh] overflow-hidden">
+      <!-- Background Image -->
+      <img src="/images/family.jpg" alt="Family Gathering" class="absolute inset-0 w-full h-full object-cover" />
+      
+      <!-- Gradient Overlay (Dark Teal Fade to Slate) -->
+      <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-slate-800"></div>
+
+      <!-- Hero Content -->
+      <div class="absolute top-0 left-0 w-full h-screen flex flex-col items-center md:items-start justify-end px-4 pb-40 md:px-24 md:pb-24">
+        
+        <div class="bg-black/80 shadow-[0_0_40px_40px_rgba(0,0,0,0.8)] absolute left-0 bottom-0 p-8 md:p-12 rounded-2xl max-w-3.5xl text-center md:text-left">
+            <h1 class="font-fleur text-6xl md:text-8xl lg:text-8xl lg:text-nowrap text-white mb-4 drop-shadow-2xl mx-auto md:mx-0 leading-tight">
+                Kollaparambil Family
+            </h1>
+
+            <!-- Malayalam Verse -->
+            <div class="flex flex-col mt-2">
+                <p class="text-sm md:text-base font-bold text-white leading-relaxed drop-shadow-md">
+                    "മക്കളുടെ മക്കൾ വൃദ്ധന്മാർക്കു കിരീടം; മക്കളുടെ മഹത്വമോ അവരുടെ അപ്പന്മാർ തന്നെ."
+                </p>
+                <p class="text-xs md:text-sm text-gray-200 mt-1 font-medium place-self-end">
+                    - സദൃശ്യവാക്യങ്ങൾ 17:6
+                </p>
+            </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Navigation Buttons (Intersection Layout) -->
+    <!-- Negative margin to pull it up over the hero image -->
+    <div class="relative z-20 -mt-10 px-4 md:px-12 pb-12">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 max-w-6xl mx-auto">
+            
+            <!-- Button 1: Family Directory (Restricted) -->
+            <div 
+                @click="handleRestrictedNavigation('/members')" 
+                class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 cursor-pointer"
+            >
+                <div class="absolute inset-0 bg-gradient-to-b from-gray-200 to-gray-400"></div>
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
+                    <h3 class="text-lg md:text-xl font-bold text-slate-800 uppercase tracking-wide leading-tight">Family<br>Directory</h3>
+                </div>
+            </div>
+
+            <!-- Button 2: Events (Public) -->
+            <NuxtLink to="/events" class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1">
+                <div class="absolute inset-0 bg-gradient-to-b from-[#A08050] to-[#6d5030]"></div> <!-- Bronze color -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
+                    <h3 class="text-lg md:text-xl font-bold text-white uppercase tracking-wide leading-tight">Events</h3>
+                </div>
+            </NuxtLink>
+
+            <!-- Button 3: Annual Kudumbayogam (Restricted) -->
+             <div 
+                @click="handleRestrictedNavigation('/kudumbayogam')"
+                class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 cursor-pointer"
+            >
+                <div class="absolute inset-0 bg-gradient-to-b from-gray-200 to-gray-400"></div>
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
+                    <h3 class="text-lg md:text-xl font-bold text-slate-800 uppercase tracking-wide leading-tight">Annual<br>Kudumbayogam</h3>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- News Section -->
+    <div class="bg-slate-800 py-16 px-4 md:px-12">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold text-white uppercase tracking-widest decoration-amber-500 underline underline-offset-8">
+                    Latest News & Events
+                </h2>
+                <button 
+                  v-if="auth.isAuthenticated"
+                  @click="isAddModalOpen = true"
+                  class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2"
+                >
+                  <span class="text-xl">+</span> Add News
+                </button>
+            </div>
+            
+            <!-- Horizontal Scroll Container -->
+            <div class="flex overflow-x-auto gap-6 pb-8 snap-x scrollbar-hide">
+                
+                <!-- Real News Card -->
+                <div 
+                    v-for="item in newsList" 
+                    :key="item.id" 
+                    @click="openDetails(item)"
+                    class="snap-start min-w-[260px] w-[260px] bg-slate-700 rounded-xl overflow-hidden shadow-lg hover:shadow-amber-500/10 transition-all cursor-pointer flex-shrink-0 group hover:-translate-y-1"
+                >
+                    <div class="relative h-36 overflow-hidden">
+                        <img :src="resolveImage(item.image) || 'https://placehold.co/600x400/2d3748/cbd5e0?text=News'" :alt="item.title" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div v-if="item.type === 'event'" class="absolute top-2 right-2 bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded shadow">
+                            EVENT
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-lg font-bold text-white mb-2 line-clamp-2 leading-tight group-hover:text-amber-400 transition-colors">{{ item.title }}</h3>
+                        <p class="text-slate-400 text-sm line-clamp-2">{{ item.description }}</p>
+                        <div class="mt-3 flex justify-between items-center">
+                            <span class="text-xs text-slate-500 uppercase tracking-wider">{{ getDay(item.created_at) }} {{ getMonth(item.created_at) }}</span>
+                            <span class="text-amber-500 text-xs font-bold uppercase tracking-wide group-hover:underline">Read More</span>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="newsList.length === 0" class="flex gap-6">
+                    <div v-for="i in 3" :key="i" class="snap-start min-w-[300px] w-[300px] bg-slate-700/50 rounded-xl h-80 animate-pulse flex items-center justify-center">
+                        <span class="text-slate-500">Loading News...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <Transition name="fade">
+        <div v-if="selectedItem" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeDetails">
+            <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+
+            <div class="relative bg-[#1A3C3B] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/10 flex flex-col">
+                <!-- Close Button -->
+                <button @click="closeDetails" class="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+
+                <!-- Modal Image -->
+                <div class="relative h-64 sm:h-80 shrink-0">
+                    <img :src="resolveImage(selectedItem.image) || 'https://placehold.co/800x600/122b2a/d4af37?text=News'" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#1A3C3B] to-transparent"></div>
+
+                    <div class="absolute bottom-4 left-6">
+                        <span class="inline-block px-3 py-1 bg-amber-500 text-[#1A3C3B] text-xs font-bold uppercase tracking-wider rounded-md mb-2">
+                            {{ getMonth(selectedItem.created_at) }} {{ getDay(selectedItem.created_at) }}, {{ getYear(selectedItem.created_at) }}
+                        </span>
+                        <h2 class="text-3xl font-serif font-bold text-white leading-tight mt-1">{{ selectedItem.title }}</h2>
+                        <p v-if="selectedItem.author_name" class="text-amber-200/80 text-sm mt-1">Posted by {{ selectedItem.author_name }}</p>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6 space-y-6">
+                    <!-- Description -->
+                    <div class="prose prose-invert max-w-none text-gray-300 font-sans">
+                        <p>{{ selectedItem.description }}</p>
+                        <p class="opacity-75">Full article content would go here. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="pt-4 border-t border-white/10 flex items-center justify-between">
+                         <div class="flex items-center gap-4">
+                             <span class="text-sm text-gray-400 uppercase font-bold tracking-wider">Share:</span>
+                             <ShareButtons :title="selectedItem.title" :description="selectedItem.description" />
+                         </div>
+                         
+                         <!-- Delete Button -->
+                         <button 
+                            v-if="selectedItem.author_id === auth.user?.id"
+                            @click="deleteNews(selectedItem.id)"
+                            class="text-red-400 hover:text-red-300 text-sm font-bold uppercase tracking-wide hover:underline"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Transition>
+
+    <!-- Add Post Modal -->
+    <AddPostModal 
+        v-if="auth.isAuthenticated"
+        :is-open="isAddModalOpen"
+        type="news"
+        @close="isAddModalOpen = false"
+        @refresh="refreshNews"
+    />
+
+    <!-- Footer -->
+    <footer class="bg-[#e4e4e4] text-[#4a4a4a] py-16 px-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center md:items-start gap-10">
+            <!-- Logo Section -->
+            <div class="flex flex-col items-center md:items-start">
+                <img src="/images/logo.png" alt="Family Logo" class="w-48 mb-6 opacity-80 grayscale hover:grayscale-0 transition-all" />
+            </div>
+
+            <!-- Links -->
+            <div class="grid grid-cols-2 gap-x-12 gap-y-4 font-semibold text-lg">
+                <NuxtLink v-if="auth.isAuthenticated" to="/familytree" class="hover:underline">Family Tree</NuxtLink>
+                <NuxtLink to="/history" class="hover:underline">Family History</NuxtLink>
+                <NuxtLink to="/events" class="hover:underline">Events</NuxtLink>
+                <NuxtLink v-if="auth.isAuthenticated" to="/committee" class="hover:underline">Commitee Member</NuxtLink>
+                <NuxtLink v-if="auth.isAuthenticated" to="/directory" class="hover:underline">Directory</NuxtLink>
+                <NuxtLink v-if="auth.isAuthenticated" to="/gallery" class="hover:underline">Gallery</NuxtLink>
+                <NuxtLink to="/donate" class="hover:underline">Donations</NuxtLink>
+                <NuxtLink to="/contact" class="hover:underline">Contact</NuxtLink>
+            </div>
+        </div>
+    </footer>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useHead, useRuntimeConfig } from '#imports'
+import { useAuthStore } from '~/stores/auth'
+import ShareButtons from '~/components/ShareButtons.vue'
+import AddPostModal from '~/components/AddPostModal.vue'
+
+const auth = useAuthStore()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBase || 'http://localhost:8000'
+
+interface NewsItem {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  created_at: string;
+  type: 'news' | 'event';
+  author_name?: string;
+  author_id?: number;
+}
+
+const newsList = ref<NewsItem[]>([])
+const selectedItem = ref<NewsItem | null>(null)
+const isAddModalOpen = ref(false)
+
+const openDetails = (item: NewsItem) => {
+  selectedItem.value = item
+  document.body.style.overflow = 'hidden'
+}
+
+const closeDetails = () => {
+  selectedItem.value = null
+  document.body.style.overflow = ''
+}
+
+// Helpers (using created_at or event_date if available in future)
+const getMonth = (dateStr: string) => new Date(dateStr).toLocaleString('default', { month: 'short' })
+const getDay = (dateStr: string) => new Date(dateStr).getDate()
+const getYear = (dateStr: string) => new Date(dateStr).getFullYear()
+
+const resolveImage = (path: string) => {
+    if (!path) return null
+    if (path.startsWith('http')) return path
+    return `http://localhost:8000${path}`
+}
+
+const handleRestrictedNavigation = (path: string) => {
+    if (auth.isAuthenticated) {
+        navigateTo(path)
+    } else {
+        alert("You need to be logged in to access this section.")
+    }
+}
+
+function getCookie(name: string) {
+  if (typeof document === 'undefined') return null
+  const matches = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]+)'))
+  return matches ? matches[2] : null
+}
+
+const refreshNews = async () => {
+    try {
+    const response = await fetch(`${apiBase}/api/news/list/`)
+    if (response.ok) {
+        newsList.value = await response.json()
+    }
+  } catch (e) {
+    console.error("Failed to fetch news", e)
+  }
+}
+
+const deleteNews = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this?')) return
+    
+    try {
+        await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
+        const csrftoken = getCookie('csrftoken')
+        
+        const res = await fetch(`${apiBase}/api/news/${id}/`, {
+            method: 'DELETE',
+            headers: {
+                ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {})
+            },
+            credentials: 'include'
+        })
+        
+        if (res.ok) {
+            closeDetails()
+            refreshNews()
+        } else {
+            alert('Failed to delete')
+        }
+    } catch (e) {
+        console.error("Delete failed", e)
+    }
+}
+
+onMounted(() => {
+    refreshNews()
+})
+
+useHead({
+  title: 'Kollaparambil Family',
+  link: [
+    { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap' },
+    { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap' },
+    { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Fleur+De+Leah&display=swap' }
+  ]
+})
+</script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Fleur+De+Leah&display=swap');
+
+.font-fleur {
+  font-family: 'Fleur De Leah', cursive !important;
+}
+
+/* No extra css needed, Tailwind handles it */
+</style>
