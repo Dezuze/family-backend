@@ -11,7 +11,8 @@ A modern, private social platform and directory for the Kollaparambil family. Th
 *   **Secure Access**: Invite-only registration system using unique Sponsor IDs.
 *   **Media Gallery**: Photo sharing and gallery view.
 *   **Committee Management**: View current committee members.
-*   **Security**: HTTPS, Secure Cookies, Password Strength Meter, and Role-based access.
+*   **Security**: HTTPS, Secure Cookies, Strong Password Policy (12+ chars), and Role-based access.
+*   **Data Integrity**: Automated Database Backups and Strict Schema Validation.
 
 ## 🛠️ Tech Stack
 
