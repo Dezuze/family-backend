@@ -44,16 +44,26 @@ class FamilyMember(models.Model):
     temp_member_id = models.CharField(max_length=50, blank=True, null=True)
 
     name = models.CharField(max_length=100)
-    age = models.PositiveIntegerField()
+    nickname = models.CharField(max_length=50, blank=True, null=True)
+    age = models.PositiveIntegerField(default=0) # Make age optional or default? Existing has it.
 
+    gender = models.CharField(max_length=1, choices=[("M", "Male"), ("F", "Female"), ("O", "Other")], default='M')
+    
     relation = models.CharField(max_length=50)
     date_of_birth = models.DateField()
+    
+    bio = models.TextField(blank=True, null=True)
 
     address_if_different = models.TextField(blank=True, null=True)
 
-    education = models.CharField(max_length=100)
-    occupation = models.CharField(max_length=100)
+    phone_no = models.CharField(max_length=20, blank=True, null=True)
+    email_id = models.EmailField(blank=True, null=True)
+    
+    education = models.CharField(max_length=100, blank=True)
+    occupation = models.CharField(max_length=100, blank=True)
     place_of_work = models.CharField(max_length=100, blank=True, null=True)
+    
+    church_parish = models.CharField(max_length=100, blank=True, null=True)
 
     blood_group = models.CharField(max_length=5)
 

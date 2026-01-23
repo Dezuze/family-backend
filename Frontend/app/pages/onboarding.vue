@@ -24,11 +24,11 @@
                             <div class="relative w-36 h-36 group cursor-pointer transition-transform hover:scale-105">
                                <input type="file" @change="onFileChange" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                                <div class="w-full h-full rounded-full bg-white shadow-xl border-4 border-white flex items-center justify-center overflow-hidden relative">
-                                   <div v-if="!form.avatar" class="absolute inset-0 bg-slate-100 flex flex-col items-center justify-center text-slate-400 group-hover:bg-slate-200 transition-colors">
+                                   <div v-if="!avatarPreview" class="absolute inset-0 bg-slate-100 flex flex-col items-center justify-center text-slate-400 group-hover:bg-slate-200 transition-colors">
                                        <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                        <span class="text-xs font-semibold">Change Photo</span>
                                    </div>
-                                   <img v-else :src="typeof form.avatar === 'string' ? form.avatar : URL.createObjectURL(form.avatar)" class="w-full h-full object-cover" />
+                                   <img v-else :src="avatarPreview" class="w-full h-full object-cover" />
                                </div>
                                <div class="absolute bottom-2 right-2 bg-slate-900 text-white rounded-full p-2.5 shadow-lg z-10 pointer-events-none group-hover:bg-blue-600 transition-colors">
                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -217,6 +217,7 @@ const form = ref({
     church_parish: '',
     avatar: null 
 })
+const avatarPreview = ref(null)
 
 // Cropper State
 const showCropper = ref(false)
@@ -267,9 +268,12 @@ onMounted(async () => {
         
         // Avatar preview
         if (u.profile_pic) {
-            form.value.avatar = u.profile_pic.startsWith('http') ? u.profile_pic : `${apiBase}${u.profile_pic}`
+            const url = u.profile_pic.startsWith('http') ? u.profile_pic : `${apiBase}${u.profile_pic}`
+            form.value.avatar = url
+            avatarPreview.value = url
         } else if (u.photo) {
              form.value.avatar = u.photo
+             avatarPreview.value = u.photo
         }
     }
 })
@@ -306,6 +310,7 @@ const cropImage = () => {
             // Create a File from the Blob to simulate a real file upload
             const file = new File([blob], "profile_pic.jpg", { type: "image/jpeg" })
             form.value.avatar = file
+            avatarPreview.value = URL.createObjectURL(file)
             console.log("Avatar updated:", file)
             
             // Close modal

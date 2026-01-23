@@ -11,8 +11,9 @@ class UserProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        if hasattr(request.user, 'member') and request.user.member:
-            serializer = FamilyMemberSerializer(request.user.member)
+        member = FamilyMember.objects.filter(user=request.user).first()
+        if member:
+            serializer = FamilyMemberSerializer(member)
             return Response(serializer.data)
         return Response({"error": "Profile not linked"}, status=404)
 
@@ -21,39 +22,53 @@ class UserProfileView(APIView):
         user = request.user
         
         # Check if member exists
-        if hasattr(user, 'member') and user.member:
-             member = user.member
-        else:
-             # Create new member if not exists?
-             # For now, assume it should exist or handled via admin/seed.
-             # Or create minimal member.
+        member = FamilyMember.objects.filter(user=user).first()
+        
+        if not member:
+             # Create new member if not exists
+             name = f"{data.get('first_name', user.username)} {data.get('last_name', '')}".strip()
              member = FamilyMember.objects.create(
-                 first_name=user.username,
-                 gender='M' # default/placeholder
+                 user=user,
+                 name=name,
+                 gender=data.get('gender', 'M'),
+                 age=0, # Default
+                 date_of_birth='2000-01-01', # Default
+                 relation='Self', # Default
+                 blood_group='Unknown', # Default
+                 education='',
+                 occupation=''
              )
-             user.member = member
-             user.save()
 
-        # Update simple fields
-        if 'first_name' in data: member.first_name = data['first_name']
-        if 'last_name' in data: member.last_name = data['last_name']
+        # Update fields
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        if first_name or last_name:
+            # If only one provided, we might need to be careful, but assuming frontend sends both
+            current_names = member.name.split(' ') if member.name else ["", ""]
+            new_first = first_name if first_name is not None else (current_names[0] if current_names else "")
+            new_last = last_name if last_name is not None else (" ".join(current_names[1:]) if len(current_names) > 1 else "")
+            member.name = f"{new_first} {new_last}".strip()
+
         if 'nickname' in data: member.nickname = data['nickname']
+        
         if 'gender' in data: member.gender = data['gender']
+        
         if 'bio' in data: member.bio = data['bio']
+        
         if 'date_of_birth' in data: member.date_of_birth = data['date_of_birth']
-        # age is computed from dob usually, or not stored.
         if 'education' in data: member.education = data['education']
         if 'occupation' in data: member.occupation = data['occupation']
         if 'place_of_work' in data: member.place_of_work = data['place_of_work']
         if 'blood_group' in data: member.blood_group = data['blood_group']
-        if 'address' in data: member.address = data['address'] # address_if_different -> address
+        if 'address' in data: member.address_if_different = data['address']
+        
         if 'phone_no' in data: member.phone_no = data['phone_no']
         if 'email_id' in data: member.email_id = data['email_id']
         if 'church_parish' in data: member.church_parish = data['church_parish']
-
+        
         # Update Profile Pic
         if 'profile_pic' in request.FILES:
-            member.profile_pic = request.FILES['profile_pic']
+            member.photo = request.FILES['profile_pic'] # Model has 'photo', view was using 'profile_pic'
         
         member.save()
         
