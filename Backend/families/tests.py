@@ -89,3 +89,51 @@ class ApiSmokeTests(TestCase):
         # Tree endpoint
         r = client.get('/api/families/tree/')
         self.assertEqual(r.status_code, 200)
+
+
+class UserProfileAPITest(APITestCase):
+    def setUp(self):
+        self._tmp_media = tempfile.mkdtemp()
+        settings.MEDIA_ROOT = self._tmp_media
+        
+        self.family = Family.objects.create(sl_no='S2', branch='B2', member_no='M2')
+        self.member = FamilyMember.objects.create(family=self.family, first_name="Init", last_name="Name")
+        self.user = User.objects.create_user(username='newuser', password='pass', member=self.member)
+        self.member.user = self.user
+        self.member.save()
+        
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def tearDown(self):
+        shutil.rmtree(self._tmp_media)
+
+    def _get_image(self, name='profile.jpg'):
+        img = (b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x00\x00\xff\xdb\x00C\x00\xff\xc0\x00\x11\x08\x00\x01\x00\x01\x03\x01"\x00\x02\x11\x01\x03\x11\x01\xff\xc4\x00\x1f\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\xff\xda\x00\x0c\x03\x01\x00\x02\x11\x03\x11\x00?\x00\xbf\x00')
+        return SimpleUploadedFile(name, img, content_type='image/jpeg')
+
+    def test_onboarding_update_persistence(self):
+        url = '/api/families/profile/'
+        data = {
+            'first_name': 'Updated',
+            'last_name': 'Person',
+            'gender': 'F',
+            'date_of_birth': '1995-05-05',
+            'profile_pic': self._get_image('new_pic.jpg'),
+            'bio': 'My Bio',
+            'email_id': 'updated@test.com'
+        }
+        
+        resp = self.client.post(url, data, format='multipart')
+        self.assertEqual(resp.status_code, 200)
+        
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.first_name, 'Updated')
+        self.assertEqual(self.member.last_name, 'Person')
+        self.assertEqual(self.member.gender, 'F')
+        self.assertTrue(bool(self.member.photo))
+        
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['first_name'], 'Updated')
+        self.assertIn('new_pic', resp.data['photo'])

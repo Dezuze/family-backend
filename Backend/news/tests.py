@@ -32,9 +32,13 @@ class NewsAPITestCase(TestCase):
         self._tmp_media = tempfile.mkdtemp()
         settings.MEDIA_ROOT = self._tmp_media
         
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
         self.client = APIClient()
         self.family = Family.objects.create(sl_no='N1', branch='NewsBranch', member_no='NMem1')
         self.member = FamilyMember.objects.create(family=self.family, first_name="News", last_name="Writer", date_of_birth="2000-01-01")
+        self.user = User.objects.create_user(username='newsuser', password='password', member=self.member)
         
         for i in range(3):
             Post.objects.create(creator=self.member, title=f'News {i}', description='desc', post_type='news')
@@ -78,4 +82,26 @@ class NewsAPITestCase(TestCase):
         data = resp.data.get('results') if isinstance(resp.data, dict) else resp.data
         self.assertIsInstance(data, list)
         self.assertLessEqual(len(data), 10)
+
+    def test_create_news_with_image(self):
+        self.client.force_authenticate(user=self.user)
+        img = _make_image_file('newspic.jpg')
+        data = {
+            'title': 'New Event',
+            'description': 'Details',
+            'post_type': 'news',
+            'image': img
+        }
+        resp = self.client.post('/api/news/create/', data, format='multipart')
+        self.assertEqual(resp.status_code, 201)
+        
+        # Verify Post
+        self.assertTrue(Post.objects.filter(title='New Event').exists())
+        post = Post.objects.get(title='New Event')
+        self.assertEqual(post.creator, self.member)
+        
+        # Verify Media
+        self.assertTrue(post.media.exists())
+        media = post.media.first()
+        self.assertTrue(bool(media.media_url))
 
