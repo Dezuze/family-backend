@@ -262,6 +262,94 @@ class ManagedMembersViewTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data['name'], "Detail")
 
+    def test_create_son_creates_relationship(self):
+        """Adding a 'Son' managed member should auto-create a Relationship."""
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post('/api/families/managed/', {
+            "first_name": "My",
+            "last_name": "Son",
+            "relation": "Son",
+            "gender": "M"
+        }, format='multipart')
+        self.assertEqual(res.status_code, 201)
+        son_id = res.data['id']
+
+        # Verify Relationship exists: Son says guardian is Father (guardian is default M)
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member_id=son_id,
+                to_member=self.guardian_member,
+                relation_type='Father'
+            ).exists()
+        )
+        # Verify parents M2M is set
+        son = FamilyMember.objects.get(id=son_id)
+        self.assertIn(self.guardian_member, son.parents.all())
+
+    def test_create_spouse_creates_relationship(self):
+        """Adding a 'Spouse' managed member should auto-create a Spouse Relationship."""
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post('/api/families/managed/', {
+            "first_name": "My",
+            "last_name": "Wife",
+            "relation": "Spouse",
+            "gender": "F"
+        }, format='multipart')
+        self.assertEqual(res.status_code, 201)
+        spouse_id = res.data['id']
+
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member=self.guardian_member,
+                to_member_id=spouse_id,
+                relation_type='Spouse'
+            ).exists()
+        )
+
+    def test_create_father_creates_relationship(self):
+        """Adding a 'Father' managed member should make him parent of creator."""
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post('/api/families/managed/', {
+            "first_name": "My",
+            "last_name": "Dad",
+            "relation": "Father",
+            "gender": "M"
+        }, format='multipart')
+        self.assertEqual(res.status_code, 201)
+        father_id = res.data['id']
+
+        # Verify: creator says this member is Father
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member=self.guardian_member,
+                to_member_id=father_id,
+                relation_type='Father'
+            ).exists()
+        )
+        # Verify parents M2M: creator's parent should include new member
+        self.assertIn(
+            FamilyMember.objects.get(id=father_id),
+            self.guardian_member.parents.all()
+        )
+
+    def test_son_appears_in_tree(self):
+        """A managed Son should appear connected in /api/families/tree/."""
+        self.client.force_authenticate(user=self.guardian)
+        self.client.post('/api/families/managed/', {
+            "first_name": "Tree",
+            "last_name": "Son",
+            "relation": "Son",
+            "gender": "M"
+        }, format='multipart')
+
+        res = self.client.get('/api/families/tree/')
+        self.assertEqual(res.status_code, 200)
+        links = res.data['links']
+
+        # There should be a parent link from guardian to the new son
+        parent_links = [l for l in links if l['type'] == 'parent' and l['source'] == self.guardian_member.id]
+        self.assertTrue(len(parent_links) > 0, "Son should be linked as child of guardian in tree")
+
 
 class FamilyTreeViewTests(TestCase):
     """Test the /api/families/tree/ endpoint."""

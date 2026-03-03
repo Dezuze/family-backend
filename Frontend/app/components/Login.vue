@@ -249,14 +249,14 @@ defineExpose({ toggle })
 
 <template>
   <!-- LOGIN / AVATAR (keeps yellow bar) -->
-  <div class="z-20 h-15 w-full lg:w-40 flex items-center
-           transition-all duration-500 max-lg:rounded-full
+  <div class="z-20 h-12 lg:h-15 w-full lg:w-40 flex items-center
+           transition-all duration-500 max-lg:rounded-2xl
            lg:rounded-br-[80px] lg:rounded-tr-[10px] bg-linear-to-b from-brand-gold to-brand-gold-dark shadow-lg">
     <div class="w-full">
       <div v-if="!auth.isAuthenticated">
         <button
           @click="toggle"
-          class="w-full max-w-[280px] mx-auto lg:max-w-none lg:pl-10 font-bold text-white py-3 block
+          class="w-full max-w-[280px] mx-auto lg:max-w-none lg:pl-10 font-bold text-white py-2 lg:py-3 block text-sm lg:text-base
                  transition lg:rounded-br-[80px] lg:rounded-tr-[10px] lg:hover:rounded-br-[100px] lg:hover:rounded-tr-[10px] hover:brightness-110 active:scale-95"
         >
           Login
@@ -273,56 +273,56 @@ defineExpose({ toggle })
              <span v-else>{{ initials }}</span>
           </button>
 
-          <div v-if="menuOpen" class="absolute z-50 top-14 lg:-left-24 left-1/2 lg:translate-x-0 -translate-x-1/2 w-72 bg-white rounded-2xl shadow-2xl p-3 text-sm text-slate-800 border border-slate-100 flex flex-col gap-1.5 animate-fade-in">
-            <div class="px-3 py-2 font-black text-brand-gold-dark border-b border-slate-100 mb-2 text-center">{{ displayName }}</div>
+          <div v-if="menuOpen" class="absolute z-50 top-14 lg:-left-24 left-1/2 lg:translate-x-0 -translate-x-1/2 w-56 lg:w-72 bg-white rounded-2xl shadow-2xl p-2 lg:p-3 text-sm text-slate-800 border border-slate-100 flex flex-col gap-0.5 animate-fade-in">
+            <div class="px-3 py-1.5 font-black text-brand-gold-dark border-b border-slate-100 mb-1 text-center text-xs lg:text-sm truncate">{{ displayName }}</div>
             
-            <button @click="copyInvite" class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-all text-brand-gold font-bold flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <button @click="copyInvite" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all text-brand-gold font-bold flex items-center gap-2 text-xs lg:text-sm">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Invite Member
             </button>
 
-            <button @click="router.push('/onboarding?step=3'); menuOpen = false" class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2 font-semibold">
-                <svg class="w-4 h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+            <button @click="router.push('/onboarding?step=3'); menuOpen = false" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2 font-semibold text-xs lg:text-sm">
+                <svg class="w-3.5 h-3.5 text-brand-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
                 Add Family Member
             </button>
 
             <!-- Managed Members Section -->
-            <div v-if="auth.isAuthenticated && (auth.user?.managed_members?.length || 0) > 0" class="border-t border-slate-100 mt-2 pt-2">
-                <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex justify-between items-center">
+            <div v-if="auth.isAuthenticated && (auth.user?.managed_members?.length || 0) > 0" class="border-t border-slate-100 mt-1 pt-1">
+                <div class="px-3 py-1 text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 flex justify-between items-center">
                     <span>Managed Members</span>
-                    <span class="bg-slate-100 text-slate-500 px-1.5 rounded-full">{{ auth.user?.managed_members?.length || 0 }}</span>
+                    <span class="bg-slate-100 text-slate-500 px-1.5 rounded-full text-[9px]">{{ auth.user?.managed_members?.length || 0 }}</span>
                 </div>
-                <div class="max-h-48 overflow-y-auto custom-scrollbar">
+                <div class="max-h-32 lg:max-h-48 overflow-y-auto custom-scrollbar">
                     <button 
                         v-for="m in (auth.user?.managed_members || [])" 
                         :key="m.id"
                         @click="router.push(`/onboarding?step=3&edit=${m.id}`); menuOpen = false"
-                        class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-3 group"
+                        class="w-full text-left px-2 py-1.5 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2 group"
                     >
-                        <div class="w-9 h-9 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200 group-hover:border-brand-gold/30 transition-colors">
+                        <div class="w-7 h-7 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200 group-hover:border-brand-gold/30 transition-colors">
                             <img v-if="m.profile_pic" :src="m.profile_pic.startsWith('http') ? m.profile_pic : `${useRuntimeConfig().public.apiBase || 'http://localhost:8000'}${m.profile_pic}`" class="w-full h-full object-cover" />
-                            <div v-else class="w-full h-full flex items-center justify-center text-slate-400 font-bold text-sm uppercase">{{ m.name.charAt(0) }}</div>
+                            <div v-else class="w-full h-full flex items-center justify-center text-slate-400 font-bold text-[10px] uppercase">{{ m.name.charAt(0) }}</div>
                         </div>
                         <div class="flex flex-col flex-1 truncate">
-                            <span class="font-bold text-slate-700 group-hover:text-brand-gold transition-colors truncate">{{ m.name }}</span>
+                            <span class="font-bold text-slate-700 group-hover:text-brand-gold transition-colors truncate text-xs">{{ m.name }}</span>
                             <div class="flex items-center gap-1">
-                                <span class="text-[10px] text-slate-400 font-medium">{{ m.relation }}</span>
+                                <span class="text-[9px] text-slate-400 font-medium">{{ m.relation }}</span>
                                 <span v-if="m.has_account" class="text-[8px] text-blue-500 font-bold">• Login</span>
                                 <span v-if="m.is_independent" class="text-[8px] text-green-500 font-bold">• Independent</span>
                             </div>
                         </div>
-                        <svg class="w-4 h-4 text-slate-300 group-hover:text-brand-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        <svg class="w-3 h-3 text-slate-300 group-hover:text-brand-gold transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </button>
                 </div>
             </div>
 
-            <div class="border-t border-slate-50 mt-1 pt-2">
-                <button @click="openEdit" class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2 font-semibold">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            <div class="border-t border-slate-50 mt-1 pt-1">
+                <button @click="openEdit" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2 font-semibold text-xs lg:text-sm">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     Edit profile
                 </button>
-                <button @click="logout" class="w-full text-left px-3 py-2.5 hover:bg-red-50 rounded-xl transition-all text-red-600 flex items-center gap-2 font-semibold">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                <button @click="logout" class="w-full text-left px-3 py-2 hover:bg-red-50 rounded-xl transition-all text-red-600 flex items-center gap-2 font-semibold text-xs lg:text-sm">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     Logout
                 </button>
             </div>

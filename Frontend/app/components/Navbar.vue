@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Login from '~/components/Login.vue'
 import { useAuthStore } from '~/stores/auth'
 
 const mobileOpen = ref(false)
-
+const router = useRouter()
 const auth = useAuthStore()
+const loginRef = ref<InstanceType<typeof Login> | null>(null)
 
 const displayName = computed(() => auth.user?.name ?? auth.user?.email ?? '')
 const initials = computed(() => {
@@ -22,19 +24,21 @@ const initials = computed(() => {
 const userPhoto = computed(() => {
   const u = auth.user
   if (!u) return ''
-  
   const photo = (u as any).profile_pic || (u as any).photo || (u as any).image || ''
   if (!photo) return ''
-  
-  if (photo.startsWith('http') || photo.startsWith('data:') || photo.startsWith('blob:')) {
-      return photo
-  }
-  
+  if (photo.startsWith('http') || photo.startsWith('data:') || photo.startsWith('blob:')) return photo
   const config = useRuntimeConfig()
   const apiBase = (config.public.apiBase as string) || 'http://localhost:8000'
-  const cleanPath = photo.replace(/^\/+/, '')
-  return `${apiBase}/${cleanPath}`
+  return `${apiBase}/${photo.replace(/^\/+/, '')}`
 })
+
+const resolvePhoto = (path: string) => {
+  if (!path) return ''
+  if (path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')) return path
+  const config = useRuntimeConfig()
+  const apiBase = (config.public.apiBase as string) || 'http://localhost:8000'
+  return `${apiBase}/${path.replace(/^\/+/, '')}`
+}
 
 const links = [
   { name: 'Family Tree', to: '/familytree' },
@@ -46,18 +50,62 @@ const links = [
 
 const restricted = ['Gallery', 'Family Tree', 'Donation']
 const visibleLinks = computed(() => links.filter((l) => !restricted.includes(l.name) || auth.isAuthenticated))
+const managedMembers = computed(() => (auth.user as any)?.managed_members || [])
+
+// Mobile menu actions
+const mobileLogin = () => {
+  mobileOpen.value = false
+  loginRef.value?.toggle()
+}
+const mobileLogout = async () => {
+  mobileOpen.value = false
+  await (auth as any).logout()
+  router.push('/')
+}
+const mobileNav = (path: string) => {
+  mobileOpen.value = false
+  router.push(path)
+}
+
+function getCookie(name: string) {
+  if (typeof document === 'undefined') return null
+  const matches = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]+)'))
+  return matches ? matches[2] : null
+}
+
+const mobileCopyInvite = async () => {
+  mobileOpen.value = false
+  try {
+    const config = useRuntimeConfig()
+    const apiBase = (config.public.apiBase as string) || 'http://localhost:8000'
+    await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
+    const csrftoken = getCookie('csrftoken')
+    const res = await fetch(`${apiBase}/api/auth/generate-invite-token/`, {
+      method: 'POST',
+      headers: { ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}) },
+      credentials: 'include'
+    })
+    if (res.ok) {
+      const data = await res.json()
+      const link = `${window.location.origin}/?token=${data.token}`
+      await navigator.clipboard.writeText(`Hey! Join our family directory here: ${link}`)
+      alert('Invite link copied to clipboard!')
+    } else {
+      alert('Failed to generate invite token.')
+    }
+  } catch (e) {
+    alert('Error generating invite.')
+  }
+}
 
 // --- Auto-hide Navbar Logic ---
 const showNavbar = ref(true)
 const lastScrollY = ref(0)
 const handleScroll = () => {
     const currentScrollY = window.scrollY
-    
-    // Show if scrolling up OR at the very top
     if (currentScrollY < lastScrollY.value || currentScrollY < 50) {
         showNavbar.value = true
     } else {
-        // Hide if scrolling down AND not at top
         showNavbar.value = false
     }
     lastScrollY.value = currentScrollY
@@ -79,11 +127,12 @@ onUnmounted(() => {
     class="fixed top-0 left-0 right-0 w-full lg:w-170 z-50 bg-transparent transition-transform duration-300 ease-in-out"
     :class="[ showNavbar ? 'translate-y-0' : '-translate-y-full' ]"
   >
+      <!-- Desktop Navbar -->
       <div class="hidden bg-white lg:flex lg:rounded-br-[80px] lg:rounded-tr-[10px] lg:hover:rounded-br-[100px] lg:hover:rounded-tr-[10px] px-4 items-center relative h-15 shadow-sm">
         <div class="flex items-center gap-4 h-full">
           <NuxtLink to="/" class="flex font-fleur text-2xl items-center text-right h-full">
            Kollamparambil<br>Family
-        </NuxtLink>
+         </NuxtLink>
           <div class="flex absolute items-center right-5">
             <NuxtLink
               v-for="link in visibleLinks"
@@ -96,69 +145,173 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="flex -z-20 ml-120 items-center gap-3">
-          <Login />
+          <Login ref="loginRef" />
         </div>
       </div>
 
-
-
-      <!-- Mobile -->
-      <div class="flex bg-white lg:hidden items-center z-30 justify-between h-15 px-4 shadow-sm border-b border-slate-100">
-        <NuxtLink to="/" class="flex font-fleur text-2xl items-center ml-4 text-right h-full">
-           Kollamparambil<br>Family
+      <!-- Mobile Top Bar -->
+      <div 
+        class="flex lg:hidden items-center z-30 justify-between h-14 px-5 transition-all duration-300"
+        :class="mobileOpen ? 'bg-white shadow-none' : 'bg-white shadow-md'"
+      >
+        <NuxtLink to="/" class="font-fleur text-xl text-slate-800 leading-tight" @click="mobileOpen = false">
+          Kollamparambil Family
         </NuxtLink>
 
-        <div class="flex items-center gap-2">
-          <button
-            @click="mobileOpen = !mobileOpen"
-            class="flex items-center gap-3 text-base font-semibold text-slate-800 pr-2 py-1 rounded transition h-10 w-10 justify-center"
-          >
-            <template v-if="auth.isAuthenticated">
-              <div v-if="userPhoto" class="h-10 w-10 rounded-full border-2 border-brand-gold overflow-hidden shrink-0 shadow-sm">
-                <img :src="userPhoto" class="w-full h-full object-cover" @error="(e) => (e.target as any).style.display='none'" />
-              </div>
-              <span v-else class="h-10 w-10 rounded-full bg-brand-gold text-white flex items-center justify-center font-bold shrink-0 shadow-sm">{{ initials }}</span>
-            </template>
-            <template v-else>
-               <svg class="w-8 h-8 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-            </template>
-          </button>
-        </div>
+        <button
+          @click="mobileOpen = !mobileOpen"
+          class="relative flex items-center justify-center h-10 w-10 rounded-full transition-all duration-200"
+          :class="mobileOpen ? 'bg-slate-100' : ''"
+        >
+          <template v-if="auth.isAuthenticated">
+            <div 
+              class="h-9 w-9 rounded-full overflow-hidden shrink-0 transition-all duration-200"
+              :class="mobileOpen ? 'ring-2 ring-brand-gold ring-offset-1' : 'border-2 border-brand-gold/50 shadow-sm'"
+            >
+              <img v-if="userPhoto" :src="userPhoto" class="w-full h-full object-cover" @error="(e) => (e.target as any).style.display='none'" />
+              <div v-else class="w-full h-full bg-brand-gold text-white flex items-center justify-center font-bold text-sm">{{ initials }}</div>
+            </div>
+          </template>
+          <template v-else>
+            <!-- Animated hamburger / close icon -->
+            <div class="flex flex-col justify-center items-center w-6 h-6 gap-1.5">
+              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? 'rotate-45 translate-y-[4px]' : ''"></span>
+              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? 'opacity-0' : ''"></span>
+              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? '-rotate-45 -translate-y-[4px]' : ''"></span>
+            </div>
+          </template>
+        </button>
       </div>
 
-    <!-- MOBILE MENU -->
+    <!-- MOBILE MENU BACKDROP -->
+    <Transition name="fade-backdrop">
+      <div
+        v-if="mobileOpen"
+        class="lg:hidden fixed inset-0 z-30 bg-black/30 backdrop-blur-[2px]"
+        @click="mobileOpen = false"
+      />
+    </Transition>
+
+    <!-- MOBILE MENU — fully inlined, no nested dropdowns -->
     <Transition name="slide">
       <div
         v-if="mobileOpen"
-        class="lg:hidden fixed inset-x-0 top-15 z-40 bg-white shadow-2xl flex flex-col items-center gap-6 px-8 py-10 rounded-b-[40px] border-t border-slate-50"
+        class="lg:hidden fixed inset-x-0 top-14 z-40 bg-white/95 backdrop-blur-xl shadow-2xl flex flex-col rounded-b-3xl border-b border-slate-100 max-h-[calc(100vh-80px)] overflow-y-auto"
       >
-        <div class="flex flex-col items-center gap-2 w-full">
+        <!-- Nav Links -->
+        <div class="flex flex-col px-4 pt-3 pb-1">
           <NuxtLink
             v-for="link in visibleLinks"
             :key="link.to"
             :to="link.to"
             @click="mobileOpen = false"
-            class="w-full text-center py-4 rounded-2xl font-bold text-lg text-slate-800 hover:bg-slate-50 hover:text-brand-gold transition-all active:scale-95"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-[15px] text-slate-700 hover:bg-slate-50 hover:text-brand-gold active:bg-slate-100 transition-all"
           >
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-gold/40 shrink-0"></span>
             {{ link.name }}
           </NuxtLink>
         </div>
 
-        <div class="w-full pt-4 border-t border-slate-100 flex flex-col items-center">
-          <Login />
+        <div class="mx-5 border-t border-slate-100"></div>
+
+        <!-- LOGGED IN: Inline profile section -->
+        <div v-if="auth.isAuthenticated" class="px-4 py-3 flex flex-col gap-0.5">
+          <!-- User Info -->
+          <div class="flex items-center gap-3 px-3 py-2 mb-1">
+            <div class="w-9 h-9 rounded-full bg-brand-gold text-white flex items-center justify-center text-sm font-bold overflow-hidden shrink-0 border-2 border-brand-gold/30">
+              <img v-if="userPhoto" :src="userPhoto" class="w-full h-full object-cover" @error="(e: any) => e.target.style.display='none'" />
+              <span v-else>{{ initials }}</span>
+            </div>
+            <div class="flex flex-col flex-1 min-w-0">
+              <span class="font-bold text-slate-800 text-sm truncate">{{ displayName }}</span>
+              <span class="text-[11px] text-slate-400">Logged in</span>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <button @click="mobileCopyInvite" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-brand-gold hover:bg-brand-gold/5 active:bg-brand-gold/10 transition-all">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Invite Member
+          </button>
+          <button @click="mobileNav('/onboarding?step=3')" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-all">
+            <svg class="w-4 h-4 text-brand-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+            Add Family Member
+          </button>
+          <button @click="mobileNav('/onboarding')" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-all">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            Edit Profile
+          </button>
+
+          <!-- Managed Members (compact, scrollable) -->
+          <div v-if="managedMembers.length > 0" class="mt-1">
+            <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center">
+              <span>Managed Members</span>
+              <span class="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[9px]">{{ managedMembers.length }}</span>
+            </div>
+            <div class="max-h-[120px] overflow-y-auto">
+              <button 
+                v-for="m in managedMembers" 
+                :key="m.id"
+                @click="mobileNav(`/onboarding?step=3&edit=${m.id}`)"
+                class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2.5"
+              >
+                <div class="w-7 h-7 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
+                  <img v-if="m.profile_pic" :src="resolvePhoto(m.profile_pic)" class="w-full h-full object-cover" />
+                  <div v-else class="w-full h-full flex items-center justify-center text-slate-400 font-bold text-[10px]">{{ m.name?.charAt(0) }}</div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-slate-700 text-xs truncate">{{ m.name }}</div>
+                  <div class="text-[10px] text-slate-400">{{ m.relation }}</div>
+                </div>
+                <svg class="w-3 h-3 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Logout -->
+          <div class="mt-1 pt-2 border-t border-slate-100">
+            <button @click="mobileLogout" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-red-500 hover:bg-red-50 active:bg-red-100 transition-all w-full">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <!-- NOT LOGGED IN: Simple login button -->
+        <div v-else class="px-5 py-4">
+          <button 
+            @click="mobileLogin"
+            class="w-full py-3 rounded-2xl font-bold text-white text-sm bg-linear-to-b from-brand-gold to-brand-gold-dark shadow-lg hover:brightness-110 active:scale-95 transition-all"
+          >
+            Login
+          </button>
         </div>
       </div>
     </Transition>
   </nav>
+
+  <!-- Login component for its modal (teleported) — ref used for mobile login trigger -->
+  <div class="hidden">
+    <Login ref="loginRef" />
+  </div>
 </template>
 
 <style scoped>
 .slide-enter-active,
 .slide-leave-active {
-  transition: transform 0.55s ease-in-out;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
 }
 .slide-enter-from,
 .slide-leave-to {
-  transform: translateY(-100%);
+  transform: translateY(-20px);
+  opacity: 0;
+}
+.fade-backdrop-enter-active,
+.fade-backdrop-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-backdrop-enter-from,
+.fade-backdrop-leave-to {
+  opacity: 0;
 }
 </style>

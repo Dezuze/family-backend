@@ -510,6 +510,217 @@ class FamilyMediaDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = FamilyMediaSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+def _create_auto_relationship(member, creator_member):
+    """
+    Auto-create reciprocal Relationship records based on the managed member's
+    `relation` field relative to the creator.  This makes the member appear
+    connected in the family tree.
+
+    Interpretation: `member.relation` describes what `member` IS to the creator.
+    E.g. relation="Son" means "this member is the creator's Son".
+    """
+    if not creator_member:
+        return
+
+    relation = member.relation
+    if not relation or relation in ('Other', 'Head', 'Member', 'Child'):
+        return
+
+    # Clean up any previous auto-created relationships between these two
+    Relationship.objects.filter(
+        Q(from_member=member, to_member=creator_member) |
+        Q(from_member=creator_member, to_member=member)
+    ).delete()
+    # Also clear parents M2M between these two
+    member.parents.remove(creator_member)
+    creator_member.parents.remove(member)
+
+    creator_gender = creator_member.gender  # 'M', 'F', or 'O'
+
+    # Map: what the member IS to the creator → what Relationship to create
+    if relation in ('Son', 'Daughter'):
+        # Member is creator's child → creator is parent of member
+        parent_type = 'Father' if creator_gender == 'M' else 'Mother'
+        Relationship.objects.get_or_create(
+            from_member=member, to_member=creator_member,
+            relation_type=parent_type
+        )
+        member.parents.add(creator_member)
+
+    elif relation in ('Father', 'Mother'):
+        # Member is creator's parent → member is parent of creator
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type=relation
+        )
+        creator_member.parents.add(member)
+
+    elif relation == 'Spouse':
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type='Spouse'
+        )
+
+    elif relation in ('Brother', 'Sister'):
+        # Sibling: share parents with creator
+        # Find creator's parents and make member a child of them too
+        for parent in creator_member.parents.all():
+            member.parents.add(parent)
+            parent_type = 'Father' if parent.gender == 'M' else 'Mother'
+            Relationship.objects.get_or_create(
+                from_member=member, to_member=parent,
+                relation_type=parent_type
+            )
+        # Also create a sibling relationship for reference
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type=relation
+        )
+
+    elif relation in ('Grandfather', 'Grandmother',
+                       'Paternal Grandfather', 'Paternal Grandmother',
+                       'Maternal Grandfather', 'Maternal Grandmother'):
+        # Member is creator's grandparent → chain through creator's parent
+        if 'Paternal' in relation:
+            parent = creator_member.parents.filter(gender='M').first()
+        elif 'Maternal' in relation:
+            parent = creator_member.parents.filter(gender='F').first()
+        else:
+            parent = creator_member.parents.first()
+
+        if parent:
+            parent.parents.add(member)
+            gp_type = 'Father' if member.gender == 'M' else 'Mother'
+            Relationship.objects.get_or_create(
+                from_member=parent, to_member=member,
+                relation_type=gp_type
+            )
+        else:
+            # No intermediate parent exists — create direct link as fallback
+            gp_type = 'Grandfather' if member.gender == 'M' else 'Grandmother'
+            Relationship.objects.get_or_create(
+                from_member=creator_member, to_member=member,
+                relation_type=gp_type
+            )
+
+    elif relation in ('Grandson', 'Granddaughter'):
+        # Member is creator's grandchild → find creator's child and make member their child
+        child_type = 'Son' if member.gender == 'M' else 'Daughter'
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type=child_type
+        )
+
+    elif relation in ('Uncle', 'Aunt'):
+        # Uncle/Aunt = creator's parent's sibling → child of grandparent
+        parent = creator_member.parents.first()
+        if parent:
+            for gp in parent.parents.all():
+                member.parents.add(gp)
+                gp_type = 'Father' if gp.gender == 'M' else 'Mother'
+                Relationship.objects.get_or_create(
+                    from_member=member, to_member=gp,
+                    relation_type=gp_type
+                )
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type=relation
+        )
+
+    elif relation in ('Nephew', 'Niece'):
+        # Nephew/Niece = sibling's child → find sibling and make member their child
+        sibling_rel = Relationship.objects.filter(
+            from_member=creator_member, relation_type__in=['Brother', 'Sister']
+        ).first()
+        if sibling_rel:
+            member.parents.add(sibling_rel.to_member)
+            parent_type = 'Father' if sibling_rel.to_member.gender == 'M' else 'Mother'
+            Relationship.objects.get_or_create(
+                from_member=member, to_member=sibling_rel.to_member,
+                relation_type=parent_type
+            )
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type=relation
+        )
+
+    elif relation == 'Cousin':
+        # Cousin = uncle/aunt's child
+        uncle_rel = Relationship.objects.filter(
+            from_member=creator_member, relation_type__in=['Uncle', 'Aunt']
+        ).first()
+        if uncle_rel:
+            member.parents.add(uncle_rel.to_member)
+            parent_type = 'Father' if uncle_rel.to_member.gender == 'M' else 'Mother'
+            Relationship.objects.get_or_create(
+                from_member=member, to_member=uncle_rel.to_member,
+                relation_type=parent_type
+            )
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type='Cousin'
+        )
+
+    elif relation in ('Father-in-law', 'Mother-in-law'):
+        # Creator's spouse's parent
+        spouse_rel = Relationship.objects.filter(
+            from_member=creator_member, relation_type='Spouse'
+        ).first()
+        if spouse_rel:
+            spouse_rel.to_member.parents.add(member)
+            parent_type = 'Father' if member.gender == 'M' else 'Mother'
+            Relationship.objects.get_or_create(
+                from_member=spouse_rel.to_member, to_member=member,
+                relation_type=parent_type
+            )
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type=relation
+        )
+
+    elif relation in ('Son-in-law', 'Daughter-in-law'):
+        # Spouse of creator's child
+        child_types = ['Son', 'Daughter']
+        child_rel = Relationship.objects.filter(
+            from_member=creator_member, relation_type__in=child_types
+        ).first()
+        # Also check reverse: child might have declared creator as parent
+        if not child_rel:
+            child_rel_rev = Relationship.objects.filter(
+                to_member=creator_member, relation_type__in=['Father', 'Mother']
+            ).first()
+            if child_rel_rev:
+                Relationship.objects.get_or_create(
+                    from_member=child_rel_rev.from_member, to_member=member,
+                    relation_type='Spouse'
+                )
+        elif child_rel:
+            Relationship.objects.get_or_create(
+                from_member=child_rel.to_member, to_member=member,
+                relation_type='Spouse'
+            )
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type=relation
+        )
+
+    elif relation in ('Brother-in-law', 'Sister-in-law'):
+        # Spouse of creator's sibling
+        sibling_type = 'Sister' if relation == 'Brother-in-law' else 'Brother'
+        sibling_rel = Relationship.objects.filter(
+            from_member=creator_member, relation_type=sibling_type
+        ).first()
+        if sibling_rel:
+            Relationship.objects.get_or_create(
+                from_member=sibling_rel.to_member, to_member=member,
+                relation_type='Spouse'
+            )
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type=relation
+        )
+
+
 class ManagedMembersView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -552,6 +763,11 @@ class ManagedMembersView(APIView):
                 nickname=data.get('nickname', ''),
                 created_by=request.user
             )
+
+            # Auto-create reciprocal Relationship based on relation field
+            creator_member = getattr(request.user, 'member', None)
+            if creator_member:
+                _create_auto_relationship(member, creator_member)
 
             # Link parents if provided
             if 'parents' in data:
@@ -645,7 +861,13 @@ class ManagedMemberDetailView(APIView):
 
             if 'age' in data: member.age = data['age']
             if 'gender' in data: member.gender = data['gender']
-            if 'relation' in data: member.relation = data['relation']
+            if 'relation' in data:
+                member.relation = data['relation']
+                # Re-create auto-relationship when relation changes
+                member.save()  # Save relation first
+                creator_member = getattr(request.user, 'member', None)
+                if creator_member:
+                    _create_auto_relationship(member, creator_member)
             if 'date_of_birth' in data: member.date_of_birth = data['date_of_birth']
             if 'blood_group' in data: member.blood_group = data['blood_group']
             if 'occupation' in data: member.occupation = data['occupation']
