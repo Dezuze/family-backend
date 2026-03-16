@@ -332,6 +332,64 @@ class ManagedMembersViewTests(TestCase):
             self.guardian_member.parents.all()
         )
 
+    def test_create_custom_relation_creates_generic_relationship(self):
+        """Custom labels like 'great great great grandfather' should be accepted."""
+        self.client.force_authenticate(user=self.guardian)
+        custom_relation = "great great great grandfather"
+        res = self.client.post('/api/families/managed/', {
+            "first_name": "Great",
+            "last_name": "Ancestor",
+            "relation": custom_relation,
+            "gender": "M"
+        }, format='multipart')
+        self.assertEqual(res.status_code, 201)
+        custom_id = res.data['id']
+
+        # Custom relation should stay perspective-based, not a global member label.
+        created = FamilyMember.objects.get(id=custom_id)
+        self.assertEqual(created.relation, 'Other')
+
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member=self.guardian_member,
+                to_member_id=custom_id,
+                relation_type=custom_relation
+            ).exists()
+        )
+
+    def test_custom_relation_in_tree_is_viewer_perspective_only(self):
+        self.client.force_authenticate(user=self.guardian)
+        custom_relation = "great great great grandfather"
+        res = self.client.post('/api/families/managed/', {
+            "first_name": "Perspective",
+            "last_name": "Ancestor",
+            "relation": custom_relation,
+            "gender": "M"
+        }, format='multipart')
+        self.assertEqual(res.status_code, 201)
+        custom_id = res.data['id']
+
+        tree_for_guardian = self.client.get('/api/families/tree/')
+        self.assertEqual(tree_for_guardian.status_code, 200)
+        guardian_node = next((n for n in tree_for_guardian.data['nodes'] if n['id'] == custom_id), None)
+        self.assertIsNotNone(guardian_node)
+        self.assertEqual(guardian_node['role'], custom_relation)
+
+        other_member = FamilyMember.objects.create(
+            family=self.family, name="Other Viewer", age=31, relation="Head", gender="M"
+        )
+        other_user = User.objects.create_user(
+            username="other_viewer", email="other_viewer@example.com",
+            password="Pass123!", member=other_member
+        )
+        self.client.force_authenticate(user=other_user)
+
+        tree_for_other = self.client.get('/api/families/tree/')
+        self.assertEqual(tree_for_other.status_code, 200)
+        other_node = next((n for n in tree_for_other.data['nodes'] if n['id'] == custom_id), None)
+        self.assertIsNotNone(other_node)
+        self.assertNotEqual(other_node['role'], custom_relation)
+
     def test_son_appears_in_tree(self):
         """A managed Son should appear connected in /api/families/tree/."""
         self.client.force_authenticate(user=self.guardian)

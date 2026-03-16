@@ -1,23 +1,8 @@
-"""
-Families App Models
-===================
-Core data models for the Kollamparambil Family application.
-
-Models:
-    - Family: Root unit grouping members by branch/household.
-    - FamilyHead: Designated leader of a Family branch.
-    - FamilyMember: Individual member with profile, demographics, and relationships.
-    - DeceasedMember: Archived record of deceased family members.
-    - FamilyMedia: Gallery images categorised by event type.
-    - Relationship: Directed edge between two FamilyMembers encoding a named
-      relation (Father, Spouse, Uncle, etc.) used by the tree-builder.
-"""
 from django.db import models
 from django.conf import settings
 
 
 class Family(models.Model):
-    """Root family unit identified by a unique member number."""
     sl_no = models.CharField(max_length=20)
     branch = models.CharField(max_length=100)
 
@@ -30,7 +15,6 @@ class Family(models.Model):
 
 
 class FamilyHead(models.Model):
-    """Designated head (eldest/primary contact) of a Family branch."""
     family = models.OneToOneField(Family, on_delete=models.CASCADE, related_name="head")
 
     # optional link to a registered user
@@ -52,29 +36,6 @@ class FamilyHead(models.Model):
 
 
 class FamilyMember(models.Model):
-    """
-    Individual family member with full profile data.
-
-    Key fields:
-        - relation: Default relation label (Father, Brother, etc.).
-        - parents: M2M self-referential field for hierarchical tree rendering.
-        - created_by: The User who added this member (guardian pattern).
-        - is_independent: When True, the member controls their own profile.
-
-    Properties:
-        - role: Returns committee role if available, else falls back to `relation`.
-        - is_committee: True if the linked user sits on a committee.
-    """
-    family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name="members")
-
-    # link to accounts.User handled by User.member (OneToOneField)
-    # temporary id for unregistered persons
-    temp_member_id = models.CharField(max_length=50, blank=True, null=True)
-
-    name = models.CharField(max_length=100)
-    nickname = models.CharField(max_length=50, blank=True, null=True)
-    age = models.PositiveIntegerField(null=True, blank=True)
-
     RELATION_CHOICES = [
         ('Head', 'Head'),
         ('Spouse', 'Spouse'),
@@ -102,8 +63,21 @@ class FamilyMember(models.Model):
         ('Other', 'Other'),
     ]
 
-    relation = models.CharField(max_length=50, choices=RELATION_CHOICES, default='Other')
-    date_of_birth = models.DateField(null=True, blank=True)
+    family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name="members")
+
+    # temporary id for unregistered persons
+    temp_member_id = models.CharField(max_length=50, blank=True, null=True)
+
+    name = models.CharField(max_length=100)
+    nickname = models.CharField(max_length=50, blank=True, null=True)
+    age = models.PositiveIntegerField(blank=True, null=True)
+    gender = models.CharField(max_length=1, choices=[("M", "Male"), ("F", "Female"), ("O", "Other")], default="M")
+
+    # Kept as free text so users can enter custom labels like
+    # "great great great grandfather" from the frontend.
+    relation = models.CharField(max_length=50, default='Other')
+    date_of_birth = models.DateField(blank=True, null=True)
+    date_of_death = models.DateField(blank=True, null=True)
 
     address_if_different = models.TextField(blank=True, null=True)
 
@@ -113,28 +87,26 @@ class FamilyMember(models.Model):
 
     blood_group = models.CharField(max_length=10, blank=True, null=True)
     is_deceased = models.BooleanField(default=False)
-    is_independent = models.BooleanField(default=False, help_text="When True, the creator/guardian loses write access and the profile owner has full control.")
-    date_of_death = models.DateField(null=True, blank=True)
-
-    gender = models.CharField(max_length=1, choices=[("M", "Male"), ("F", "Female"), ("O", "Other")], default="M")
-    bio = models.TextField(blank=True, null=True)
+    is_independent = models.BooleanField(
+        default=False,
+        help_text='When True, the creator/guardian loses write access and the profile owner has full control.'
+    )
     phone_no = models.CharField(max_length=20, blank=True, null=True)
     email_id = models.EmailField(blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
     church_parish = models.CharField(max_length=100, blank=True, null=True)
 
     photo = models.ImageField(upload_to="members/photos/", blank=True, null=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='managed_members',
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+    )
 
     # Link to other FamilyMember instances to represent parent/child relationships.
     # Use `symmetrical=False` so `parents` and `children` are distinct.
-    # Track who created this member (especially for children/members without accounts)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name="managed_members",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL
-    )
-
     parents = models.ManyToManyField(
         'self',
         symmetrical=False,
@@ -144,7 +116,7 @@ class FamilyMember(models.Model):
 
     @property
     def role(self):
-        """Return committee role title if member is on a committee, else relation label."""
+        # Fallback gracefully if committee module is unavailable.
         try:
             if hasattr(self, 'user_account') and self.user_account:
                 committee_entry = self.user_account.committee_entries.first()
@@ -156,7 +128,6 @@ class FamilyMember(models.Model):
 
     @property
     def is_committee(self):
-        """True if this member's linked user account has any committee entries."""
         try:
             if hasattr(self, 'user_account') and self.user_account:
                 return self.user_account.committee_entries.exists()
@@ -165,11 +136,10 @@ class FamilyMember(models.Model):
         return False
 
     def __str__(self):
-        return f"{self.name} ({self.role})"
+        return self.name
 
 
 class DeceasedMember(models.Model):
-    """Archived record for a deceased family member (separate from FamilyMember.is_deceased)."""
     family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name="deceased")
 
     name = models.CharField(max_length=100)
@@ -186,7 +156,6 @@ class DeceasedMember(models.Model):
 
 
 class FamilyMedia(models.Model):
-    """Gallery image uploaded under a specific category (family, wedding, achievement)."""
     CATEGORY_CHOICES = [
         ("family", "Family"),
         ("wedding", "Wedding"),
@@ -200,47 +169,36 @@ class FamilyMedia(models.Model):
 
 
 class Relationship(models.Model):
-    """
-    Directed relationship edge: from_member --[relation_type]--> to_member.
-
-    Interpretation: "from_member says to_member is their <relation_type>."
-    Example: Relationship(from=Alex, to=John, type='Father') means
-             "Alex says John is his Father".
-
-    The GENDER_MAP class attribute auto-assigns gender when new members are
-    created through the onboarding flow.
-    """
     RELATION_CHOICES = [
-        ("Father", "Father"),
-        ("Mother", "Mother"),
-        ("Son", "Son"),
-        ("Daughter", "Daughter"),
-        ("Spouse", "Spouse"),
-        ("Brother", "Brother"),
-        ("Sister", "Sister"),
-        ("Grandfather", "Grandfather"),
-        ("Grandmother", "Grandmother"),
-        ("Paternal Grandfather", "Paternal Grandfather"),
-        ("Paternal Grandmother", "Paternal Grandmother"),
-        ("Maternal Grandfather", "Maternal Grandfather"),
-        ("Maternal Grandmother", "Maternal Grandmother"),
-        ("Grandson", "Grandson"),
-        ("Granddaughter", "Granddaughter"),
-        ("Uncle", "Uncle"),
-        ("Aunt", "Aunt"),
-        ("Nephew", "Nephew"),
-        ("Niece", "Niece"),
-        ("Cousin", "Cousin"),
-        ("Father-in-law", "Father-in-law"),
-        ("Mother-in-law", "Mother-in-law"),
-        ("Son-in-law", "Son-in-law"),
-        ("Daughter-in-law", "Daughter-in-law"),
-        ("Brother-in-law", "Brother-in-law"),
-        ("Sister-in-law", "Sister-in-law"),
-        ("Other", "Other"),
+        ('Father', 'Father'),
+        ('Mother', 'Mother'),
+        ('Son', 'Son'),
+        ('Daughter', 'Daughter'),
+        ('Spouse', 'Spouse'),
+        ('Brother', 'Brother'),
+        ('Sister', 'Sister'),
+        ('Grandfather', 'Grandfather'),
+        ('Grandmother', 'Grandmother'),
+        ('Paternal Grandfather', 'Paternal Grandfather'),
+        ('Paternal Grandmother', 'Paternal Grandmother'),
+        ('Maternal Grandfather', 'Maternal Grandfather'),
+        ('Maternal Grandmother', 'Maternal Grandmother'),
+        ('Grandson', 'Grandson'),
+        ('Granddaughter', 'Granddaughter'),
+        ('Uncle', 'Uncle'),
+        ('Aunt', 'Aunt'),
+        ('Nephew', 'Nephew'),
+        ('Niece', 'Niece'),
+        ('Cousin', 'Cousin'),
+        ('Father-in-law', 'Father-in-law'),
+        ('Mother-in-law', 'Mother-in-law'),
+        ('Son-in-law', 'Son-in-law'),
+        ('Daughter-in-law', 'Daughter-in-law'),
+        ('Brother-in-law', 'Brother-in-law'),
+        ('Sister-in-law', 'Sister-in-law'),
+        ('Other', 'Other'),
     ]
 
-    # Gender auto-assignment map
     GENDER_MAP = {
         'Father': 'M', 'Mother': 'F',
         'Son': 'M', 'Daughter': 'F',
@@ -256,12 +214,13 @@ class Relationship(models.Model):
         'Brother-in-law': 'M', 'Sister-in-law': 'F',
     }
 
-    from_member = models.ForeignKey(FamilyMember, on_delete=models.CASCADE, related_name="relationships_from")
-    to_member = models.ForeignKey(FamilyMember, on_delete=models.CASCADE, related_name="relationships_to")
-    relation_type = models.CharField(max_length=50, choices=RELATION_CHOICES)
+    from_member = models.ForeignKey(FamilyMember, on_delete=models.CASCADE, related_name='relationships_from')
+    to_member = models.ForeignKey(FamilyMember, on_delete=models.CASCADE, related_name='relationships_to')
+    # Free text to support custom links in onboarding while preserving known presets.
+    relation_type = models.CharField(max_length=50, default='Other')
 
     class Meta:
         unique_together = ('from_member', 'to_member', 'relation_type')
 
     def __str__(self):
-        return f"{self.from_member.name} -> {self.relation_type} -> {self.to_member.name}"
+        return f'{self.from_member.name} -> {self.relation_type} -> {self.to_member.name}'

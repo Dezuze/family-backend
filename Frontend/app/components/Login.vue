@@ -269,7 +269,7 @@ defineExpose({ toggle })
           <span class="text-white font-black text-xs lg:hidden drop-shadow-md truncate max-w-[120px]">{{ displayName }}</span>
 
           <button @click="menuOpen = !menuOpen" class="h-10 w-10 lg:h-11 lg:w-11 rounded-full bg-brand-gold border-2 border-white/50 text-white flex items-center justify-center font-bold overflow-hidden shrink-0 shadow-lg transition-transform active:scale-95">
-             <img v-if="userPhoto" :src="userPhoto" alt="User" class="w-full h-full object-cover" @error="(e) => (e.target as any).style.display='none'" />
+             <img v-if="userPhoto" :src="userPhoto" :alt="displayName || 'User photo'" class="w-full h-full object-cover" @error="(e) => (e.target as any).style.display='none'" />
              <span v-else>{{ initials }}</span>
           </button>
 
@@ -300,7 +300,7 @@ defineExpose({ toggle })
                         class="w-full text-left px-2 py-1.5 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2 group"
                     >
                         <div class="w-7 h-7 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200 group-hover:border-brand-gold/30 transition-colors">
-                            <img v-if="m.profile_pic" :src="m.profile_pic.startsWith('http') ? m.profile_pic : `${useRuntimeConfig().public.apiBase || 'http://localhost:8000'}${m.profile_pic}`" class="w-full h-full object-cover" />
+                            <img v-if="m.profile_pic" :src="m.profile_pic.startsWith('http') ? m.profile_pic : `${useRuntimeConfig().public.apiBase || 'http://localhost:8000'}${m.profile_pic}`" :alt="m.name || 'Member photo'" class="w-full h-full object-cover" />
                             <div v-else class="w-full h-full flex items-center justify-center text-slate-400 font-bold text-[10px] uppercase">{{ m.name.charAt(0) }}</div>
                         </div>
                         <div class="flex flex-col flex-1 truncate">
@@ -408,7 +408,7 @@ defineExpose({ toggle })
             <label class="block text-xs text-gray-500 mb-1">Profile Photo (Optional)</label>
             
             <div v-if="avatarSrc && !croppingAvatar" class="relative group w-20 h-20 mx-auto mb-2">
-                <img :src="avatarSrc" class="w-full h-full object-cover rounded-full border-2 border-brand-gold" />
+                <img :src="avatarSrc" :alt="regName || 'Avatar preview'" class="w-full h-full object-cover rounded-full border-2 border-brand-gold" />
                 <button @click="avatarSrc = null; regAvatar = null" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>

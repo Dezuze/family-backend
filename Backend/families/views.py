@@ -24,6 +24,21 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from datetime import date
 
+
+def _normalize_relation_label(value, fallback='Other', max_len=50):
+    label = str(value or '').strip()
+    if not label:
+        return fallback
+    return label[:max_len]
+
+
+def _storable_member_relation(value):
+    relation = _normalize_relation_label(value)
+    known_member_relations = {choice[0] for choice in FamilyMember.RELATION_CHOICES}
+    if relation in known_member_relations:
+        return relation
+    return 'Other'
+
 class UserProfileView(APIView):
     """
     GET  /api/families/profile/  → Return the authenticated user's FamilyMember.
@@ -35,7 +50,7 @@ class UserProfileView(APIView):
     def get(self, request):
         member = FamilyMember.objects.filter(user_account=request.user).first()
         if member:
-            serializer = FamilyMemberSerializer(member)
+            serializer = FamilyMemberSerializer(member, context={'request': request})
             return Response(serializer.data)
         return Response({"error": "Profile not linked"}, status=404)
 
@@ -142,7 +157,7 @@ class UserProfileView(APIView):
                     Relationship.objects.filter(from_member=member).delete()
                     for item in rel_data:
                         to_id = item.get('to_member') or item.get('to_member_id')
-                        rel_type = item.get('relation_type')
+                        rel_type = _normalize_relation_label(item.get('relation_type'))
                         name = item.get('name') or item.get('to_member_name')
                         
                         if not to_id and name:
@@ -150,7 +165,7 @@ class UserProfileView(APIView):
                             auto_gender = Relationship.GENDER_MAP.get(rel_type, 'M')
                             new_member = FamilyMember.objects.create(
                                 name=name,
-                                relation=rel_type,
+                                relation=_storable_member_relation(rel_type),
                                 gender=auto_gender,
                                 age=0, 
                                 created_by=request.user,
@@ -201,7 +216,7 @@ class UserProfileView(APIView):
             
             member.save()
             
-            return Response(FamilyMemberSerializer(member).data)
+            return Response(FamilyMemberSerializer(member, context={'request': request}).data)
         except Exception as e:
             import traceback
             traceback.print_exc() # Print to server logs for debugging
@@ -232,6 +247,14 @@ class FamilyTreeView(APIView):
     def get(self, request):
         members = FamilyMember.objects.all()
         relationships = Relationship.objects.all()
+
+        viewer_member = getattr(request.user, 'member', None) if getattr(request.user, 'is_authenticated', False) else None
+        viewer_relation_map = {}
+        if viewer_member:
+            viewer_relation_map = {
+                rel.to_member_id: rel.relation_type
+                for rel in relationships.filter(from_member_id=viewer_member.id)
+            }
         
         nodes = []
         links = []
@@ -249,7 +272,8 @@ class FamilyTreeView(APIView):
                 "id": m.id,
                 "name": m.name,
                 "photo": m.photo.url if m.photo else None,
-                "role": m.role,
+                "role": viewer_relation_map.get(m.id) or m.role,
+                "relation": viewer_relation_map.get(m.id) or m.relation,
                 "is_committee": m.is_committee,
                 "username": username,
                 "gender": m.gender,
@@ -510,7 +534,7 @@ class FamilyMediaDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = FamilyMediaSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-def _create_auto_relationship(member, creator_member):
+def _create_auto_relationship(member, creator_member, relation_override=None):
     """
     Auto-create reciprocal Relationship records based on the managed member's
     `relation` field relative to the creator.  This makes the member appear
@@ -522,7 +546,7 @@ def _create_auto_relationship(member, creator_member):
     if not creator_member:
         return
 
-    relation = member.relation
+    relation = _normalize_relation_label(relation_override if relation_override is not None else member.relation)
     if not relation or relation in ('Other', 'Head', 'Member', 'Child'):
         return
 
@@ -720,6 +744,14 @@ def _create_auto_relationship(member, creator_member):
             relation_type=relation
         )
 
+    else:
+        # Keep custom relations connected in the graph when they don't map to
+        # one of the explicit genealogical rule branches above.
+        Relationship.objects.get_or_create(
+            from_member=creator_member, to_member=member,
+            relation_type=relation
+        )
+
 
 class ManagedMembersView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -727,7 +759,7 @@ class ManagedMembersView(APIView):
     def get(self, request):
         # List all members created by this user that are NOT independent
         members = FamilyMember.objects.filter(created_by=request.user, is_independent=False)
-        serializer = FamilyMemberSerializer(members, many=True)
+        serializer = FamilyMemberSerializer(members, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
@@ -743,13 +775,14 @@ class ManagedMembersView(APIView):
             f_name = data.get('first_name', '')
             l_name = data.get('last_name', '')
             full_name = data.get('name', f"{f_name} {l_name}".strip())
+            relation_label = _normalize_relation_label(data.get('relation', 'Child'), fallback='Child')
 
             member = FamilyMember.objects.create(
                 family=family,
                 name=full_name,
                 age=data.get('age', 0),
                 gender=data.get('gender', 'M'),
-                relation=data.get('relation', 'Child'),
+                relation=_storable_member_relation(relation_label),
                 date_of_birth=data.get('date_of_birth', '2000-01-01'),
                 blood_group=data.get('blood_group', 'Unknown'),
                 occupation=data.get('occupation', ''),
@@ -767,7 +800,7 @@ class ManagedMembersView(APIView):
             # Auto-create reciprocal Relationship based on relation field
             creator_member = getattr(request.user, 'member', None)
             if creator_member:
-                _create_auto_relationship(member, creator_member)
+                _create_auto_relationship(member, creator_member, relation_override=relation_label)
 
             # Link parents if provided
             if 'parents' in data:
@@ -789,14 +822,14 @@ class ManagedMembersView(APIView):
                         rel_data = json.loads(rel_data)
                     for item in rel_data:
                         to_id = item.get('to_member') or item.get('to_member_id')
-                        rel_type = item.get('relation_type')
+                        rel_type = _normalize_relation_label(item.get('relation_type'))
                         name = item.get('name') or item.get('to_member_name')
 
                         if not to_id and name:
                             # Auto-create member if not found
                             new_member = FamilyMember.objects.create(
                                 name=name,
-                                relation=rel_type, # Temporary
+                                relation=_storable_member_relation(rel_type),
                                 age=0, 
                                 created_by=request.user,
                                 family=member.family
@@ -822,7 +855,7 @@ class ManagedMembersView(APIView):
             
             member.save()
 
-            return Response(FamilyMemberSerializer(member).data, status=status.HTTP_201_CREATED)
+            return Response(FamilyMemberSerializer(member, context={'request': request}).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
@@ -838,7 +871,7 @@ class ManagedMemberDetailView(APIView):
 
     def get(self, request, pk):
         member = get_object_or_404(FamilyMember, pk=pk, created_by=request.user)
-        return Response(FamilyMemberSerializer(member).data)
+        return Response(FamilyMemberSerializer(member, context={'request': request}).data)
 
     def put(self, request, pk):
         member = self.get_object(pk, request.user)
@@ -862,12 +895,13 @@ class ManagedMemberDetailView(APIView):
             if 'age' in data: member.age = data['age']
             if 'gender' in data: member.gender = data['gender']
             if 'relation' in data:
-                member.relation = data['relation']
+                input_relation = _normalize_relation_label(data['relation'])
+                member.relation = _storable_member_relation(input_relation)
                 # Re-create auto-relationship when relation changes
                 member.save()  # Save relation first
                 creator_member = getattr(request.user, 'member', None)
                 if creator_member:
-                    _create_auto_relationship(member, creator_member)
+                    _create_auto_relationship(member, creator_member, relation_override=input_relation)
             if 'date_of_birth' in data: member.date_of_birth = data['date_of_birth']
             if 'blood_group' in data: member.blood_group = data['blood_group']
             if 'occupation' in data: member.occupation = data['occupation']
@@ -891,14 +925,14 @@ class ManagedMemberDetailView(APIView):
                     Relationship.objects.filter(from_member=member).delete()
                     for item in rel_data:
                         to_id = item.get('to_member') or item.get('to_member_id')
-                        rel_type = item.get('relation_type')
+                        rel_type = _normalize_relation_label(item.get('relation_type'))
                         name = item.get('name') or item.get('to_member_name')
 
                         if not to_id and name:
                             # Auto-create member if not found
                             new_member = FamilyMember.objects.create(
                                 name=name,
-                                relation=rel_type, # Temporary
+                                relation=_storable_member_relation(rel_type),
                                 age=0, 
                                 created_by=request.user,
                                 family=member.family
@@ -932,7 +966,7 @@ class ManagedMemberDetailView(APIView):
                 member.photo = request.FILES['photo']
 
             member.save()
-            return Response(FamilyMemberSerializer(member).data)
+            return Response(FamilyMemberSerializer(member, context={'request': request}).data)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 

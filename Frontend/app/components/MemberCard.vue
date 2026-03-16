@@ -3,7 +3,7 @@
     <div class="shrink-0">
       <img 
         :src="resolveImage(member.photo) || `https://ui-avatars.com/api/?name=${member.name}&background=f1f5f9&color=64748b`" 
-        alt="photo" 
+        :alt="member.name || 'Member photo'"
         class="w-16 h-16 rounded-full object-cover ring-1 ring-slate-100 shadow-sm"
         @error="(e) => (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${member.name}&background=f1f5f9&color=64748b`"
       />

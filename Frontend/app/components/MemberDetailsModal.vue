@@ -15,6 +15,7 @@
              <div class="w-48 h-48 rounded-full border-4 border-white overflow-hidden shadow-xl mb-6 ring-1 ring-slate-200">
                <img 
                  :src="resolveImage(member.photo) || `https://ui-avatars.com/api/?name=${member.name}&background=cbd5e1&color=fff`" 
+                 :alt="member.name || 'Member photo'"
                  class="w-full h-full object-cover"
                />
              </div>

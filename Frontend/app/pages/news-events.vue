@@ -99,7 +99,7 @@
         <div class="relative bg-white rounded-[2rem] max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 flex flex-col md:flex-row">
           <!-- Image Part -->
           <div class="md:w-1/2 bg-slate-100 h-64 md:h-auto overflow-hidden relative">
-            <img :src="resolveImage(selectedItem.image) || 'https://placehold.co/800x1200/f1f5f9/d4af37?text=News'" class="w-full h-full object-contain md:object-cover" />
+            <img :src="resolveImage(selectedItem.image) || 'https://placehold.co/800x1200/f1f5f9/d4af37?text=News'" :alt="selectedItem.title || 'News image'" class="w-full h-full object-contain md:object-cover" />
              <div class="absolute inset-0 bg-linear-to-t from-black/40 to-transparent md:hidden"></div>
           </div>
 
@@ -165,13 +165,20 @@
 </template>
 
 <script setup lang="ts">
-import { useRuntimeConfig, useHead, ref, onMounted, onUnmounted } from '#imports'
+import { useRuntimeConfig, useHead, ref, onMounted, onUnmounted, useRoute } from '#imports'
 import AddPostModal from '~/components/AddPostModal.vue'
 import { useAuthStore } from '~/stores/auth'
 
 const auth = useAuthStore()
 const config = useRuntimeConfig()
+const route = useRoute()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
+
+useHead({
+  title: 'News & Events',
+  meta: [{ name: 'description', content: 'Read the latest news, announcements, and event recaps from the Kollamparambil family association.' }],
+  link: [{ rel: 'canonical', href: `${config.public.siteUrl || 'http://localhost:3000'}${route.path}` }]
+})
 
 interface NewsItem {
   id: number

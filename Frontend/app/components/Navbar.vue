@@ -164,11 +164,11 @@ onUnmounted(() => {
           :class="mobileOpen ? 'bg-slate-100' : ''"
         >
           <template v-if="auth.isAuthenticated">
-            <div 
+              <div 
               class="h-9 w-9 rounded-full overflow-hidden shrink-0 transition-all duration-200"
               :class="mobileOpen ? 'ring-2 ring-brand-gold ring-offset-1' : 'border-2 border-brand-gold/50 shadow-sm'"
             >
-              <img v-if="userPhoto" :src="userPhoto" class="w-full h-full object-cover" @error="(e) => (e.target as any).style.display='none'" />
+              <img v-if="userPhoto" :src="userPhoto" :alt="displayName || 'User photo'" class="w-full h-full object-cover" @error="(e) => (e.target as any).style.display='none'" />
               <div v-else class="w-full h-full bg-brand-gold text-white flex items-center justify-center font-bold text-sm">{{ initials }}</div>
             </div>
           </template>
@@ -218,8 +218,8 @@ onUnmounted(() => {
         <div v-if="auth.isAuthenticated" class="px-4 py-3 flex flex-col gap-0.5">
           <!-- User Info -->
           <div class="flex items-center gap-3 px-3 py-2 mb-1">
-            <div class="w-9 h-9 rounded-full bg-brand-gold text-white flex items-center justify-center text-sm font-bold overflow-hidden shrink-0 border-2 border-brand-gold/30">
-              <img v-if="userPhoto" :src="userPhoto" class="w-full h-full object-cover" @error="(e: any) => e.target.style.display='none'" />
+              <div class="w-9 h-9 rounded-full bg-brand-gold text-white flex items-center justify-center text-sm font-bold overflow-hidden shrink-0 border-2 border-brand-gold/30">
+              <img v-if="userPhoto" :src="userPhoto" :alt="displayName || 'User photo'" class="w-full h-full object-cover" @error="(e: any) => e.target.style.display='none'" />
               <span v-else>{{ initials }}</span>
             </div>
             <div class="flex flex-col flex-1 min-w-0">
@@ -256,7 +256,7 @@ onUnmounted(() => {
                 class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2.5"
               >
                 <div class="w-7 h-7 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
-                  <img v-if="m.profile_pic" :src="resolvePhoto(m.profile_pic)" class="w-full h-full object-cover" />
+                  <img v-if="m.profile_pic" :src="resolvePhoto(m.profile_pic)" :alt="m.name || 'Member photo'" class="w-full h-full object-cover" />
                   <div v-else class="w-full h-full flex items-center justify-center text-slate-400 font-bold text-[10px]">{{ m.name?.charAt(0) }}</div>
                 </div>
                 <div class="flex-1 min-w-0">

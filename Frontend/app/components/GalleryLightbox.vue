@@ -25,8 +25,8 @@
             :aria-label="image.title || 'Image'"
           ></div>
           
-          <!-- Hidden image to track loading -->
-          <img :src="image.photo" @load="handleLoad" class="hidden" />
+          <!-- Hidden image to track loading (decorative preload) -->
+          <img :src="image.photo" @load="handleLoad" class="hidden" alt="" />
 
           <!-- blocker captures contextmenu/long-press to make downloading harder -->
           <div class="gl-img-blocker" @contextmenu.prevent @touchstart.prevent @mousedown.prevent></div>

@@ -52,6 +52,7 @@
                 <img 
                   v-if="m.photo" 
                   :src="m.photo" 
+                  :alt="m.name || 'Member photo'"
                   class="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-110" 
                 />
                 <div v-else class="w-full h-full flex items-center justify-center bg-linear-to-b from-slate-100 to-slate-200 text-brand-gold/20">
@@ -145,6 +146,7 @@
             <img 
               v-if="selectedMember.photo" 
               :src="selectedMember.photo" 
+              :alt="selectedMember.name || 'Member photo'"
               class="w-full h-full object-cover object-top" 
             />
             <div v-else class="w-full h-full flex items-center justify-center bg-linear-to-b from-slate-100 to-slate-200 text-brand-gold/10">
@@ -205,11 +207,20 @@
 </template>
 
 <script setup lang="ts">
-import { useHead, useRuntimeConfig } from '#imports'
+import { useHead, useRuntimeConfig, useRoute } from '#imports'
 import type { FamilyMember } from '~/types/family'
 
+const config = useRuntimeConfig()
+const route = useRoute()
+
 useHead({
-  title: 'Committee'
+  title: 'Committee',
+  meta: [
+    { name: 'description', content: 'Committee members and leadership of the Kollamparambil Family Association. Meet the team for 2025-2027.' }
+  ],
+  link: [
+    { rel: 'canonical', href: `${config.public.siteUrl || 'http://localhost:3000'}${route.path}` }
+  ]
 })
 
 // Types

@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { useHead } from '#imports'
+import { useHead, useRoute, useRuntimeConfig } from '#imports'
+
+const route = useRoute()
+const config = useRuntimeConfig()
+const siteUrl = config.public.siteUrl || 'http://localhost:3000'
 
 useHead({
-  titleTemplate: () => 'Kollamparambil Family',
+  titleTemplate: (title: string | undefined) => title ? `${title} | Kollamparambil Family` : 'Kollamparambil Family',
   title: 'Kollamparambil Family',
   link: [
     { rel: 'icon', type: 'image/png', href: '/favicon.png?v=3' },
@@ -10,7 +14,8 @@ useHead({
     { rel: 'shortcut icon', href: '/favicon.ico?v=3' },
     { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap' },
     { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Fleur+De+Leah&display=swap' },
-    { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' }
+    { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' },
+    { rel: 'canonical', href: `${siteUrl}${route.path}` }
   ],
   meta: [
     // Primary Meta Tags
@@ -43,6 +48,18 @@ useHead({
     
     // Additional Meta
     { name: 'robots', content: 'index, follow' }
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Kollamparambil Family",
+        "url": siteUrl,
+        "logo": `${siteUrl}/images/logo.png`
+      })
+    }
   ]
 })
 </script>

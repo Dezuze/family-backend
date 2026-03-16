@@ -30,7 +30,7 @@
                                        <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                        <span class="text-xs font-semibold">Change Photo</span>
                                    </div>
-                                   <img v-else :src="avatarPreview" class="w-full h-full object-cover" />
+                                   <img v-else :src="avatarPreview" :alt="form.first_name || form.last_name || 'Avatar preview'" class="w-full h-full object-cover" />
                                </div>
                                 <div class="absolute bottom-2 right-2 bg-brand-gold text-white rounded-full p-2.5 shadow-lg z-10 pointer-events-none group-hover:brightness-110 transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -211,7 +211,7 @@
                                      </div>
 
                                      <!-- Married to? picker for in-law types -->
-                                     <div v-if="isInLawType(selectedRelType)" class="mt-3">
+                                     <div v-if="isInLawType(activeRelType)" class="mt-3">
                                         <label class="text-xs font-bold text-slate-400 uppercase mb-1 block ml-1">Married to?</label>
                                         <select v-model="marriedToMemberId" class="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 font-bold text-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none">
                                             <option :value="null">Select family member...</option>
@@ -230,7 +230,7 @@
                                           >
                                               <div class="flex items-center gap-4">
                                                   <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 overflow-hidden">
-                                                      <img v-if="pm.photo" :src="pm.photo.startsWith('http') ? pm.photo : apiBase+pm.photo" class="w-full h-full object-cover">
+                                                      <img v-if="pm.photo" :src="pm.photo.startsWith('http') ? pm.photo : apiBase+pm.photo" :alt="pm.name || 'Member photo'" class="w-full h-full object-cover">
                                                       <span v-else>{{ pm.name.charAt(0) }}</span>
                                                   </div>
                                                   <div>
@@ -239,7 +239,7 @@
                                                   </div>
                                               </div>
                                               <div class="bg-brand-gold text-white px-4 py-1.5 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                                  Add as {{ selectedRelType }}
+                                                  Add as {{ activeRelType }}
                                               </div>
                                           </button>
 
@@ -313,7 +313,7 @@
                              <div v-for="m in managedMembers" :key="m.id" class="bg-white border-2 border-slate-50 p-6 rounded-[32px] flex flex-col gap-6 group hover:border-brand-gold/20 hover:shadow-xl hover:shadow-brand-gold/5 transition-all duration-300">
                                 <div class="flex items-center gap-5">
                                     <div class="w-20 h-20 rounded-3xl overflow-hidden bg-slate-50 border-4 border-white shadow-lg shrink-0">
-                                        <img v-if="m.photo || m.profile_pic" :src="resolveImage(m.photo || m.profile_pic)" class="w-full h-full object-cover">
+                                        <img v-if="m.photo || m.profile_pic" :src="resolveImage(m.photo || m.profile_pic)" :alt="m.name || 'Member photo'" class="w-full h-full object-cover">
                                         <div v-else class="w-full h-full flex items-center justify-center text-slate-300 text-3xl font-black uppercase">{{ m.name.charAt(0) }}</div>
                                     </div>
                                      <div class="flex-1">
@@ -400,7 +400,7 @@
                                         <svg class="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                         <span class="text-[10px] font-bold uppercase tracking-wider">Photo</span>
                                     </div>
-                                    <img v-else :src="managedAvatarPreview" class="w-full h-full object-cover" />
+                                    <img v-else :src="managedAvatarPreview" :alt="managedForm.first_name || managedForm.last_name || 'Managed avatar preview'" class="w-full h-full object-cover" />
                                 </div>
                              </div>
                         </div>
@@ -424,32 +424,19 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Relation</label>
-                                <select v-model="managedForm.relation" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
-                                    <option value="Head">Head</option>
-                                    <option value="Spouse">Spouse</option>
-                                    <option value="Father">Father</option>
-                                    <option value="Mother">Mother</option>
-                                    <option value="Son">Son</option>
-                                    <option value="Daughter">Daughter</option>
-                                    <option value="Brother">Brother</option>
-                                    <option value="Sister">Sister</option>
-                                    <option value="Grandfather">Grandfather</option>
-                                    <option value="Grandmother">Grandmother</option>
-                                    <option value="Grandson">Grandson</option>
-                                    <option value="Granddaughter">Granddaughter</option>
-                                    <option value="Uncle">Uncle</option>
-                                    <option value="Aunt">Aunt</option>
-                                    <option value="Nephew">Nephew</option>
-                                    <option value="Niece">Niece</option>
-                                    <option value="Cousin">Cousin</option>
-                                    <option value="Father-in-law">Father-in-law</option>
-                                    <option value="Mother-in-law">Mother-in-law</option>
-                                    <option value="Son-in-law">Son-in-law</option>
-                                    <option value="Daughter-in-law">Daughter-in-law</option>
-                                    <option value="Brother-in-law">Brother-in-law</option>
-                                    <option value="Sister-in-law">Sister-in-law</option>
-                                    <option value="Other">Other</option>
-                                </select>
+                                <input
+                                    v-model="managedForm.relation"
+                                    list="managed-relation-options"
+                                    type="text"
+                                    class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold"
+                                    placeholder="e.g. Great great great grandfather"
+                                >
+                                <p class="mt-2 text-xs font-semibold text-slate-500">
+                                    You can type any relation. Custom labels are shown from your own perspective.
+                                </p>
+                                <datalist id="managed-relation-options">
+                                    <option v-for="preset in relationTypes" :key="preset" :value="preset" />
+                                </datalist>
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Gender</label>
@@ -653,6 +640,12 @@ async function submitGiveAccess() {
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
 
+const normalizeRelationLabel = (value: string, fallback = 'Other') => {
+    const normalized = (value || '').trim()
+    if (!normalized) return fallback
+    return normalized.slice(0, 50)
+}
+
 const step = ref(1)
 const loading = ref(false)
 const form = ref({
@@ -780,6 +773,8 @@ const saveManagedMember = async () => {
         const csrfData = await csrfRes.json().catch(() => ({}))
         const csrftoken = getCookie('csrftoken') || csrfData.csrfToken
 
+        managedForm.value.relation = normalizeRelationLabel(managedForm.value.relation || 'Child', 'Child')
+
         const formData = new FormData()
         Object.keys(managedForm.value).forEach(key => {
             if (key !== 'avatar' && managedForm.value[key] !== null && managedForm.value[key] !== '') {
@@ -877,6 +872,8 @@ const selectedRelType = ref('Father')
 const relTypeSearch = ref('')
 const showRelTypeDropdown = ref(false)
 const relationTypes = [
+    'Child',
+    'Member',
     'Father', 'Mother', 'Son', 'Daughter',
     'Spouse',
     'Brother', 'Sister',
@@ -892,6 +889,7 @@ const relationTypes = [
     'Brother-in-law', 'Sister-in-law',
     'Other'
 ]
+const activeRelType = computed(() => normalizeRelationLabel(relTypeSearch.value || selectedRelType.value))
 
 // Searchable dropdown state for editing existing relations
 const editingRelIdx = ref(-1)
@@ -943,31 +941,37 @@ const filteredRelatives = computed(() => {
 })
 
 const addRelationship = (m) => {
+    const relationType = activeRelType.value
     const relData = {
         to_member: m.id,
         to_member_name: m.name,
-        relation_type: selectedRelType.value
+        relation_type: relationType
     }
-    if (isInLawType(selectedRelType.value) && marriedToMemberId.value) {
+    if (isInLawType(relationType) && marriedToMemberId.value) {
         relData.married_to = marriedToMemberId.value
     }
     form.value.relationships.push(relData)
+    selectedRelType.value = relationType
     relSearch.value = ''
+    relTypeSearch.value = ''
     marriedToMemberId.value = null
 }
 
 const addNewRelationship = () => {
     if (!relSearch.value.trim()) return
+    const relationType = activeRelType.value
     const relData = {
         to_member: null,
         to_member_name: relSearch.value,
-        relation_type: selectedRelType.value
+        relation_type: relationType
     }
-    if (isInLawType(selectedRelType.value) && marriedToMemberId.value) {
+    if (isInLawType(relationType) && marriedToMemberId.value) {
         relData.married_to = marriedToMemberId.value
     }
     form.value.relationships.push(relData)
+    selectedRelType.value = relationType
     relSearch.value = ''
+    relTypeSearch.value = ''
     marriedToMemberId.value = null
 }
 
@@ -976,7 +980,7 @@ const removeRelationship = (toMemberId) => {
 }
 
 const updateRelType = (rel, type) => {
-    rel.relation_type = type
+    rel.relation_type = normalizeRelationLabel(type)
 }
 const avatarPreview = ref(null)
 

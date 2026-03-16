@@ -119,7 +119,7 @@
 
           <!-- Modal Image -->
           <div class="relative h-64 sm:h-80 shrink-0">
-            <img :src="resolveImage(selectedEvent.image) || 'https://placehold.co/800x600/f1f5f9/d4af37?text=Event'" class="w-full h-full object-cover" />
+            <img :src="resolveImage(selectedEvent.image) || 'https://placehold.co/800x600/f1f5f9/d4af37?text=Event'" :alt="selectedEvent.title || 'Event image'" class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             
              <div class="absolute bottom-4 left-6">
@@ -207,14 +207,23 @@
 </template>
 
 <script setup lang="ts">
-import { useRuntimeConfig, useHead } from '#imports'
+import { useRuntimeConfig, useHead, useRoute } from '#imports'
 import ShareButtons from '~/components/ShareButtons.vue'
 import AddPostModal from '~/components/AddPostModal.vue'
 import { useAuthStore } from '~/stores/auth'
 
 const auth = useAuthStore()
 const config = useRuntimeConfig()
+const route = useRoute()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
+
+useHead({
+  title: 'Upcoming Gatherings',
+  meta: [
+    { name: 'description', content: 'Upcoming gatherings and events for the Kollamparambil family. Join us for fellowship, ceremonies, and community updates.' }
+  ],
+  link: [ { rel: 'canonical', href: `${config.public.siteUrl || 'http://localhost:3000'}${route.path}` } ]
+})
 
 interface EventItem {
   id: number

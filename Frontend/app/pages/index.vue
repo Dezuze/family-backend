@@ -148,7 +148,7 @@
 
                 <!-- Modal Image -->
                 <div class="relative h-64 sm:h-80 shrink-0">
-                    <img :src="resolveImage(selectedItem.image) || 'https://placehold.co/800x600/f1f5f9/d4af37?text=News'" class="w-full h-full object-cover" />
+                    <img :src="resolveImage(selectedItem.image) || 'https://placehold.co/800x600/f1f5f9/d4af37?text=News'" :alt="selectedItem?.title || 'News image'" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
 
                     <div class="absolute bottom-4 left-6">
@@ -203,7 +203,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useHead, useRuntimeConfig, navigateTo } from '#imports'
+import { useHead, useRuntimeConfig, navigateTo, useRoute } from '#imports'
 import { useAuthStore } from '~/stores/auth'
 import ShareButtons from '~/components/ShareButtons.vue'
 import AddPostModal from '~/components/AddPostModal.vue'
@@ -211,6 +211,8 @@ import AddPostModal from '~/components/AddPostModal.vue'
 const auth = useAuthStore()
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
+const route = useRoute()
+const siteUrl = config.public.siteUrl || 'http://localhost:3000'
 
 const isAddModalOpen = ref(false)
 
@@ -305,7 +307,13 @@ onMounted(() => {
 })
 
 useHead({
-  title: 'Home'
+    title: 'Home',
+    meta: [
+        { name: 'description', content: 'Kollamparambil Family Association — connecting our heritage and future. Find events, news, and family history.' }
+    ],
+    link: [
+        { rel: 'canonical', href: `${siteUrl}${route.path}` }
+    ]
 })
 </script>
 

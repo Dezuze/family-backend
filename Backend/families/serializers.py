@@ -9,6 +9,7 @@ class RelationshipSerializer(serializers.ModelSerializer):
         fields = ['id', 'to_member', 'to_member_name', 'relation_type']
 
 class FamilyMemberSerializer(serializers.ModelSerializer):
+    relation = serializers.SerializerMethodField()
     role = serializers.ReadOnlyField()
     is_committee = serializers.ReadOnlyField()
     profile_pic = serializers.SerializerMethodField()
@@ -38,6 +39,19 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
 
     def get_has_account(self, obj):
         return hasattr(obj, 'user_account') and obj.user_account is not None
+
+    def get_relation(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            viewer_member = getattr(request.user, 'member', None)
+            if viewer_member:
+                rel = Relationship.objects.filter(
+                    from_member_id=viewer_member.id,
+                    to_member_id=obj.id,
+                ).values_list('relation_type', flat=True).first()
+                if rel:
+                    return rel
+        return obj.relation
 
 class FamilyTreeSerializer(serializers.ModelSerializer):
     role = serializers.ReadOnlyField()

@@ -21,8 +21,7 @@ export const useFamilyStore = defineStore('family', {
 
       try {
         const response = await fetch(`${apiBase}/api/families/tree/`, {
-             // Add Auth header if needed, but tree might be public or read-only
-             // credentials: 'include' 
+           credentials: 'include'
         })
         if (response.ok) {
             const data = await response.json()

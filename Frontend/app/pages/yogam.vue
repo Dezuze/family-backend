@@ -106,7 +106,7 @@
           </button>
 
           <div class="relative h-64 sm:h-80 shrink-0">
-            <img :src="resolveImage(selectedEvent.image) || 'https://placehold.co/800x600/f1f5f9/d4af37?text=Annual+Meeting'" class="w-full h-full object-cover" />
+            <img :src="resolveImage(selectedEvent.image) || 'https://placehold.co/800x600/f1f5f9/d4af37?text=Annual+Meeting'" :alt="selectedEvent.title || 'Annual meeting image'" class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             
              <div class="absolute bottom-4 left-6">
@@ -159,13 +159,20 @@
 </template>
 
 <script setup lang="ts">
-import { useRuntimeConfig, useHead, ref, onMounted } from '#imports'
+import { useRuntimeConfig, useHead, ref, onMounted, useRoute } from '#imports'
 import AddPostModal from '~/components/AddPostModal.vue'
 import { useAuthStore } from '~/stores/auth'
 
 const auth = useAuthStore()
 const config = useRuntimeConfig()
+const route = useRoute()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
+
+useHead({
+  title: 'Annual Kudumbayogam',
+  meta: [{ name: 'description', content: 'Highlights, schedules, and memories from our Annual Kudumbayogam — the family’s annual gathering.' }],
+  link: [{ rel: 'canonical', href: `${config.public.siteUrl || 'http://localhost:3000'}${route.path}` }]
+})
 
 interface EventItem {
   id: number
