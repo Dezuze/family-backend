@@ -767,7 +767,9 @@ class ManagedMembersView(APIView):
         try:
             data = request.data
             from .models import Family
-            family = Family.objects.first()
+
+            creator_member = getattr(request.user, 'member', None)
+            family = creator_member.family if creator_member and creator_member.family_id else Family.objects.first()
             if not family:
                 return Response({"error": "No family found"}, status=400)
 
@@ -798,7 +800,6 @@ class ManagedMembersView(APIView):
             )
 
             # Auto-create reciprocal Relationship based on relation field
-            creator_member = getattr(request.user, 'member', None)
             if creator_member:
                 _create_auto_relationship(member, creator_member, relation_override=relation_label)
 

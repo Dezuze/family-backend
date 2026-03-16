@@ -210,7 +210,7 @@
 import { useHead, useRuntimeConfig, useRoute } from '#imports'
 import type { FamilyMember } from '~/types/family'
 
-const config = useRuntimeConfig()
+const runtimeConfig = useRuntimeConfig()
 const route = useRoute()
 
 useHead({
@@ -219,7 +219,7 @@ useHead({
     { name: 'description', content: 'Committee members and leadership of the Kollamparambil Family Association. Meet the team for 2025-2027.' }
   ],
   link: [
-    { rel: 'canonical', href: `${config.public.siteUrl || 'http://localhost:3000'}${route.path}` }
+    { rel: 'canonical', href: `${runtimeConfig.public.siteUrl || 'http://localhost:3000'}${route.path}` }
   ]
 })
 
@@ -260,8 +260,7 @@ const getPriority = (role?: string) => {
     return rolePriority[cleanRole] || 100
 }
 
-const config = useRuntimeConfig()
-const apiBase = config.public.apiBase || 'http://localhost:8000'
+const apiBase = runtimeConfig.public.apiBase || 'http://localhost:8000'
 
 // Fetch Data
 const resolveImage = (path: string) => {

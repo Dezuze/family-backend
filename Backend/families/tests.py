@@ -434,6 +434,109 @@ class FamilyTreeViewTests(TestCase):
         self.assertEqual(res.status_code, 200)  # Tree is public
 
 
+class PerspectiveBranchingTests(TestCase):
+    """Ensure relationship creation stays perspective-safe unless explicit targets are provided."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.family1 = Family.objects.create(sl_no="1", branch="Branch A", member_no="F-BR-001")
+        self.family2 = Family.objects.create(sl_no="2", branch="Branch B", member_no="F-BR-002")
+
+        self.user1_member = FamilyMember.objects.create(
+            family=self.family1, name="User One", age=30, relation="Head", gender="M"
+        )
+        self.user2_member = FamilyMember.objects.create(
+            family=self.family2, name="User Two", age=28, relation="Head", gender="F"
+        )
+
+        self.user1 = User.objects.create_user(
+            username="branch_user_1", email="branch1@example.com", password="Pass123!", member=self.user1_member
+        )
+        self.user2 = User.objects.create_user(
+            username="branch_user_2", email="branch2@example.com", password="Pass123!", member=self.user2_member
+        )
+
+    def test_managed_member_uses_creator_family(self):
+        self.client.force_authenticate(user=self.user2)
+        res = self.client.post('/api/families/managed/', {
+            "first_name": "Child",
+            "last_name": "B",
+            "relation": "Daughter",
+            "gender": "F"
+        }, format='multipart')
+
+        self.assertEqual(res.status_code, 201)
+        created = FamilyMember.objects.get(id=res.data['id'])
+        self.assertEqual(created.family_id, self.family2.id)
+
+    def test_same_name_members_do_not_auto_link_across_users(self):
+        self.client.force_authenticate(user=self.user1)
+        res1 = self.client.post('/api/families/managed/', {
+            "first_name": "Shared",
+            "last_name": "Father",
+            "relation": "Father",
+            "gender": "M"
+        }, format='multipart')
+        self.assertEqual(res1.status_code, 201)
+        user1_father_id = res1.data['id']
+
+        self.client.force_authenticate(user=self.user2)
+        res2 = self.client.post('/api/families/managed/', {
+            "first_name": "Shared",
+            "last_name": "Father",
+            "relation": "Father",
+            "gender": "M"
+        }, format='multipart')
+        self.assertEqual(res2.status_code, 201)
+        user2_father_id = res2.data['id']
+
+        self.assertNotEqual(user1_father_id, user2_father_id)
+
+        self.assertFalse(
+            Relationship.objects.filter(
+                from_member=self.user2_member,
+                to_member_id=user1_father_id,
+                relation_type='Father'
+            ).exists()
+        )
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member=self.user2_member,
+                to_member_id=user2_father_id,
+                relation_type='Father'
+            ).exists()
+        )
+
+    def test_explicit_member_id_creates_cross_user_connection(self):
+        self.client.force_authenticate(user=self.user1)
+        res1 = self.client.post('/api/families/managed/', {
+            "first_name": "Explicit",
+            "last_name": "Target",
+            "relation": "Father",
+            "gender": "M"
+        }, format='multipart')
+        self.assertEqual(res1.status_code, 201)
+        target_member_id = res1.data['id']
+
+        self.client.force_authenticate(user=self.user2)
+        res2 = self.client.post('/api/families/profile/', {
+            "relationships": [
+                {"to_member": target_member_id, "relation_type": "Father"}
+            ]
+        }, format='json')
+        self.assertEqual(res2.status_code, 200)
+
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member=self.user2_member,
+                to_member_id=target_member_id,
+                relation_type='Father'
+            ).exists()
+        )
+        self.user2_member.refresh_from_db()
+        self.assertIn(FamilyMember.objects.get(id=target_member_id), self.user2_member.parents.all())
+
+
 class PermissionsTests(TestCase):
     """Test IsGuardianOrSelf permission logic via managed member endpoints."""
 

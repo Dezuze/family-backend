@@ -129,12 +129,13 @@ class GenerateInviteTokenView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Ensure user is linked to a member
-        if not hasattr(request.user, 'member') or not request.user.member:
+        # Regular users must be linked to a FamilyMember.
+        # Admin/staff users are allowed to generate general invite tokens.
+        member = getattr(request.user, 'member', None)
+        if not member and not (request.user.is_staff or request.user.is_superuser):
             return Response({"error": "User must be linked to a Family Member to generate invites."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Create a new token
-        token_obj = InviteToken.objects.create(member=None)
+
+        token_obj = InviteToken.objects.create(member=member)
         
         return Response({"token": str(token_obj.token)}, status=status.HTTP_201_CREATED)
 

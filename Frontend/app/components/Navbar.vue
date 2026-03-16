@@ -91,7 +91,8 @@ const mobileCopyInvite = async () => {
       await navigator.clipboard.writeText(`Hey! Join our family directory here: ${link}`)
       alert('Invite link copied to clipboard!')
     } else {
-      alert('Failed to generate invite token.')
+      const err = await res.json().catch(() => ({}))
+      alert(err.error || 'Failed to generate invite token.')
     }
   } catch (e) {
     alert('Error generating invite.')
@@ -175,9 +176,9 @@ onUnmounted(() => {
           <template v-else>
             <!-- Animated hamburger / close icon -->
             <div class="flex flex-col justify-center items-center w-6 h-6 gap-1.5">
-              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? 'rotate-45 translate-y-[4px]' : ''"></span>
+              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? 'rotate-45 translate-y-1' : ''"></span>
               <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? 'opacity-0' : ''"></span>
-              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? '-rotate-45 -translate-y-[4px]' : ''"></span>
+              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? '-rotate-45 -translate-y-1' : ''"></span>
             </div>
           </template>
         </button>
@@ -248,7 +249,7 @@ onUnmounted(() => {
               <span>Managed Members</span>
               <span class="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[9px]">{{ managedMembers.length }}</span>
             </div>
-            <div class="max-h-[120px] overflow-y-auto">
+            <div class="max-h-30 overflow-y-auto">
               <button 
                 v-for="m in managedMembers" 
                 :key="m.id"

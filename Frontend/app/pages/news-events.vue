@@ -96,7 +96,7 @@
       <div v-if="selectedItem" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden" @click.self="closeDetails">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-xl"></div>
         
-        <div class="relative bg-white rounded-[2rem] max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 flex flex-col md:flex-row">
+        <div class="relative bg-white rounded-4xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 flex flex-col md:flex-row">
           <!-- Image Part -->
           <div class="md:w-1/2 bg-slate-100 h-64 md:h-auto overflow-hidden relative">
             <img :src="resolveImage(selectedItem.image) || 'https://placehold.co/800x1200/f1f5f9/d4af37?text=News'" :alt="selectedItem.title || 'News image'" class="w-full h-full object-contain md:object-cover" />

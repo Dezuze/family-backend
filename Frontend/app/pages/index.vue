@@ -96,7 +96,7 @@
                 
                 <!-- Skeleton News Cards -->
                 <template v-if="newsList.length === 0">
-                    <div v-for="n in 4" :key="n" class="snap-start min-w-[260px] w-[260px] bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 shrink-0 animate-pulse">
+                    <div v-for="n in 4" :key="n" class="snap-start min-w-65 w-65 bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 shrink-0 animate-pulse">
                         <div class="h-36 bg-slate-200"></div>
                         <div class="p-5 space-y-3">
                             <div class="h-4 bg-slate-200 rounded w-3/4"></div>
@@ -112,7 +112,7 @@
                     v-for="item in newsList" 
                     :key="item.id" 
                     @click="openDetails(item)"
-                    class="snap-start min-w-[260px] w-[260px] bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all cursor-pointer shrink-0 group hover:-translate-y-1 border border-slate-200"
+                    class="snap-start min-w-65 w-65 bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all cursor-pointer shrink-0 group hover:-translate-y-1 border border-slate-200"
                 >
                     <div class="relative h-36 overflow-hidden">
                         <img :src="resolveImage(item.image) || 'https://placehold.co/600x400/f1f5f9/64748b?text=News'" :alt="item.title" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />

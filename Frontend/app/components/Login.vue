@@ -174,7 +174,8 @@ const copyInvite = async () => {
             await navigator.clipboard.writeText(message)
             alert('Invite link and message copied to clipboard! You can now paste it directly into WhatsApp.')
         } else {
-            alert('Failed to generate invite token. Please make sure your profile is completed.')
+          const err = await res.json().catch(() => ({}))
+          alert(err.error || 'Failed to generate invite token. Please make sure your profile is completed.')
         }
     } catch (e) {
         console.error("Invite generation failed", e)
@@ -256,7 +257,7 @@ defineExpose({ toggle })
       <div v-if="!auth.isAuthenticated">
         <button
           @click="toggle"
-          class="w-full max-w-[280px] mx-auto lg:max-w-none lg:pl-10 font-bold text-white py-2 lg:py-3 block text-sm lg:text-base
+          class="w-full max-w-70 mx-auto lg:max-w-none lg:pl-10 font-bold text-white py-2 lg:py-3 block text-sm lg:text-base
                  transition lg:rounded-br-[80px] lg:rounded-tr-[10px] lg:hover:rounded-br-[100px] lg:hover:rounded-tr-[10px] hover:brightness-110 active:scale-95"
         >
           Login
@@ -266,7 +267,7 @@ defineExpose({ toggle })
       <div v-else class="flex items-center lg:justify-end justify-center lg:pr-10 w-full h-full px-4 lg:px-0">
         <div class="relative flex items-center gap-3">
           <!-- Name (Visible on Mobile, slightly smaller to fit pill) -->
-          <span class="text-white font-black text-xs lg:hidden drop-shadow-md truncate max-w-[120px]">{{ displayName }}</span>
+          <span class="text-white font-black text-xs lg:hidden drop-shadow-md truncate max-w-30">{{ displayName }}</span>
 
           <button @click="menuOpen = !menuOpen" class="h-10 w-10 lg:h-11 lg:w-11 rounded-full bg-brand-gold border-2 border-white/50 text-white flex items-center justify-center font-bold overflow-hidden shrink-0 shadow-lg transition-transform active:scale-95">
              <img v-if="userPhoto" :src="userPhoto" :alt="displayName || 'User photo'" class="w-full h-full object-cover" @error="(e) => (e.target as any).style.display='none'" />
@@ -481,7 +482,7 @@ defineExpose({ toggle })
                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </button>
               </div>
-              <div class="bg-black flex-1 overflow-hidden min-h-[300px]">
+              <div class="bg-black flex-1 overflow-hidden min-h-75">
                   <Cropper
                       ref="cropper"
                       class="h-full w-full"

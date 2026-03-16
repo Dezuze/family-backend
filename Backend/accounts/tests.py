@@ -127,6 +127,48 @@ class SignupTests(TestCase):
         self.assertEqual(me_res.data['username'], "autouser")
 
 
+class GenerateInviteTokenTests(TestCase):
+    """Test invite token generation permissions."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.family = Family.objects.create(sl_no="1", branch="Main", member_no="FAM-INV-001")
+        self.member = FamilyMember.objects.create(
+            family=self.family, name="Invite Member", age=35, relation="Head"
+        )
+        self.member_user = User.objects.create_user(
+            username="invite_member", email="invite_member@example.com", password="Pass123!", member=self.member
+        )
+        self.admin_user = User.objects.create_superuser(
+            username="admin_no_member", email="admin_no_member@example.com", password="Admin123!"
+        )
+        self.regular_user_no_member = User.objects.create_user(
+            username="plain_user", email="plain_user@example.com", password="Pass123!"
+        )
+
+    def test_member_user_can_generate_invite_token(self):
+        self.client.force_authenticate(user=self.member_user)
+        res = self.client.post('/api/auth/generate-invite-token/', format='json')
+        self.assertEqual(res.status_code, 201)
+        self.assertIn('token', res.data)
+        token = InviteToken.objects.get(token=res.data['token'])
+        self.assertEqual(token.member, self.member)
+
+    def test_superuser_without_member_can_generate_invite_token(self):
+        self.client.force_authenticate(user=self.admin_user)
+        res = self.client.post('/api/auth/generate-invite-token/', format='json')
+        self.assertEqual(res.status_code, 201)
+        self.assertIn('token', res.data)
+        token = InviteToken.objects.get(token=res.data['token'])
+        self.assertIsNone(token.member)
+
+    def test_regular_user_without_member_cannot_generate_invite_token(self):
+        self.client.force_authenticate(user=self.regular_user_no_member)
+        res = self.client.post('/api/auth/generate-invite-token/', format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('error', res.data)
+
+
 class MeAndLogoutTests(TestCase):
     """Test /me/ endpoint and logout."""
 

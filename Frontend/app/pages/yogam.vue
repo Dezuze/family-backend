@@ -25,7 +25,7 @@
       
       <!-- Skeleton Cards -->
       <template v-if="loading">
-        <div v-for="n in 6" :key="n" class="bg-white h-[450px] rounded-xl overflow-hidden shadow-sm border border-slate-200 animate-pulse">
+        <div v-for="n in 6" :key="n" class="bg-white h-112.5 rounded-xl overflow-hidden shadow-sm border border-slate-200 animate-pulse">
            <div class="h-1/2 bg-slate-200"></div>
            <div class="p-6 space-y-4">
               <div class="h-6 bg-slate-200 rounded w-3/4"></div>
@@ -52,7 +52,7 @@
             <div class="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-60"></div>
             
             <!-- Floating Date Badge -->
-            <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md border border-slate-200 rounded-lg p-3 text-center min-w-[70px] shadow-lg">
+            <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md border border-slate-200 rounded-lg p-3 text-center min-w-17.5 shadow-lg">
               <span class="block text-xs font-bold uppercase tracking-wider text-brand-gold mb-0.5">{{ getMonth(event.event_date) }}</span>
               <span class="block text-2xl font-serif font-bold text-slate-900 leading-none">{{ getDay(event.event_date) }}</span>
             </div>

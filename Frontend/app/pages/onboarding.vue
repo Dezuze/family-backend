@@ -41,22 +41,23 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">First Name</label>
-                                 <input v-model="form.first_name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="John">
+                                 <input v-model="form.first_name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="First name">
                             </div>
                             <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Last Name</label>
-                                <input v-model="form.last_name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Doe">
+                                <input v-model="form.last_name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Last name">
                             </div>
                         </div>
 
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Nickname</label>
-                                <input v-model="form.nickname" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="Johnny">
+                                <input v-model="form.nickname" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="Nickname">
                             </div>
                              <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Gender</label>
                                  <select v-model="form.gender" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all appearance-none cursor-pointer">
+                                     <option value="" disabled>Select gender</option>
                                      <option value="M">Male</option>
                                      <option value="F">Female</option>
                                      <option value="O">Other</option>
@@ -73,7 +74,7 @@
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Blood Group</label>
                                 <div class="relative">
                                      <select v-model="form.blood_group" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all appearance-none cursor-pointer">
-                                         <option>Unknown</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+                                         <option value="" disabled>Select blood group</option><option value="Unknown">Unknown</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
                                      </select>
                                     <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                                         <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -95,11 +96,11 @@
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email</label>
-                                <input v-model="form.email_id" type="email" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="john@example.com">
+                                <input v-model="form.email_id" type="email" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="Email">
                              </div>
                              <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Phone Number</label>
-                                <input v-model="form.phone_no" type="tel" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="+91 9876543210">
+                                <input v-model="form.phone_no" type="tel" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="Phone number">
                              </div>
                          </div>
 
@@ -111,22 +112,22 @@
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Occupation</label>
-                                <input v-model="form.occupation" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="Software Engineer">
+                                <input v-model="form.occupation" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="Occupation">
                             </div>
                              <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Place of Work</label>
-                                 <input v-model="form.place_of_work" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="TechPark, Kochi">
+                                 <input v-model="form.place_of_work" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Place of work">
                             </div>
                          </div>
  
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Education</label>
-                                <input v-model="form.education" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="B.Tech Computer Science">
+                                <input v-model="form.education" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Education">
                             </div>
                              <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Parish / Church</label>
-                                <input v-model="form.church_parish" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="St. Mary's Forane Church">
+                                <input v-model="form.church_parish" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Parish / Church">
                             </div>
                          </div>
 
@@ -140,7 +141,7 @@
                                           <div class="w-10 h-10 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold font-bold">
                                               {{ rel.to_member_name.charAt(0) }}
                                           </div>
-                                          <div class="flex-1 min-w-[120px]">
+                                          <div class="flex-1 min-w-30">
                                               <div class="font-bold text-slate-800">{{ rel.to_member_name }}</div>
                                               <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Family Member</div>
                                           </div>
@@ -210,6 +211,13 @@
                                          </div>
                                      </div>
 
+                                     <p
+                                         v-if="relSearch.trim() && (filteredRelatives.length === 0 || !filteredRelatives.find(m => m.name.toLowerCase() === relSearch.toLowerCase()))"
+                                         class="mt-3 text-xs md:text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2"
+                                     >
+                                         Select a person from search results to link to an existing member. If you add this typed name directly, a new branch member will be created in your own view.
+                                     </p>
+
                                      <!-- Married to? picker for in-law types -->
                                      <div v-if="isInLawType(activeRelType)" class="mt-3">
                                         <label class="text-xs font-bold text-slate-400 uppercase mb-1 block ml-1">Married to?</label>
@@ -256,7 +264,7 @@
                                                   </div>
                                                   <div>
                                                       <div class="font-bold text-brand-gold text-lg">Add "{{ relSearch }}"</div>
-                                                      <div class="text-xs text-brand-gold/60 font-medium tracking-wide uppercase">New Family Member</div>
+                                                      <div class="text-xs text-brand-gold/60 font-medium tracking-wide uppercase">Create New Branch Member</div>
                                                   </div>
                                               </div>
                                               <div class="bg-brand-gold text-white px-4 py-1.5 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
@@ -293,7 +301,7 @@
 
                     <!-- Step 3: Managed Members Dashboard -->
                      <div v-if="step === 3" class="space-y-8 animate-fade-in">
-                        <div class="bg-linear-to-br from-brand-gold/10 to-brand-gold/5 p-8 rounded-[32px] border border-brand-gold/10 mb-8">
+                        <div class="bg-linear-to-br from-brand-gold/10 to-brand-gold/5 p-8 rounded-4xl border border-brand-gold/10 mb-8">
                              <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                                  <div>
                                      <h2 class="text-2xl font-bold text-slate-900 mb-2">My Family Members</h2>
@@ -310,7 +318,7 @@
 
                          <!-- Managed Members List -->
                          <div v-if="managedMembers.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <div v-for="m in managedMembers" :key="m.id" class="bg-white border-2 border-slate-50 p-6 rounded-[32px] flex flex-col gap-6 group hover:border-brand-gold/20 hover:shadow-xl hover:shadow-brand-gold/5 transition-all duration-300">
+                             <div v-for="m in managedMembers" :key="m.id" class="bg-white border-2 border-slate-50 p-6 rounded-4xl flex flex-col gap-6 group hover:border-brand-gold/20 hover:shadow-xl hover:shadow-brand-gold/5 transition-all duration-300">
                                 <div class="flex items-center gap-5">
                                     <div class="w-20 h-20 rounded-3xl overflow-hidden bg-slate-50 border-4 border-white shadow-lg shrink-0">
                                         <img v-if="m.photo || m.profile_pic" :src="resolveImage(m.photo || m.profile_pic)" :alt="m.name || 'Member photo'" class="w-full h-full object-cover">
@@ -418,7 +426,7 @@
 
                         <div>
                             <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Nickname (Shout-out name)</label>
-                            <input v-model="managedForm.nickname" type="text" placeholder="e.g. Pappu, Babu" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                            <input v-model="managedForm.nickname" type="text" placeholder="Nickname" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -429,7 +437,7 @@
                                     list="managed-relation-options"
                                     type="text"
                                     class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold"
-                                    placeholder="e.g. Great great great grandfather"
+                                    placeholder="Relation"
                                 >
                                 <p class="mt-2 text-xs font-semibold text-slate-500">
                                     You can type any relation. Custom labels are shown from your own perspective.
@@ -441,6 +449,7 @@
                             <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Gender</label>
                                 <select v-model="managedForm.gender" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                                    <option value="" disabled>Select gender</option>
                                     <option value="M">Male</option>
                                     <option value="F">Female</option>
                                     <option value="O">Other</option>
@@ -462,7 +471,7 @@
                              <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Blood Group</label>
                                 <select v-model="managedForm.blood_group" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
-                                    <option>Unknown</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+                                    <option value="" disabled>Select blood group</option><option value="Unknown">Unknown</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
                                 </select>
                             </div>
                         </div>
@@ -470,11 +479,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Occupation / School</label>
-                                <input v-model="managedForm.occupation" type="text" placeholder="e.g. Student" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                                <input v-model="managedForm.occupation" type="text" placeholder="Occupation / School" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Church / Parish</label>
-                                <input v-model="managedForm.church_parish" type="text" placeholder="e.g. St. Mary's" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                                <input v-model="managedForm.church_parish" type="text" placeholder="Church / Parish" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
                         </div>
  
@@ -484,7 +493,7 @@
                         </div>
 
                         <!-- Deceased Toggle for Managed Member -->
-                        <div class="flex items-center justify-between p-5 bg-slate-50 rounded-[24px] border-2 border-slate-100 transition-all">
+                        <div class="flex items-center justify-between p-5 bg-slate-50 rounded-3xl border-2 border-slate-100 transition-all">
                              <div class="flex items-center gap-4">
                                  <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A4.833 4.833 0 0012 9a4.833 4.833 0 00-7.5 1.332V21a.75.75 0 00.75.75h13.5a.75.75 0 00.75-.75z"></path></svg>
@@ -611,7 +620,7 @@ const giveAccessSuccess = ref('')
 
 function openGiveAccess(member) {
     giveAccessTarget.value = member
-    giveAccessUsername.value = member.name.toLowerCase().replace(/\s+/g, '_')
+    giveAccessUsername.value = ''
     giveAccessPassword.value = ''
     giveAccessError.value = ''
     giveAccessSuccess.value = ''
@@ -640,7 +649,7 @@ async function submitGiveAccess() {
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
 
-const normalizeRelationLabel = (value: string, fallback = 'Other') => {
+const normalizeRelationLabel = (value, fallback = 'Other') => {
     const normalized = (value || '').trim()
     if (!normalized) return fallback
     return normalized.slice(0, 50)
@@ -652,10 +661,10 @@ const form = ref({
     first_name: '',
     last_name: '',
     nickname: '',
-    gender: 'M',
+    gender: '',
     date_of_birth: '',
     bio: '',
-    blood_group: 'Unknown',
+    blood_group: '',
     occupation: '',
     education: '',
     email_id: '',
@@ -676,10 +685,10 @@ const managedForm = ref({
     first_name: '',
     last_name: '',
     nickname: '',
-    gender: 'M',
-    relation: 'Child',
+    gender: '',
+    relation: '',
     date_of_birth: '',
-    blood_group: 'Unknown',
+    blood_group: '',
     occupation: '',
     church_parish: '',
     bio: '',
@@ -701,17 +710,17 @@ const openAddManaged = () => {
         first_name: '',
         last_name: '',
         nickname: '',
-        gender: 'M',
-        relation: 'Child',
+        gender: '',
+        relation: '',
         date_of_birth: '',
-        blood_group: 'Unknown',
+        blood_group: '',
         occupation: '',
         church_parish: '',
         bio: '',
         is_deceased: false,
         date_of_death: '',
         avatar: null,
-        age: 0
+        age: ''
     }
     managedAvatarPreview.value = null
     managedModal.value = true
@@ -731,10 +740,10 @@ const editManagedMember = (m) => {
         first_name: f,
         last_name: l,
         nickname: m.nickname || '',
-        gender: m.gender || 'M',
-        relation: m.relation || 'Child',
+        gender: m.gender || '',
+        relation: m.relation || '',
         date_of_birth: m.date_of_birth || '',
-        blood_group: m.blood_group || 'Unknown',
+        blood_group: m.blood_group || '',
         occupation: m.occupation || '',
         church_parish: m.church_parish || '',
         bio: m.bio || '',
@@ -1029,10 +1038,10 @@ onMounted(async () => {
         }
 
         form.value.nickname = u.nickname || ''
-        form.value.gender = u.gender || 'M'
+        form.value.gender = u.gender || ''
         form.value.date_of_birth = u.date_of_birth || ''
         form.value.bio = u.bio || ''
-        form.value.blood_group = u.blood_group || 'Unknown'
+        form.value.blood_group = u.blood_group || ''
         form.value.occupation = u.occupation || ''
         form.value.education = u.education || ''
         form.value.email_id = u.email_id || u.email || ''

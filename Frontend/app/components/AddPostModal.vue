@@ -57,7 +57,7 @@
                   v-model="form.location" 
                   type="text" 
                   class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold/40 transition-shadow"
-                  placeholder="e.g. Community Hall"
+                  placeholder="Community Hall"
                 />
               </div>
             </div>
