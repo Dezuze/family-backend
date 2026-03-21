@@ -258,8 +258,9 @@ const deletePost = async (id: number) => {
     if (!confirm('Are you sure you want to delete this highlight?')) return
     
     try {
-        await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
-        const csrftoken = getCookie('csrftoken')
+    const csrfRes = await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
+    const csrfData = await csrfRes.json().catch(() => ({}))
+    const csrftoken = getCookie('csrftoken') || csrfData.csrfToken
         
         const res = await fetch(`${apiBase}/api/news/${id}/`, {
             method: 'DELETE',

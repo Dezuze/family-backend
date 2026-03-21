@@ -827,8 +827,9 @@ const saveManagedMember = async () => {
 const confirmDeleteManaged = async (m) => {
     if (confirm(`Are you sure you want to delete ${m.name}?`)) {
         try {
-            await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
-            const csrftoken = getCookie('csrftoken')
+            const csrfRes = await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
+            const csrfData = await csrfRes.json().catch(() => ({}))
+            const csrftoken = getCookie('csrftoken') || csrfData.csrfToken
             const res = await fetch(`${apiBase}/api/families/managed/${m.id}/`, {
                 method: 'DELETE',
                 headers: {
