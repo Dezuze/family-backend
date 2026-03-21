@@ -1,8 +1,10 @@
 from django.contrib import admin
 from django.urls import path, include
 from accounts.views import CsrfInitView
+from backapi.views import health_check
 
 urlpatterns = [
+    path('health/', health_check),
     path('admin/', admin.site.urls),
     # families API mounted at /api/families/
     path('api/families/', include('families.urls')),
