@@ -1,7 +1,9 @@
 from django.urls import path
 from .views import (
     UserProfileView, FamilyTreeView, FamilyMediaList, FamilyMediaDetail,
-    ManagedMembersView, ManagedMemberDetailView
+    ManagedMembersView, ManagedMemberDetailView,
+    FamilyMemberContextView, FamilyMemberSearchView,
+    FamilyTreeAddRelativeView, FamilyTreeLinkExistingMemberView, FamilyTreeRemoveMemberView,
 )
 
 urlpatterns = [
@@ -11,4 +13,9 @@ urlpatterns = [
     path('media/<int:pk>/', FamilyMediaDetail.as_view(), name='family-media-detail'),
     path('managed/', ManagedMembersView.as_view(), name='managed-members'),
     path('managed/<int:pk>/', ManagedMemberDetailView.as_view(), name='managed-member-detail'),
+    path('member-context/<int:pk>/', FamilyMemberContextView.as_view(), name='member-context'),
+    path('member-search/', FamilyMemberSearchView.as_view(), name='member-search'),
+    path('tree-edit/<int:pk>/add-relative/', FamilyTreeAddRelativeView.as_view(), name='tree-edit-add-relative'),
+    path('tree-edit/<int:pk>/link-existing/', FamilyTreeLinkExistingMemberView.as_view(), name='tree-edit-link-existing'),
+    path('tree-edit/<int:pk>/remove/', FamilyTreeRemoveMemberView.as_view(), name='tree-edit-remove-member'),
 ]

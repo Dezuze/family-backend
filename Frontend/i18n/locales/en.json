@@ -1,0 +1,704 @@
+{
+  "app": {
+    "siteName": "Kollamparambil Family",
+    "metaDescription": "Kollamparambil Family Association - connecting our heritage and future.",
+    "themeColor": "#A08050",
+    "language": {
+      "en": "English",
+      "ml": "Malayalam"
+    }
+  },
+  "nav": {
+    "brand": "Kollamparambil Family",
+    "language": "Language",
+    "links": {
+      "familyTree": "Family Tree",
+      "gallery": "Gallery",
+      "familyHistory": "Family History",
+      "committeeMembers": "Committee Members",
+      "contact": "Contact"
+    },
+    "loggedIn": "Logged in",
+    "inviteMember": "Invite Member",
+    "addFamilyMember": "Add Family Member",
+    "editProfile": "Edit Profile",
+    "managedMembers": "Managed Members",
+    "logout": "Logout",
+    "login": "Login",
+    "inviteMessage": "Hey! Join our family directory here: {link}",
+    "alerts": {
+      "inviteCopied": "Invite link copied to clipboard!",
+      "inviteFailed": "Failed to generate invite token.",
+      "inviteError": "Error generating invite."
+    },
+    "photoAlt": {
+      "user": "User photo",
+      "member": "Member photo"
+    }
+  },
+  "footer": {
+    "links": {
+      "familyTree": "Family Tree",
+      "familyHistory": "Family History",
+      "events": "Events",
+      "committee": "Committee",
+      "directory": "Directory",
+      "gallery": "Gallery",
+      "donations": "Donations",
+      "contact": "Contact"
+    },
+    "copyright": "All rights reserved."
+  },
+  "shared": {
+    "types": {
+      "news": "News",
+      "event": "Event",
+      "announcement": "Announcement"
+    }
+  },
+  "shareButtons": {
+    "whatsapp": "Share on WhatsApp",
+    "facebook": "Share on Facebook",
+    "x": "Share on X",
+    "instagram": "Open Instagram"
+  },
+  "home": {
+    "hero": {
+      "title": "Kollamparambil Family",
+      "imageAlt": "Family gathering",
+      "verse": "Children's children are a crown to the aged, and parents are the pride of their children.",
+      "verseRef": "Proverbs 17:6"
+    },
+    "quick": {
+      "committeeLine1": "Committee",
+      "committeeLine2": "Members",
+      "eventsNews": "Events & News",
+      "annualLine1": "Annual",
+      "annualLine2": "Kudumbayogam"
+    },
+    "news": {
+      "heading": "Latest News & Events",
+      "viewAll": "View All",
+      "addNews": "Add News",
+      "readMore": "Read More"
+    },
+    "modal": {
+      "newsImageAlt": "News image",
+      "postedBy": "Posted by {name}",
+      "placeholder": "Full article content would go here.",
+      "share": "Share:",
+      "deletePost": "Delete Post"
+    },
+    "alerts": {
+      "loginRequired": "You need to be logged in to access this section.",
+      "confirmDelete": "Are you sure you want to delete this?",
+      "deleteFailed": "Failed to delete"
+    },
+    "meta": {
+      "title": "Home",
+      "description": "Kollamparambil Family Association - connecting our heritage and future. Find events, news, and family history."
+    }
+  },
+  "events": {
+    "header": {
+      "title": "Upcoming Gatherings",
+      "description": "Join our family in fellowship and celebration. Save the date for these upcoming moments together.",
+      "addEvent": "Add Event"
+    },
+    "card": {
+      "viewDetails": "View Details",
+      "addToCalendar": "Add to Calendar"
+    },
+    "empty": {
+      "title": "No Upcoming Events",
+      "description": "We are currently planning our next gathering. Check back soon."
+    },
+    "modal": {
+      "eventImageAlt": "Event image",
+      "organizedBy": "Organized by {name}",
+      "placeholder": "Event details and additional description would appear here.",
+      "shareEvent": "Share Event:",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "alerts": {
+      "confirmDelete": "Are you sure you want to delete this event?",
+      "deleteFailed": "Failed to delete"
+    },
+    "meta": {
+      "title": "Upcoming Gatherings",
+      "description": "Upcoming gatherings and events for the Kollamparambil family. Join us for fellowship, ceremonies, and community updates."
+    }
+  },
+  "newsEvents": {
+    "header": {
+      "title": "Every Story Matters",
+      "description": "Explore the latest updates, events, and announcements from the Kollamparambil family.",
+      "postNews": "Post News"
+    },
+    "card": {
+      "readArticle": "Read Article",
+      "by": "By {name}"
+    },
+    "modal": {
+      "newsImageAlt": "News image",
+      "contributor": "Contributor",
+      "addToCalendar": "Add to Calendar",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "alerts": {
+      "confirmDelete": "Are you sure you want to delete this?",
+      "deleteFailed": "Failed to delete"
+    },
+    "meta": {
+      "title": "News & Events",
+      "description": "Read the latest news, announcements, and event recaps from the Kollamparambil family association."
+    }
+  },
+  "contact": {
+    "header": {
+      "title": "Contact Us",
+      "description": "Have questions or want to get in touch? We'd love to hear from you."
+    },
+    "meta": {
+      "title": "Contact"
+    },
+    "info": {
+      "addressTitle": "Address",
+      "addressLine1": "Kollamparambil Family Association",
+      "addressLine2": "Near St. Mary's Church,",
+      "addressLine3": "Kochi, Kerala - 682001",
+      "emailTitle": "Email",
+      "phoneTitle": "Phone"
+    },
+    "form": {
+      "title": "Send Message",
+      "nameLabel": "Your Name",
+      "namePlaceholder": "John Doe",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "name(at)example.com",
+      "messageLabel": "Message",
+      "messagePlaceholder": "How can we help you?",
+      "send": "Send Message"
+    }
+  },
+  "committee": {
+    "header": {
+      "title": "Committee Members",
+      "term": "Term 2025 - 2027"
+    },
+    "meta": {
+      "title": "Committee",
+      "description": "Committee members and leadership of the Kollamparambil Family Association. Meet the team for 2025-2027."
+    },
+    "searchPlaceholder": "Search committee...",
+    "alt": {
+      "memberPhoto": "Member photo"
+    },
+    "labels": {
+      "member": "Member",
+      "committeeMember": "Committee Member",
+      "verifiedContact": "Verified Contact",
+      "directoryOnly": "Directory Only",
+      "committee": "Committee"
+    },
+    "empty": {
+      "noMembers": "No committee members found"
+    },
+    "modal": {
+      "contactNumber": "Contact Number",
+      "notPubliclyListed": "Not Publicly Listed",
+      "representation": "Representation",
+      "executiveBody": "Kollamparambil Executive Body",
+      "closeProfile": "Close Profile"
+    }
+  },
+  "donate": {
+    "header": {
+      "title": "Under Development",
+      "descriptionLine1": "We are currently setting up our secure donation system.",
+      "descriptionLine2": "Please check back soon to support the Kollamparambil Family Association.",
+      "returnHome": "Return Home"
+    },
+    "meta": {
+      "title": "Donation - Coming Soon"
+    }
+  },
+  "history": {
+    "header": {
+      "title": "Family History",
+      "hint": "Use swipe or arrow keys to navigate pages."
+    },
+    "meta": {
+      "title": "Family History"
+    }
+  },
+  "familyTree": {
+    "header": {
+      "title": "Family Tree",
+      "description": "Interactive Genealogy & Member Directory",
+      "findMember": "Find member..."
+    },
+    "meta": {
+      "title": "Family Tree",
+      "description": "Interactive genealogy tree and member directory for the Kollamparambil family."
+    },
+    "labels": {
+      "visualMap": "Visual Map",
+      "directory": "Directory",
+      "perspective": "Perspective",
+      "layout": "Layout",
+      "grid": "Grid",
+      "list": "List",
+      "compact": "Compact",
+      "size": "Size",
+      "member": "Member",
+      "agePill": "{symbol}  {age} Yrs"
+    },
+    "editor": {
+      "editMode": "Edit Mode",
+      "editModeOn": "Edit Mode On",
+      "zoomHint": "Ctrl/Cmd + scroll to zoom.",
+      "openTreeEditor": "Open Tree Editor",
+      "title": "Tree Editor",
+      "subtitle": "Select a member card to edit relationships",
+      "hide": "Hide",
+      "close": "Close",
+      "actions": {
+        "parent": "+ Parent",
+        "spouse": "+ Spouse",
+        "sibling": "+ Sibling",
+        "child": "+ Child"
+      },
+      "addRelativeTitle": "Add Relative",
+      "mode": {
+        "create": "Create New",
+        "link": "Link Existing"
+      },
+      "relation": {
+        "parent": "Parent",
+        "spouse": "Spouse",
+        "sibling": "Sibling",
+        "child": "Child"
+      },
+      "placeholders": {
+        "relativeName": "Relative name",
+        "searchExisting": "Search existing member"
+      },
+      "searching": "Searching...",
+      "selectedLabel": "Selected: {name}",
+      "clear": "Clear",
+      "saving": "Saving...",
+      "addRelative": "Add Relative",
+      "accessOwnership": "Access & Ownership",
+      "badges": {
+        "hasAccount": "Has Account",
+        "independent": "Independent",
+        "managedByYou": "Managed By You"
+      },
+      "becomeIndependent": "Become Independent",
+      "removeSelected": "Remove Selected Member",
+      "permissionHint": "You can edit only your own profile or members you created.",
+      "pickMemberHint": "Pick a member in the tree to add parent, spouse, sibling, or child.",
+      "confirmRemove": "Remove {name} from the tree?",
+      "warnings": {
+        "alreadyLinked": "These members are already linked with this relationship.",
+        "spouseExists": "Spouse already linked for this member.",
+        "parentCap": "Two parents are already linked for this member.",
+        "fatherExists": "Father already linked for this member.",
+        "motherExists": "Mother already linked for this member."
+      },
+      "errors": {
+        "spouseAlreadyLinked": "This member already has a spouse linked in the tree.",
+        "managePermission": "You can only edit your own profile or members you created.",
+        "relativeNameRequired": "Relative name is required.",
+        "selectExistingMember": "Select an existing member to link.",
+        "addRelativeFailed": "Failed to add relative.",
+        "removePermission": "You do not have permission to remove this member.",
+        "removeFailed": "Could not remove member.",
+        "giveAccessFailed": "Failed to give access.",
+        "independenceFailed": "Could not update independence."
+      },
+      "success": {
+        "relativeAdded": "Relative added to tree.",
+        "existingLinked": "Existing member linked successfully.",
+        "memberRemoved": "Member removed from tree.",
+        "profileIndependent": "Profile is now independent."
+      }
+    },
+    "empty": {
+      "noMembersFound": "No members found matching your search"
+    }
+  },
+  "gallery": {
+    "header": {
+      "title": "Family Gallery",
+      "description": "Capturing moments of our shared heritage and celebrations.",
+      "uploadPhoto": "Upload Photo"
+    },
+    "meta": {
+      "title": "Family Gallery",
+      "description": "Browse and share family photos, celebrations, and memories."
+    },
+    "imageAlt": "Gallery image",
+    "alerts": {
+      "selectImageFirst": "Please select an image first."
+    },
+    "errors": {
+      "loadFailed": "Failed to load gallery",
+      "uploadFailed": "Upload failed"
+    },
+    "status": {
+      "loading": "Loading...",
+      "errorPrefix": "Error:",
+      "noMoreImages": "No more images"
+    },
+    "upload": {
+      "title": "Upload Gallery Photo",
+      "photoLabel": "Photo",
+      "descriptionLabel": "Description (Optional)",
+      "descriptionPlaceholder": "Share a short memory or detail...",
+      "eventDateLabel": "Event Date (Optional)",
+      "cancel": "Cancel",
+      "uploading": "Uploading...",
+      "submit": "Share Moment"
+    },
+    "lightbox": {
+      "close": "Close",
+      "previous": "Previous",
+      "next": "Next",
+      "imageFallback": "Image"
+    }
+  },
+  "onboarding": {
+    "header": {
+      "title": "Your Profile",
+      "description": "Update your information for the family directory."
+    },
+    "meta": {
+      "title": "Profile Setup"
+    },
+    "labels": {
+      "changePhoto": "Change Photo"
+    },
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "nickname": "Nickname",
+      "gender": "Gender",
+      "dateOfBirth": "Date of Birth",
+      "bloodGroup": "Blood Group",
+      "bio": "Bio",
+      "email": "Email",
+      "phoneNumber": "Phone Number",
+      "address": "Address",
+      "occupation": "Occupation",
+      "placeOfWork": "Place of Work",
+      "education": "Education",
+      "parishChurch": "Parish / Church",
+      "relation": "Relation"
+    },
+    "placeholders": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "nickname": "Nickname",
+      "selectGender": "Select gender",
+      "selectBloodGroup": "Select blood group",
+      "bio": "Tell the family a bit about yourself...",
+      "email": "Email",
+      "phoneNumber": "Phone number",
+      "address": "Full residential address",
+      "occupation": "Occupation",
+      "placeOfWork": "Place of work",
+      "education": "Education",
+      "parishChurch": "Parish / Church",
+      "relation": "Relation"
+    },
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "bloodGroup": {
+      "unknown": "Unknown"
+    },
+    "relationships": {
+      "connectRelatives": "Connect your Relatives",
+      "familyMember": "Family Member",
+      "isMy": "is my",
+      "searchPlaceholder": "Search...",
+      "noMatch": "No match",
+      "findMemberPlaceholder": "Type a name to find member...",
+      "searchRelationPlaceholder": "Search relation...",
+      "createBranchHint": "Select a person from search results to link to an existing member. If you add this typed name directly, a new branch member will be created in your own view.",
+      "marriedTo": "Married to?",
+      "selectFamilyMember": "Select family member...",
+      "member": "Member",
+      "addAs": "Add as",
+      "addQuoted": "Add \"{name}\"",
+      "createNewBranchMember": "Create New Branch Member",
+      "createAndAdd": "Create & Add",
+      "linkingHint": "Linking relatives helps us understand how everyone is connected."
+    },
+    "actions": {
+      "back": "Back",
+      "nextStep": "Next Step",
+      "savingChanges": "Saving Changes...",
+      "saveAndContinue": "Save & Continue",
+      "backToProfile": "Back to Profile",
+      "finishRegistration": "Finish Registration",
+      "cancel": "Cancel"
+    },
+    "managed": {
+      "title": "My Family Members",
+      "description": "Add and manage profiles for children or relatives who don't have an account.",
+      "addMember": "Add Member",
+      "independent": "Independent",
+      "managed": "Managed",
+      "hasAccount": "Has Account",
+      "details": "Details",
+      "giveAccess": "Give Access",
+      "emptyTitle": "Your Managed List Is Empty",
+      "emptyDescription": "Start building your family circle by adding children, spouses, or older relatives who don't have an online account."
+    },
+    "managedModal": {
+      "editMember": "Edit Member",
+      "addMember": "Add New Member",
+      "addMemberButton": "Add Member",
+      "updateMember": "Update Member",
+      "photo": "Photo",
+      "nickname": "Nickname (Shout-out name)",
+      "relationHint": "You can type any relation. Custom labels are shown from your own perspective.",
+      "birthday": "Birthday",
+      "age": "Age",
+      "enterAgeInstead": "Enter age instead",
+      "enterDobInstead": "Enter DOB instead",
+      "enterAge": "Enter age",
+      "occupationSchool": "Occupation / School",
+      "churchParish": "Church / Parish",
+      "shortNote": "Short Note (Bio)",
+      "shortNotePlaceholder": "Tell us a bit about them...",
+      "isDeceased": "Is this person deceased?",
+      "restInPeaceStatus": "Rest in Peace status",
+      "dateOfDeath": "Date of Death"
+    },
+    "cropper": {
+      "adjustPhoto": "Adjust Photo",
+      "setProfilePhoto": "Set Profile Photo"
+    },
+    "giveAccess": {
+      "title": "Give Access",
+      "description": "Create login credentials for",
+      "username": "Username",
+      "usernamePlaceholder": "Enter username",
+      "password": "Password",
+      "passwordPlaceholder": "Set a temporary password",
+      "creating": "Creating...",
+      "createAccount": "Create Account",
+      "errors": {
+        "requiredFields": "Username and password are required."
+      }
+    },
+    "confirm": {
+      "deleteMember": "Are you sure you want to delete {name}?"
+    },
+    "errors": {
+      "saveMemberFailed": "Failed to save member:",
+      "errorSavingMember": "Error saving managed member",
+      "deleteMemberFailed": "Failed to delete member:",
+      "connectionErrorDelete": "Connection error during deletion",
+      "unknownError": "Unknown error",
+      "unknown": "Unknown",
+      "authFailed": "Authentication failed. This usually happens if your session expired or if you are using '127.0.0.1' instead of 'localhost'. Please try logging in again at http://localhost:3000.",
+      "saveProfileFailed": "Failed to save profile:",
+      "tryAgain": "Please try again.",
+      "errorSavingProfile": "Error saving profile:"
+    }
+  },
+  "claim": {
+    "header": {
+      "title": "Claim Your Account",
+      "description": "A family member has created a profile for you. Set your new password to take control."
+    },
+    "meta": {
+      "title": "Claim Account"
+    },
+    "form": {
+      "newPasswordLabel": "New Password",
+      "newPasswordPlaceholder": "Choose a strong password",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "submit": "Claim Account"
+    },
+    "status": {
+      "claiming": "Claiming...",
+      "claimedTitle": "Account Claimed!",
+      "claimedDescription": "Welcome! You are now logged in.",
+      "editProfile": "Edit My Profile"
+    },
+    "errors": {
+      "noToken": "No claim token provided. Please use the link shared by your family member.",
+      "enterPassword": "Please enter a new password.",
+      "passwordMismatch": "Passwords do not match.",
+      "passwordTooShort": "Password must be at least 6 characters.",
+      "claimFailed": "Failed to claim account."
+    }
+  },
+  "yogam": {
+    "header": {
+      "title": "Annual Kudumbayogam",
+      "description": "Stay updated with the highlights and schedules of our annual family gatherings, bringing everyone together in celebration.",
+      "addHighlight": "Add Highlight"
+    },
+    "meta": {
+      "title": "Annual Kudumbayogam",
+      "description": "Highlights, schedules, and memories from our Annual Kudumbayogam - the family's annual gathering."
+    },
+    "card": {
+      "viewHighlights": "View Highlights"
+    },
+    "empty": {
+      "title": "No Yogam History Yet",
+      "description": "Highlights of our annual gatherings will appear here."
+    },
+    "modal": {
+      "imageAlt": "Annual meeting image",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "alerts": {
+      "confirmDelete": "Are you sure you want to delete this highlight?",
+      "deleteFailed": "Failed to delete"
+    }
+  },
+  "addPostModal": {
+    "heading": {
+      "edit": "Edit {type}",
+      "addNews": "Add News",
+      "addEvent": "Add Event"
+    },
+    "fields": {
+      "titleLabel": "Title",
+      "titlePlaceholder": "Enter a descriptive title...",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Share the details...",
+      "dateTimeLabel": "Date & Time",
+      "locationLabel": "Location",
+      "locationPlaceholder": "Community Hall",
+      "coverImageLabel": "Cover Image (Optional)"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "saveChanges": "Save Changes",
+      "postNow": "Post Now"
+    },
+    "errors": {
+      "submitFailed": "Failed to submit post",
+      "createFailed": "Error creating post"
+    }
+  },
+  "login": {
+    "actions": {
+      "login": "Login",
+      "continue": "Continue",
+      "createAccount": "Create an account",
+      "createAccountTitle": "Create Account",
+      "create": "Create",
+      "cancel": "Cancel"
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "inviteToken": "Invite Token",
+      "fullName": "Full name",
+      "profilePhotoOptional": "Profile Photo (Optional)",
+      "avatarPreviewAlt": "Avatar preview"
+    },
+    "help": {
+      "inviteTokenPrompt": "Enter your Invite Token to join."
+    },
+    "labels": {
+      "loginShort": "Login",
+      "independentShort": "Independent"
+    },
+    "passwordStrength": {
+      "label": "Security",
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
+    },
+    "cropper": {
+      "title": "Crop Profile Photo",
+      "apply": "Apply Crop"
+    },
+    "alerts": {
+      "inviteCopied": "Invite link and message copied to clipboard! You can now paste it directly into WhatsApp."
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "inviteFailed": "Failed to generate invite token. Please make sure your profile is completed.",
+      "inviteError": "Error generating invite.",
+      "fillAllFields": "Please fill all fields, including Sponsor ID.",
+      "signupFailed": "Signup failed"
+    }
+  },
+  "memberCard": {
+    "committeeBadge": "Comm",
+    "ageSuffix": "y"
+  },
+  "memberDetailsModal": {
+    "labels": {
+      "age": "Age",
+      "male": "Male",
+      "female": "Female",
+      "deceased": "Deceased",
+      "member": "Member",
+      "profileDetails": "Profile Details",
+      "dateOfDeath": "Date of Death",
+      "dateOfBirth": "Date of Birth",
+      "bloodGroup": "Blood Group",
+      "occupation": "Occupation",
+      "workplace": "Workplace",
+      "parish": "Parish",
+      "spouse": "Spouse",
+      "location": "Location",
+      "education": "Education",
+      "email": "Email",
+      "phone": "Phone",
+      "biography": "Biography",
+      "children": "Children",
+      "name": "Name",
+      "noChildren": "No children listed.",
+      "notAvailable": "N/A"
+    }
+  },
+  "pdfViewer": {
+    "loadingDocument": "Loading Document...",
+    "errors": {
+      "loadLibraryFailed": "Failed to load PDF library",
+      "renderFailed": "Failed to render document"
+    }
+  },
+  "relationshipLab": {
+    "page": {
+      "title": "Perspective Relationship Tree Lab",
+      "description": "Type natural language relationships and the parser maps them to perspective-based generation offsets around the User node."
+    },
+    "labels": {
+      "describeRelationship": "Describe Relationship",
+      "autoGhostBridges": "Auto ghost bridges",
+      "parsed": "Parsed",
+      "userNode": "User",
+      "unknown": "Unknown"
+    },
+    "placeholders": {
+      "relationshipInput": "This is my 2nd great-grandfather, Thomas"
+    },
+    "actions": {
+      "addMember": "Add Member"
+    }
+  }
+}

@@ -6,7 +6,7 @@
         </div>
         <div v-if="loading" class="absolute inset-0 bg-white/80 z-20 flex flex-col gap-3 items-center justify-center backdrop-blur-sm">
             <div class="w-10 h-10 border-4 border-gray-300 border-t-indigo-600 rounded-full animate-spin"></div>
-            <span class="text-sm font-medium text-gray-700">Loading Document...</span>
+            <span class="text-sm font-medium text-gray-700">{{ t('pdfViewer.loadingDocument') }}</span>
         </div>
     </div>
   </div>
@@ -15,11 +15,13 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onBeforeUnmount, nextTick } from 'vue'
 import { useHead } from '#imports'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ src: string; initialPage?: number }>()
 
 const frameRef = ref<HTMLElement | null>(null)
 const innerRef = ref<HTMLElement | null>(null)
+const { t } = useI18n()
 // Non-reactive variable for PDF document to avoid Proxy/Private field issues
 let pdfDoc: any = null
 
@@ -45,7 +47,7 @@ useHead({
       },
       onerror: (e) => {
         console.error('Failed to load PDF.js from CDN', e)
-        error.value = 'Failed to load PDF library'
+        error.value = t('pdfViewer.errors.loadLibraryFailed')
         loading.value = false
       }
     }
@@ -86,7 +88,7 @@ async function loadPdf() {
     loading.value = false
   } catch (err) {
     console.error('PDF load/render error', err)
-    error.value = String(err)
+    error.value = t('pdfViewer.errors.renderFailed')
     loading.value = false
   }
 }
@@ -251,6 +253,9 @@ onBeforeUnmount(() => {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   max-width: 100%; /* Allow full width */
   width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 0.75rem;
   display: flex;
   justify-content: center;
   min-height: 400px;
@@ -262,6 +267,7 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 2px;
   width: 100%; /* Ensure it fills frame */
+  max-width: 100%;
 }
 .pdf-canvas {
   background: white;

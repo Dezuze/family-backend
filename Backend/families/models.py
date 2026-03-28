@@ -218,6 +218,7 @@ class Relationship(models.Model):
     to_member = models.ForeignKey(FamilyMember, on_delete=models.CASCADE, related_name='relationships_to')
     # Free text to support custom links in onboarding while preserving known presets.
     relation_type = models.CharField(max_length=50, default='Other')
+    is_inferred = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('from_member', 'to_member', 'relation_type')

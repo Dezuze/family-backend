@@ -6,7 +6,7 @@ class RelationshipSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Relationship
-        fields = ['id', 'to_member', 'to_member_name', 'relation_type']
+        fields = ['id', 'to_member', 'to_member_name', 'relation_type', 'is_inferred']
 
 class FamilyMemberSerializer(serializers.ModelSerializer):
     relation = serializers.SerializerMethodField()

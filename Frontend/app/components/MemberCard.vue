@@ -3,7 +3,7 @@
     <div class="shrink-0">
       <img 
         :src="resolveImage(member.photo) || `https://ui-avatars.com/api/?name=${member.name}&background=f1f5f9&color=64748b`" 
-        :alt="member.name || 'Member photo'"
+        :alt="member.name || t('nav.photoAlt.member')"
         class="w-16 h-16 rounded-full object-cover ring-1 ring-slate-100 shadow-sm"
         @error="(e) => (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${member.name}&background=f1f5f9&color=64748b`"
       />
@@ -12,13 +12,13 @@
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between gap-2">
         <h3 class="text-sm font-semibold truncate text-slate-800">{{ member.name }}</h3>
-        <span v-if="member.is_committee" class="shrink-0 bg-brand-gold/10 text-brand-gold text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tight">Comm</span>
+        <span v-if="member.is_committee" class="shrink-0 bg-brand-gold/10 text-brand-gold text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tight">{{ t('memberCard.committeeBadge') }}</span>
         <span class="shrink-0 text-[10px] text-slate-400">#{{ member.id }}</span>
       </div>
       <p class="text-xs text-slate-500 truncate mt-0.5">
         <span v-if="member.role" class="text-brand-gold font-bold mr-1">{{ member.role }}</span>
         <span v-else-if="member.relation">{{ member.relation }}</span>
-        <span v-if="member.age" class="ml-1 opacity-70">• {{ member.age }}y</span>
+        <span v-if="member.age" class="ml-1 opacity-70">• {{ member.age }}{{ t('memberCard.ageSuffix') }}</span>
       </p>
     </div>
   </div>
@@ -28,10 +28,12 @@
 import type { FamilyMember } from '~/types/family'
 import { computed } from 'vue'
 import { useRuntimeConfig } from '#imports'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ member: FamilyMember; variant?: 'default' | 'compact' | 'list' }>()
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
+const { t } = useI18n()
 
 const resolveImage = (path: string | undefined | null) => {
     if (!path) return undefined

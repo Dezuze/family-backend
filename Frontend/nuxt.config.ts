@@ -15,6 +15,8 @@ export default defineNuxtConfig({
     families: {
       Arima: [400, 700],
       Itim: [400, 700],
+      'Noto Sans Malayalam': [400, 500, 700],
+      'Noto Serif Malayalam': [400, 700],
     },
     display: 'swap',
     prefetch: true,
@@ -35,7 +37,20 @@ export default defineNuxtConfig({
     '@formkit/auto-animate',
     '@nuxtjs/color-mode',
     '@nuxtjs/google-fonts',
+    '@nuxtjs/i18n',
     '@pinia/nuxt',
     '@pinia-plugin-persistedstate/nuxt',
   ],
+
+  i18n: {
+    defaultLocale: 'en',
+    strategy: 'no_prefix',
+    lazy: true,
+    langDir: 'locales',
+    detectBrowserLanguage: false,
+    locales: [
+      { code: 'en', name: 'English', file: 'en.json' },
+      { code: 'ml', name: 'Malayalam', file: 'ml.json' },
+    ],
+  },
 })

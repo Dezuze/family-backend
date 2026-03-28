@@ -3,11 +3,11 @@
     <!-- Header -->
     <div class="max-w-7xl mx-auto mb-16 text-center space-y-4">
         <h1 class="text-4xl md:text-5xl font-serif font-bold text-slate-900 leading-tight">
-            Every Story Matters
+          {{ t('newsEvents.header.title') }}
         </h1>
         <div class="h-1.5 w-32 bg-brand-gold rounded-full mx-auto"></div>
         <p class="text-lg text-slate-500 max-w-xl mx-auto font-medium">
-            Explore the latest updates, events, and announcements from the Kollamparambil family.
+          {{ t('newsEvents.header.description') }}
         </p>
         
         <div v-if="auth.isAuthenticated" class="pt-6 flex justify-center">
@@ -15,7 +15,7 @@
                 @click="isAddModalOpen = true"
                 class="bg-brand-gold text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-brand-gold/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
             >
-                <span class="text-xl leading-none">+</span> Post News
+                <span class="text-xl leading-none">+</span> {{ t('newsEvents.header.postNews') }}
             </button>
         </div>
     </div>
@@ -48,7 +48,7 @@
                    class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg backdrop-blur-md border border-white/20"
                    :class="item.type === 'event' ? 'bg-brand-gold text-white' : 'bg-white/90 text-slate-800'"
                 >
-                   {{ item.type || 'News' }}
+                   {{ getTypeLabel(item.type) }}
                 </span>
             </div>
           </div>
@@ -72,9 +72,9 @@
              </p>
 
              <div class="pt-4 flex items-center justify-between border-t border-slate-50">
-                <span class="text-sm font-bold text-slate-400 group-hover:text-brand-gold transition-colors">Read Article &rarr;</span>
+                 <span class="text-sm font-bold text-slate-400 group-hover:text-brand-gold transition-colors">{{ t('newsEvents.card.readArticle') }} &rarr;</span>
                 <div v-if="item.author_name" class="flex items-center gap-2">
-                   <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">By {{ item.author_name }}</span>
+                   <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{{ t('newsEvents.card.by', { name: item.author_name }) }}</span>
                 </div>
              </div>
           </div>
@@ -99,7 +99,7 @@
         <div class="relative bg-white rounded-4xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 flex flex-col md:flex-row">
           <!-- Image Part -->
           <div class="md:w-1/2 bg-slate-100 h-64 md:h-auto overflow-hidden relative">
-            <img :src="resolveImage(selectedItem.image) || 'https://placehold.co/800x1200/f1f5f9/d4af37?text=News'" :alt="selectedItem.title || 'News image'" class="w-full h-full object-contain md:object-cover" />
+            <img :src="resolveImage(selectedItem.image) || 'https://placehold.co/800x1200/f1f5f9/d4af37?text=News'" :alt="selectedItem.title || t('newsEvents.modal.newsImageAlt')" class="w-full h-full object-contain md:object-cover" />
              <div class="absolute inset-0 bg-linear-to-t from-black/40 to-transparent md:hidden"></div>
           </div>
 
@@ -111,7 +111,7 @@
 
             <div class="mb-8">
                <span class="inline-block px-4 py-1.5 bg-brand-gold/10 text-brand-gold text-[10px] font-black uppercase tracking-[0.2em] rounded-full mb-6 border border-brand-gold/10">
-                 {{ selectedItem.type || 'Announcement' }}
+                 {{ getTypeLabel(selectedItem.type) }}
                </span>
                <h2 class="text-3xl md:text-4xl font-serif font-bold text-slate-900 leading-[1.1] mb-4">{{ selectedItem.title }}</h2>
                <p class="text-sm font-bold text-slate-400 tracking-wide">{{ formatDate(selectedItem.created_at) }}</p>
@@ -123,7 +123,7 @@
 
             <div class="mt-12 pt-8 border-t border-slate-100 flex items-center justify-between">
                 <div v-if="selectedItem.author_name" class="flex flex-col">
-                   <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Contributor</span>
+                   <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{{ t('newsEvents.modal.contributor') }}</span>
                    <span class="text-sm font-bold text-slate-900">{{ selectedItem.author_name }}</span>
                 </div>
                 <button 
@@ -131,20 +131,20 @@
                    @click="addToCalendar(selectedItem)"
                    class="bg-brand-gold text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-brand-gold/20"
                 >
-                   Add to Calendar
+                   {{ t('newsEvents.modal.addToCalendar') }}
                 </button>
                 <div v-if="auth.isAuthenticated && (selectedItem.author_id === auth.user?.id || auth.user?.is_superuser)" class="flex gap-2">
                    <button 
                       @click="openEdit"
                       class="bg-slate-50 text-slate-600 px-6 py-2.5 rounded-xl font-bold text-xs border border-slate-200 hover:bg-slate-100 transition-colors"
                    >
-                      Edit
+                      {{ t('newsEvents.modal.edit') }}
                    </button>
                    <button 
                       @click="deletePost(selectedItem.id)"
                       class="bg-red-50 text-red-600 px-6 py-2.5 rounded-xl font-bold text-xs border border-red-100 hover:bg-red-100 transition-colors"
                    >
-                      Delete
+                      {{ t('newsEvents.modal.delete') }}
                    </button>
                 </div>
             </div>
@@ -166,6 +166,8 @@
 
 <script setup lang="ts">
 import { useRuntimeConfig, useHead, ref, onMounted, onUnmounted, useRoute } from '#imports'
+import { useI18n } from 'vue-i18n'
+import { computed } from 'vue'
 import AddPostModal from '~/components/AddPostModal.vue'
 import { useAuthStore } from '~/stores/auth'
 
@@ -173,12 +175,14 @@ const auth = useAuthStore()
 const config = useRuntimeConfig()
 const route = useRoute()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
+const { t, locale } = useI18n()
+const activeDateLocale = computed(() => locale.value === 'ml' ? 'ml-IN' : 'en-US')
 
-useHead({
-  title: 'News & Events',
-  meta: [{ name: 'description', content: 'Read the latest news, announcements, and event recaps from the Kollamparambil family association.' }],
+useHead(() => ({
+  title: t('newsEvents.meta.title'),
+  meta: [{ name: 'description', content: t('newsEvents.meta.description') }],
   link: [{ rel: 'canonical', href: `${config.public.siteUrl || 'http://localhost:3000'}${route.path}` }]
-})
+}))
 
 interface NewsItem {
   id: number
@@ -225,8 +229,14 @@ const closeAddModal = () => {
   editingItem.value = null
 }
 
+const getTypeLabel = (type?: string) => {
+  if (type === 'event') return t('shared.types.event')
+  if (type === 'news') return t('shared.types.news')
+  return t('shared.types.announcement')
+}
+
 const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('default', { 
+  return new Date(dateStr).toLocaleDateString(activeDateLocale.value, {
         month: 'long', 
         day: 'numeric',
         year: 'numeric'
@@ -307,7 +317,7 @@ function getCookie(name: string) {
 }
 
 const deletePost = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this?')) return
+    if (!confirm(t('newsEvents.alerts.confirmDelete'))) return
     
     try {
     const csrfRes = await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
@@ -330,7 +340,7 @@ const deletePost = async (id: number) => {
             hasMore.value = true
             await refreshData()
         } else {
-            alert('Failed to delete')
+            alert(t('newsEvents.alerts.deleteFailed'))
         }
     } catch (e) {
         console.error("Delete failed", e)
@@ -352,10 +362,6 @@ onMounted(() => {
 
 onUnmounted(() => {
     if (observer) observer.disconnect()
-})
-
-useHead({
-  title: 'News & Events'
 })
 </script>
 

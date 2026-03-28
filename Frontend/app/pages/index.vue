@@ -3,7 +3,7 @@
     <!-- Hero Section -->
     <div class="relative w-full h-[110vh] overflow-hidden">
       <!-- Background Image -->
-      <img src="/images/family.jpg" alt="Family Gathering" class="absolute inset-0 w-full h-full object-cover" />
+    <img src="/images/family.jpg" :alt="t('home.hero.imageAlt')" class="absolute inset-0 w-full h-full object-cover" />
       
       <div class="absolute inset-0 bg-linear-to-b from-black/30 via-black/60 to-slate-50"></div>
 
@@ -12,16 +12,16 @@
         
         <div class="bg-black/80 backdrop-blur-md shadow-[0_0_40px_40px_rgba(0,0,0,0.8)] absolute left-0 bottom-0 p-8 md:p-10 rounded-tr-3xl max-w-3xl text-center md:text-left">
             <h1 class="font-fleur text-6xl md:text-8xl lg:text-8xl lg:text-nowrap text-white mb-4 drop-shadow-2xl mx-auto md:mx-0 leading-tight">
-                Kollamparambil Family
+                {{ t('home.hero.title') }}
             </h1>
 
             <!-- Malayalam Verse -->
             <div class="flex flex-col mt-2">
                 <p class="text-sm md:text-base font-bold text-white leading-relaxed drop-shadow-md">
-                    "മക്കളുടെ മക്കള്‍ വൃദ്ധന്മാര്‍ക്കും കിരീടമാകുന്നു; മക്കളുടെ മഹത്വം അവരുടെ അപ്പന്മാര്‍ തന്നേ."
+                    "{{ t('home.hero.verse') }}"
                 </p>
                 <p class="text-xs md:text-sm text-gray-300 mt-1 font-medium place-self-end">
-                    - സദൃശ്യവാക്യങ്ങൾ 17:6
+                    - {{ t('home.hero.verseRef') }}
                 </p>
             </div>
         </div>
@@ -39,14 +39,14 @@
                 class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 bg-white border border-slate-100"
             >
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
-                    <h3 class="text-lg md:text-xl font-bold text-slate-800 uppercase tracking-wide leading-tight group-hover:text-brand-gold transition-colors">Committee<br>Members</h3>
+                    <h3 class="text-lg md:text-xl font-bold text-slate-800 uppercase tracking-wide leading-tight group-hover:text-brand-gold transition-colors">{{ t('home.quick.committeeLine1') }}<br>{{ t('home.quick.committeeLine2') }}</h3>
                 </div>
             </NuxtLink>
 
             <!-- Button 2: Events (Public) -->
             <NuxtLink to="/news-events" class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 bg-linear-to-b from-brand-gold to-brand-gold-dark">
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
-                    <h3 class="text-lg md:text-xl font-bold text-white uppercase tracking-wide leading-tight">Events & News</h3>
+                    <h3 class="text-lg md:text-xl font-bold text-white uppercase tracking-wide leading-tight">{{ t('home.quick.eventsNews') }}</h3>
                 </div>
             </NuxtLink>
 
@@ -56,7 +56,7 @@
                 class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 cursor-pointer bg-white border border-slate-100"
             >
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
-                    <h3 class="text-lg md:text-xl font-bold text-slate-800 uppercase tracking-wide leading-tight group-hover:text-brand-gold transition-colors">Annual<br>Kudumbayogam</h3>
+                    <h3 class="text-lg md:text-xl font-bold text-slate-800 uppercase tracking-wide leading-tight group-hover:text-brand-gold transition-colors">{{ t('home.quick.annualLine1') }}<br>{{ t('home.quick.annualLine2') }}</h3>
                 </div>
             </div>
 
@@ -69,7 +69,7 @@
             <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
                 <div class="space-y-2">
                     <h2 class="text-3xl md:text-5xl font-serif font-bold text-slate-900 drop-shadow-sm">
-                        Latest News & Events
+                        {{ t('home.news.heading') }}
                     </h2>
                     <div class="h-1.5 w-24 bg-brand-gold rounded-full"></div>
                 </div>
@@ -78,7 +78,7 @@
                       to="/news-events"
                       class="bg-white border-2 border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-white px-6 py-2.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 shadow-md active:scale-95"
                     >
-                      View All
+                      {{ t('home.news.viewAll') }}
                     </NuxtLink>
 
                     <button 
@@ -86,7 +86,7 @@
                       @click="isAddModalOpen = true"
                       class="bg-linear-to-b from-brand-gold to-brand-gold-dark hover:brightness-110 text-white px-6 py-2.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 shadow-lg active:scale-95 shrink-0"
                     >
-                      <span class="text-xl leading-none">+</span> Add News
+                      <span class="text-xl leading-none">+</span> {{ t('home.news.addNews') }}
                     </button>
                 </div>
             </div>
@@ -117,7 +117,7 @@
                     <div class="relative h-36 overflow-hidden">
                         <img :src="resolveImage(item.image) || 'https://placehold.co/600x400/f1f5f9/64748b?text=News'" :alt="item.title" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                         <div v-if="item.type === 'event'" class="absolute top-2 right-2 bg-brand-gold text-white text-xs font-bold px-2 py-0.5 rounded shadow">
-                            EVENT
+                            {{ t('shared.types.event') }}
                         </div>
                     </div>
                     <div class="p-5">
@@ -125,7 +125,7 @@
                         <p class="text-slate-600 text-sm line-clamp-2 leading-relaxed font-medium">{{ item.description }}</p>
                         <div class="mt-3 flex justify-between items-center">
                             <span class="text-xs text-slate-400 uppercase tracking-wider">{{ getDay(item.created_at) }} {{ getMonth(item.created_at) }}</span>
-                            <span class="text-brand-gold text-xs font-bold uppercase tracking-wide group-hover:underline">Read More</span>
+                            <span class="text-brand-gold text-xs font-bold uppercase tracking-wide group-hover:underline">{{ t('home.news.readMore') }}</span>
                         </div>
                     </div>
                 </div>
@@ -148,7 +148,7 @@
 
                 <!-- Modal Image -->
                 <div class="relative h-64 sm:h-80 shrink-0">
-                    <img :src="resolveImage(selectedItem.image) || 'https://placehold.co/800x600/f1f5f9/d4af37?text=News'" :alt="selectedItem?.title || 'News image'" class="w-full h-full object-cover" />
+                    <img :src="resolveImage(selectedItem.image) || 'https://placehold.co/800x600/f1f5f9/d4af37?text=News'" :alt="selectedItem?.title || t('home.modal.newsImageAlt')" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
 
                     <div class="absolute bottom-4 left-6">
@@ -156,7 +156,7 @@
                             {{ getMonth(selectedItem.created_at) }} {{ getDay(selectedItem.created_at) }}, {{ getYear(selectedItem.created_at) }}
                         </span>
                         <h2 class="text-3xl font-serif font-bold text-white leading-tight mt-1 drop-shadow-md">{{ selectedItem.title }}</h2>
-                        <p v-if="selectedItem.author_name" class="text-brand-gold/70 text-sm mt-1 font-medium">Posted by {{ selectedItem.author_name }}</p>
+                        <p v-if="selectedItem.author_name" class="text-brand-gold/70 text-sm mt-1 font-medium">{{ t('home.modal.postedBy', { name: selectedItem.author_name }) }}</p>
                     </div>
                 </div>
 
@@ -165,13 +165,13 @@
                     <!-- Description -->
                     <div class="prose prose-slate max-w-none text-slate-800 font-sans leading-loose text-lg">
                         <p class="font-medium">{{ selectedItem.description }}</p>
-                        <p class="opacity-75">Full article content would go here. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                        <p class="opacity-75">{{ t('home.modal.placeholder') }}</p>
                     </div>
 
                     <!-- Actions -->
                     <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
                          <div class="flex items-center gap-4">
-                             <span class="text-sm text-slate-400 uppercase font-bold tracking-wider">Share:</span>
+                             <span class="text-sm text-slate-400 uppercase font-bold tracking-wider">{{ t('home.modal.share') }}</span>
                              <ShareButtons :title="selectedItem.title" :description="selectedItem.description" />
                          </div>
                          
@@ -181,7 +181,7 @@
                             @click="deleteNews(selectedItem.id)"
                             class="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors border border-red-100"
                         >
-                            Delete Post
+                            {{ t('home.modal.deletePost') }}
                         </button>
                     </div>
                 </div>
@@ -202,8 +202,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useHead, useRuntimeConfig, navigateTo, useRoute } from '#imports'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '~/stores/auth'
 import ShareButtons from '~/components/ShareButtons.vue'
 import AddPostModal from '~/components/AddPostModal.vue'
@@ -213,6 +214,8 @@ const config = useRuntimeConfig()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
 const route = useRoute()
 const siteUrl = config.public.siteUrl || 'http://localhost:3000'
+const { t, locale } = useI18n()
+const activeDateLocale = computed(() => locale.value === 'ml' ? 'ml-IN' : 'en-US')
 
 const isAddModalOpen = ref(false)
 
@@ -241,7 +244,7 @@ const closeDetails = () => {
 }
 
 // Helpers
-const getMonth = (dateStr: string) => new Date(dateStr).toLocaleString('default', { month: 'short' })
+const getMonth = (dateStr: string) => new Date(dateStr).toLocaleString(activeDateLocale.value, { month: 'short' })
 const getDay = (dateStr: string) => new Date(dateStr).getDate()
 const getYear = (dateStr: string) => new Date(dateStr).getFullYear()
 
@@ -255,7 +258,7 @@ const handleRestrictedNavigation = (path: string) => {
     if (auth.isAuthenticated) {
         navigateTo(path)
     } else {
-        alert("You need to be logged in to access this section.")
+        alert(t('home.alerts.loginRequired'))
     }
 }
 
@@ -277,7 +280,7 @@ const refreshNews = async () => {
 }
 
 const deleteNews = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this?')) return
+    if (!confirm(t('home.alerts.confirmDelete'))) return
     
     try {
         const csrfRes = await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
@@ -296,7 +299,7 @@ const deleteNews = async (id: number) => {
             closeDetails()
             refreshNews()
         } else {
-            alert('Failed to delete')
+            alert(t('home.alerts.deleteFailed'))
         }
     } catch (e) {
         console.error("Delete failed", e)
@@ -307,15 +310,15 @@ onMounted(() => {
     refreshNews()
 })
 
-useHead({
-    title: 'Home',
+useHead(() => ({
+    title: t('home.meta.title'),
     meta: [
-        { name: 'description', content: 'Kollamparambil Family Association — connecting our heritage and future. Find events, news, and family history.' }
+        { name: 'description', content: t('home.meta.description') }
     ],
     link: [
         { rel: 'canonical', href: `${siteUrl}${route.path}` }
     ]
-})
+}))
 </script>
 
 <style scoped>

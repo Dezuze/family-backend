@@ -14,8 +14,8 @@
         <div class="bg-white/70 backdrop-blur-2xl p-8 md:p-12 rounded-[40px] shadow-[0_20px_40px_rgba(0,0,0,0.05)] border border-white/60 relative overflow-hidden transition-all duration-500">
             
             <div class="relative z-10 transition-all duration-500" v-auto-animate>
-                <h1 class="text-3xl md:text-4xl font-bold mb-3 text-center text-slate-900 tracking-tight">Your Profile</h1>
-                <p class="text-slate-500 text-center mb-12 text-base font-medium">Update your information for the family directory.</p>
+                <h1 class="text-3xl md:text-4xl font-bold mb-3 text-center text-slate-900 tracking-tight">{{ t('onboarding.header.title') }}</h1>
+                <p class="text-slate-500 text-center mb-12 text-base font-medium">{{ t('onboarding.header.description') }}</p>
 
                 <form @submit.prevent="saveProfile" class="space-y-4">
                     
@@ -28,7 +28,7 @@
                                <div class="w-full h-full rounded-full bg-white shadow-xl border-4 border-white flex items-center justify-center overflow-hidden relative">
                                    <div v-if="!avatarPreview" class="absolute inset-0 bg-slate-100 flex flex-col items-center justify-center text-slate-400 group-hover:bg-slate-200 transition-colors">
                                        <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                       <span class="text-xs font-semibold">Change Photo</span>
+                                       <span class="text-xs font-semibold">{{ t('onboarding.labels.changePhoto') }}</span>
                                    </div>
                                    <img v-else :src="avatarPreview" :alt="form.first_name || form.last_name || 'Avatar preview'" class="w-full h-full object-cover" />
                                </div>
@@ -40,41 +40,41 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">First Name</label>
-                                 <input v-model="form.first_name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="First name">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.firstName') }}</label>
+                                 <input v-model="form.first_name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" :placeholder="t('onboarding.placeholders.firstName')">
                             </div>
                             <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Last Name</label>
-                                <input v-model="form.last_name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Last name">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.lastName') }}</label>
+                                <input v-model="form.last_name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" :placeholder="t('onboarding.placeholders.lastName')">
                             </div>
                         </div>
 
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Nickname</label>
-                                <input v-model="form.nickname" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="Nickname">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.nickname') }}</label>
+                                <input v-model="form.nickname" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" :placeholder="t('onboarding.placeholders.nickname')">
                             </div>
                              <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Gender</label>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.gender') }}</label>
                                  <select v-model="form.gender" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all appearance-none cursor-pointer">
-                                     <option value="" disabled>Select gender</option>
-                                     <option value="M">Male</option>
-                                     <option value="F">Female</option>
-                                     <option value="O">Other</option>
+                                     <option value="" disabled>{{ t('onboarding.placeholders.selectGender') }}</option>
+                                     <option value="M">{{ t('onboarding.gender.male') }}</option>
+                                     <option value="F">{{ t('onboarding.gender.female') }}</option>
+                                     <option value="O">{{ t('onboarding.gender.other') }}</option>
                                  </select>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Date of Birth</label>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.dateOfBirth') }}</label>
                                 <input v-model="form.date_of_birth" type="date" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all cursor-text">
                             </div>
                             <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Blood Group</label>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.bloodGroup') }}</label>
                                 <div class="relative">
                                      <select v-model="form.blood_group" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all appearance-none cursor-pointer">
-                                         <option value="" disabled>Select blood group</option><option value="Unknown">Unknown</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                         <option value="" disabled>{{ t('onboarding.placeholders.selectBloodGroup') }}</option><option value="Unknown">{{ t('onboarding.bloodGroup.unknown') }}</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
                                      </select>
                                     <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                                         <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -84,8 +84,8 @@
                         </div>
 
                         <div>
-                             <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Bio</label>
-                             <textarea v-model="form.bio" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 resize-none" placeholder="Tell the family a bit about yourself..."></textarea>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.bio') }}</label>
+                        <textarea v-model="form.bio" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 resize-none" :placeholder="t('onboarding.placeholders.bio')"></textarea>
                         </div>
 
                     </div>
@@ -95,45 +95,45 @@
                          
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Email</label>
-                                <input v-model="form.email_id" type="email" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="Email">
+                                          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.email') }}</label>
+                                          <input v-model="form.email_id" type="email" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" :placeholder="t('onboarding.placeholders.email')">
                              </div>
                              <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Phone Number</label>
-                                <input v-model="form.phone_no" type="tel" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="Phone number">
+                                          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.phoneNumber') }}</label>
+                                          <input v-model="form.phone_no" type="tel" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" :placeholder="t('onboarding.placeholders.phoneNumber')">
                              </div>
                          </div>
 
                          <div>
-                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Address</label>
-                            <textarea v-model="form.address" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 resize-none" placeholder="Full residential address"></textarea>
+                                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.address') }}</label>
+                                     <textarea v-model="form.address" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 resize-none" :placeholder="t('onboarding.placeholders.address')"></textarea>
                          </div>
 
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Occupation</label>
-                                <input v-model="form.occupation" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" placeholder="Occupation">
+                                          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.occupation') }}</label>
+                                          <input v-model="form.occupation" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400" :placeholder="t('onboarding.placeholders.occupation')">
                             </div>
                              <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Place of Work</label>
-                                 <input v-model="form.place_of_work" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Place of work">
+                                          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.placeOfWork') }}</label>
+                                            <input v-model="form.place_of_work" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" :placeholder="t('onboarding.placeholders.placeOfWork')">
                             </div>
                          </div>
  
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Education</label>
-                                <input v-model="form.education" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Education">
+                                          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.education') }}</label>
+                                          <input v-model="form.education" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" :placeholder="t('onboarding.placeholders.education')">
                             </div>
                              <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Parish / Church</label>
-                                <input v-model="form.church_parish" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Parish / Church">
+                                          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.parishChurch') }}</label>
+                                          <input v-model="form.church_parish" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" :placeholder="t('onboarding.placeholders.parishChurch')">
                             </div>
                          </div>
 
                          <!-- Flexible Relationship Selection -->
                          <div class="group pt-4">
-                             <label class="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 ml-1">Connect your Relatives</label>
+                             <label class="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 ml-1">{{ t('onboarding.relationships.connectRelatives') }}</label>
                              <div class="space-y-6">
                                  <!-- Selected Relationships List -->
                                  <div v-if="form.relationships.length > 0" class="space-y-3">
@@ -143,12 +143,12 @@
                                           </div>
                                           <div class="flex-1 min-w-30">
                                               <div class="font-bold text-slate-800">{{ rel.to_member_name }}</div>
-                                              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Family Member</div>
+                                              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{{ t('onboarding.relationships.familyMember') }}</div>
                                           </div>
                                           
                                           <!-- Relation Type Picker -->
                                           <div class="flex items-center gap-2">
-                                              <span class="text-xs font-bold text-slate-400">is my</span>
+                                              <span class="text-xs font-bold text-slate-400">{{ t('onboarding.relationships.isMy') }}</span>
                                               <div class="relative">
                                                   <input 
                                                       :value="editingRelIdx === idx ? editingRelSearch : rel.relation_type"
@@ -156,7 +156,7 @@
                                                       @focus="editingRelIdx = idx; editingRelSearch = ''"
                                                       @blur="closeEditingRelDropdown()"
                                                       class="w-36 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-brand-gold-dark focus:ring-2 focus:ring-brand-gold/20 outline-none"
-                                                      placeholder="Search..."
+                                                      :placeholder="t('onboarding.relationships.searchPlaceholder')"
                                                   >
                                                   <div v-if="editingRelIdx === idx" class="absolute z-50 top-full mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto py-1">
                                                       <button 
@@ -167,7 +167,7 @@
                                                           class="w-full text-left px-3 py-2 text-sm font-medium hover:bg-brand-gold/10 hover:text-brand-gold transition-colors"
                                                           :class="{'bg-brand-gold/10 text-brand-gold': t === rel.relation_type}"
                                                       >{{ t }}</button>
-                                                      <div v-if="filteredEditRelTypes.length === 0" class="px-3 py-2 text-sm text-slate-400 text-center">No match</div>
+                                                      <div v-if="filteredEditRelTypes.length === 0" class="px-3 py-2 text-sm text-slate-400 text-center">{{ t('onboarding.relationships.noMatch') }}</div>
                                                   </div>
                                               </div>
                                           </div>
@@ -186,7 +186,7 @@
                                                  v-model="relSearch" 
                                                  type="text" 
                                                  class="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400 text-lg" 
-                                                 placeholder="Type a name to find member..."
+                                                 :placeholder="t('onboarding.relationships.findMemberPlaceholder')"
                                              >
                                          </div>
                                          <div class="w-full md:w-56 shrink-0 relative">
@@ -195,7 +195,7 @@
                                                 @focus="showRelTypeDropdown = true"
                                                 @blur="closeRelTypeDropdown()"
                                                 class="w-full h-full bg-white border border-slate-200 rounded-2xl px-4 py-4 font-bold text-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none"
-                                                :placeholder="selectedRelType || 'Search relation...'"
+                                                :placeholder="selectedRelType || t('onboarding.relationships.searchRelationPlaceholder')"
                                             >
                                             <div v-if="showRelTypeDropdown" class="absolute z-50 top-full mt-1 w-full bg-white border border-slate-200 rounded-2xl shadow-xl max-h-56 overflow-y-auto py-1">
                                                 <button 
@@ -206,7 +206,7 @@
                                                     class="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-brand-gold/10 hover:text-brand-gold transition-colors"
                                                     :class="{'bg-brand-gold/10 text-brand-gold font-bold': t === selectedRelType}"
                                                 >{{ t }}</button>
-                                                <div v-if="filteredAddRelTypes.length === 0" class="px-4 py-3 text-sm text-slate-400 text-center">No match</div>
+                                                <div v-if="filteredAddRelTypes.length === 0" class="px-4 py-3 text-sm text-slate-400 text-center">{{ t('onboarding.relationships.noMatch') }}</div>
                                             </div>
                                          </div>
                                      </div>
@@ -215,14 +215,14 @@
                                          v-if="relSearch.trim() && (filteredRelatives.length === 0 || !filteredRelatives.find(m => m.name.toLowerCase() === relSearch.toLowerCase()))"
                                          class="mt-3 text-xs md:text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2"
                                      >
-                                         Select a person from search results to link to an existing member. If you add this typed name directly, a new branch member will be created in your own view.
+                                         {{ t('onboarding.relationships.createBranchHint') }}
                                      </p>
 
                                      <!-- Married to? picker for in-law types -->
                                      <div v-if="isInLawType(activeRelType)" class="mt-3">
-                                        <label class="text-xs font-bold text-slate-400 uppercase mb-1 block ml-1">Married to?</label>
+                                        <label class="text-xs font-bold text-slate-400 uppercase mb-1 block ml-1">{{ t('onboarding.relationships.marriedTo') }}</label>
                                         <select v-model="marriedToMemberId" class="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 font-bold text-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none">
-                                            <option :value="null">Select family member...</option>
+                                            <option :value="null">{{ t('onboarding.relationships.selectFamilyMember') }}</option>
                                             <option v-for="sib in siblingMembers" :key="sib.to_member" :value="sib.to_member">{{ sib.to_member_name }}</option>
                                         </select>
                                      </div>
@@ -243,11 +243,11 @@
                                                   </div>
                                                   <div>
                                                       <div class="font-bold text-slate-800 text-lg">{{ pm.name }}</div>
-                                                      <div class="text-xs text-slate-500">{{ pm.location || 'Member' }}</div>
+                                                      <div class="text-xs text-slate-500">{{ pm.location || t('onboarding.relationships.member') }}</div>
                                                   </div>
                                               </div>
                                               <div class="bg-brand-gold text-white px-4 py-1.5 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                                  Add as {{ activeRelType }}
+                                                  {{ t('onboarding.relationships.addAs') }} {{ activeRelType }}
                                               </div>
                                           </button>
 
@@ -263,19 +263,19 @@
                                                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                                   </div>
                                                   <div>
-                                                      <div class="font-bold text-brand-gold text-lg">Add "{{ relSearch }}"</div>
-                                                      <div class="text-xs text-brand-gold/60 font-medium tracking-wide uppercase">Create New Branch Member</div>
+                                                      <div class="font-bold text-brand-gold text-lg">{{ t('onboarding.relationships.addQuoted', { name: relSearch }) }}</div>
+                                                      <div class="text-xs text-brand-gold/60 font-medium tracking-wide uppercase">{{ t('onboarding.relationships.createNewBranchMember') }}</div>
                                                   </div>
                                               </div>
                                               <div class="bg-brand-gold text-white px-4 py-1.5 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                                                  Create & Add
+                                                  {{ t('onboarding.relationships.createAndAdd') }}
                                               </div>
                                           </button>
                                       </div>
                                      
                                      <p class="text-xs text-slate-500 mt-4 font-medium flex items-center gap-2">
                                          <svg class="w-4 h-4 text-brand-gold" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-                                         Linking relatives helps us understand how everyone is connected.
+                                         {{ t('onboarding.relationships.linkingHint') }}
                                      </p>
                                  </div>
                              </div>
@@ -286,16 +286,16 @@
                     <div class="pt-10 flex justify-between items-center">
                         <button v-if="step > 1" type="button" @click="step--" class="text-slate-500 hover:text-slate-800 font-semibold transition-colors flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-slate-100">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                            Back
+                            {{ t('onboarding.actions.back') }}
                         </button>
                         <div v-else></div> <!-- spacer -->
 
                          <button v-if="step < 2" type="button" @click="step++" class="bg-brand-gold hover:brightness-110 text-white px-8 py-3.5 rounded-2xl font-bold shadow-lg shadow-brand-gold/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2">
-                             Next Step
+                             {{ t('onboarding.actions.nextStep') }}
                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                          </button>
                          <button v-else type="submit" :disabled="loading" class="bg-linear-to-b from-brand-gold to-brand-gold-dark hover:brightness-110 text-white px-8 py-3.5 rounded-2xl font-bold shadow-xl shadow-brand-gold/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                             {{ loading ? 'Saving Changes...' : 'Save & Continue' }}
+                             {{ loading ? t('onboarding.actions.savingChanges') : t('onboarding.actions.saveAndContinue') }}
                          </button>
                     </div>
 
@@ -304,14 +304,14 @@
                         <div class="bg-linear-to-br from-brand-gold/10 to-brand-gold/5 p-8 rounded-4xl border border-brand-gold/10 mb-8">
                              <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                                  <div>
-                                     <h2 class="text-2xl font-bold text-slate-900 mb-2">My Family Members</h2>
-                                     <p class="text-slate-600 font-medium">Add and manage profiles for children or relatives who don't have an account.</p>
+                                     <h2 class="text-2xl font-bold text-slate-900 mb-2">{{ t('onboarding.managed.title') }}</h2>
+                                     <p class="text-slate-600 font-medium">{{ t('onboarding.managed.description') }}</p>
                                  </div>
                                  <button @click="openAddManaged" type="button" class="bg-brand-gold hover:brightness-110 text-white px-6 py-4 rounded-2xl font-bold shadow-xl shadow-brand-gold/30 transition-all hover:scale-[1.05] active:scale-95 flex items-center gap-3 shrink-0">
                                      <div class="bg-white/20 p-1 rounded-lg">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
                                      </div>
-                                     Add Member
+                                     {{ t('onboarding.managed.addMember') }}
                                  </button>
                              </div>
                         </div>
@@ -334,24 +334,24 @@
                                         </div>
                                         <div class="flex flex-wrap gap-2 mt-2">
                                             <span class="bg-brand-gold/10 text-brand-gold text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-brand-gold/10">{{ m.relation }}</span>
-                                            <span class="bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-100">{{ m.gender === 'M' ? 'Male' : 'Female' }}</span>
+                                            <span class="bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-100">{{ m.gender === 'M' ? t('onboarding.gender.male') : t('onboarding.gender.female') }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-50">
                                     <!-- Status badges -->
                                     <div class="col-span-2 flex flex-wrap gap-2 mb-2">
-                                        <span v-if="m.is_independent" class="bg-green-100 text-green-700 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">Independent</span>
-                                        <span v-else class="bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">Managed</span>
-                                        <span v-if="m.has_account" class="bg-blue-100 text-blue-700 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">Has Account</span>
+                                        <span v-if="m.is_independent" class="bg-green-100 text-green-700 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">{{ t('onboarding.managed.independent') }}</span>
+                                        <span v-else class="bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">{{ t('onboarding.managed.managed') }}</span>
+                                        <span v-if="m.has_account" class="bg-blue-100 text-blue-700 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">{{ t('onboarding.managed.hasAccount') }}</span>
                                     </div>
                                      <button @click="editManagedMember(m)" type="button" class="flex-1 py-3 bg-slate-50 hover:bg-brand-gold/5 hover:text-brand-gold rounded-2xl text-slate-600 font-bold text-sm transition-all flex items-center justify-center gap-2">
                                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                         Details
+                                         {{ t('onboarding.managed.details') }}
                                      </button>
                                     <button v-if="!m.has_account && !m.is_independent" @click="openGiveAccess(m)" type="button" class="flex-1 py-3 bg-brand-gold/10 hover:bg-brand-gold hover:text-white rounded-2xl text-brand-gold font-bold text-sm transition-all flex items-center justify-center gap-2">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
-                                        Give Access
+                                        {{ t('onboarding.managed.giveAccess') }}
                                     </button>
                                     <button @click="confirmDeleteManaged(m)" type="button" class="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all flex items-center justify-center">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -363,18 +363,18 @@
                              <div class="bg-slate-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <svg class="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
                              </div>
-                             <div class="text-2xl font-black text-slate-800 mb-2 whitespace-pre-wrap">Your Managed List Is Empty</div>
-                             <p class="text-slate-500 font-medium max-w-sm mx-auto">Start building your family circle by adding children, spouses, or older relatives who don't have an online account.</p>
+                             <div class="text-2xl font-black text-slate-800 mb-2 whitespace-pre-wrap">{{ t('onboarding.managed.emptyTitle') }}</div>
+                             <p class="text-slate-500 font-medium max-w-sm mx-auto">{{ t('onboarding.managed.emptyDescription') }}</p>
                          </div>
 
                          <!-- Step 3 Navigation -->
                          <div class="pt-12 flex flex-col md:flex-row gap-4 justify-between items-center">
                             <button type="button" @click="step--" class="w-full md:w-auto text-slate-400 hover:text-slate-800 font-bold transition-all px-6 py-4 rounded-2xl hover:bg-slate-100 flex items-center justify-center gap-3">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
-                                Back to Profile
+                                {{ t('onboarding.actions.backToProfile') }}
                             </button>
                              <button @click="router.push('/')" type="button" class="w-full md:w-auto bg-slate-900 hover:bg-black text-white px-12 py-5 rounded-2xl font-black shadow-2xl transition-all hover:scale-[1.02] flex items-center justify-center gap-4">
-                                 Finish Registration
+                                 {{ t('onboarding.actions.finishRegistration') }}
                                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                              </button>
                          </div>
@@ -391,7 +391,7 @@
         <div v-if="managedModal" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-[40px] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-fade-up">
                 <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-                    <h3 class="text-2xl font-bold text-slate-800">{{ editingManagedId ? 'Edit Member' : 'Add New Member' }}</h3>
+                    <h3 class="text-2xl font-bold text-slate-800">{{ editingManagedId ? t('onboarding.managedModal.editMember') : t('onboarding.managedModal.addMember') }}</h3>
                     <button @click="managedModal = false" class="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -406,7 +406,7 @@
                                 <div class="w-full h-full rounded-full bg-white shadow-lg border-2 border-slate-100 flex items-center justify-center overflow-hidden relative">
                                     <div v-if="!managedAvatarPreview" class="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center text-slate-400 group-hover:bg-slate-100 transition-colors">
                                         <svg class="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        <span class="text-[10px] font-bold uppercase tracking-wider">Photo</span>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider">{{ t('onboarding.managedModal.photo') }}</span>
                                     </div>
                                     <img v-else :src="managedAvatarPreview" :alt="managedForm.first_name || managedForm.last_name || 'Managed avatar preview'" class="w-full h-full object-cover" />
                                 </div>
@@ -415,44 +415,45 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">First Name</label>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.fields.firstName') }}</label>
                                  <input v-model="managedForm.first_name" required type="text" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Last Name</label>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.fields.lastName') }}</label>
                                 <input v-model="managedForm.last_name" required type="text" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Nickname (Shout-out name)</label>
-                            <input v-model="managedForm.nickname" type="text" placeholder="Nickname" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.nickname') }}</label>
+                            <input v-model="managedForm.nickname" type="text" :placeholder="t('onboarding.placeholders.nickname')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Relation</label>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.fields.relation') }}</label>
                                 <input
                                     v-model="managedForm.relation"
+                                    @blur="normalizeManagedRelationInput"
                                     list="managed-relation-options"
                                     type="text"
                                     class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold"
-                                    placeholder="Relation"
+                                    :placeholder="t('onboarding.placeholders.relation')"
                                 >
                                 <p class="mt-2 text-xs font-semibold text-slate-500">
-                                    You can type any relation. Custom labels are shown from your own perspective.
+                                    {{ t('onboarding.managedModal.relationHint') }}
                                 </p>
                                 <datalist id="managed-relation-options">
                                     <option v-for="preset in relationTypes" :key="preset" :value="preset" />
                                 </datalist>
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Gender</label>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.fields.gender') }}</label>
                                 <select v-model="managedForm.gender" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
-                                    <option value="" disabled>Select gender</option>
-                                    <option value="M">Male</option>
-                                    <option value="F">Female</option>
-                                    <option value="O">Other</option>
+                                    <option value="" disabled>{{ t('onboarding.placeholders.selectGender') }}</option>
+                                    <option value="M">{{ t('onboarding.gender.male') }}</option>
+                                    <option value="F">{{ t('onboarding.gender.female') }}</option>
+                                    <option value="O">{{ t('onboarding.gender.other') }}</option>
                                 </select>
                             </div>
                         </div>
@@ -460,36 +461,36 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <div class="flex items-center justify-between mb-2">
-                                    <label class="block text-sm font-bold text-slate-500 uppercase ml-1">{{ managedUseDob ? 'Birthday' : 'Age' }}</label>
+                                    <label class="block text-sm font-bold text-slate-500 uppercase ml-1">{{ managedUseDob ? t('onboarding.managedModal.birthday') : t('onboarding.managedModal.age') }}</label>
                                     <button type="button" @click="managedUseDob = !managedUseDob" class="text-xs font-bold text-brand-gold hover:underline">
-                                        {{ managedUseDob ? 'Enter age instead' : 'Enter DOB instead' }}
+                                        {{ managedUseDob ? t('onboarding.managedModal.enterAgeInstead') : t('onboarding.managedModal.enterDobInstead') }}
                                     </button>
                                 </div>
                                 <input v-if="managedUseDob" v-model="managedForm.date_of_birth" type="date" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
-                                <input v-else v-model.number="managedForm.age" type="number" min="0" max="150" placeholder="Enter age" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                                <input v-else v-model.number="managedForm.age" type="number" min="0" max="150" :placeholder="t('onboarding.managedModal.enterAge')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
                              <div>
-                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Blood Group</label>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.fields.bloodGroup') }}</label>
                                 <select v-model="managedForm.blood_group" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
-                                    <option value="" disabled>Select blood group</option><option value="Unknown">Unknown</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                    <option value="" disabled>{{ t('onboarding.placeholders.selectBloodGroup') }}</option><option value="Unknown">{{ t('onboarding.bloodGroup.unknown') }}</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Occupation / School</label>
-                                <input v-model="managedForm.occupation" type="text" placeholder="Occupation / School" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.occupationSchool') }}</label>
+                                <input v-model="managedForm.occupation" type="text" :placeholder="t('onboarding.managedModal.occupationSchool')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Church / Parish</label>
-                                <input v-model="managedForm.church_parish" type="text" placeholder="Church / Parish" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.churchParish') }}</label>
+                                <input v-model="managedForm.church_parish" type="text" :placeholder="t('onboarding.managedModal.churchParish')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
                         </div>
  
                         <div>
-                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Short Note (Bio)</label>
-                            <textarea v-model="managedForm.bio" rows="3" placeholder="Tell us a bit about them..." class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all resize-none text-lg font-bold"></textarea>
+                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.shortNote') }}</label>
+                            <textarea v-model="managedForm.bio" rows="3" :placeholder="t('onboarding.managedModal.shortNotePlaceholder')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all resize-none text-lg font-bold"></textarea>
                         </div>
 
                         <!-- Deceased Toggle for Managed Member -->
@@ -499,8 +500,8 @@
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A4.833 4.833 0 0012 9a4.833 4.833 0 00-7.5 1.332V21a.75.75 0 00.75.75h13.5a.75.75 0 00.75-.75z"></path></svg>
                                  </div>
                                  <div>
-                                     <div class="font-black text-slate-800 text-lg">Is this person deceased?</div>
-                                     <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Rest in Peace status</div>
+                                     <div class="font-black text-slate-800 text-lg">{{ t('onboarding.managedModal.isDeceased') }}</div>
+                                     <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">{{ t('onboarding.managedModal.restInPeaceStatus') }}</div>
                                  </div>
                              </div>
                              <button @click="managedForm.is_deceased = !managedForm.is_deceased" type="button" 
@@ -511,14 +512,14 @@
 
                         <!-- Date of Death (shown when deceased) -->
                         <div v-if="managedForm.is_deceased" class="animate-fade-in">
-                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Date of Death</label>
+                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.dateOfDeath') }}</label>
                             <input v-model="managedForm.date_of_death" type="date" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                         </div>
                          
                          <div class="pt-6 flex gap-3">
-                             <button @click="managedModal = false" type="button" class="flex-1 px-8 py-3.5 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all border border-slate-200">Cancel</button>
+                             <button @click="managedModal = false" type="button" class="flex-1 px-8 py-3.5 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all border border-slate-200">{{ t('onboarding.actions.cancel') }}</button>
                              <button type="submit" :disabled="loading" class="flex-1 bg-brand-gold hover:brightness-110 text-white px-8 py-3.5 rounded-2xl font-bold shadow-lg shadow-brand-gold/20 transition-all active:scale-95 disabled:opacity-50">
-                                 {{ editingManagedId ? 'Update Member' : 'Add Member' }}
+                                 {{ editingManagedId ? t('onboarding.managedModal.updateMember') : t('onboarding.managedModal.addMemberButton') }}
                              </button>
                         </div>
                     </form>
@@ -535,7 +536,7 @@
       <div v-if="showCropper" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div class="bg-white rounded-3xl overflow-hidden w-full max-w-lg shadow-2xl animate-fade-up">
               <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-slate-50">
-                  <h3 class="font-bold text-slate-800">Adjust Photo</h3>
+                  <h3 class="font-bold text-slate-800">{{ t('onboarding.cropper.adjustPhoto') }}</h3>
                   <button @click="cancelCrop" class="text-slate-400 hover:text-slate-600">
                       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </button>
@@ -554,8 +555,8 @@
               </div>
 
               <div class="p-4 flex gap-3 justify-end bg-white border-t border-gray-100">
-                   <button @click="cancelCrop" class="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
-                   <button @click="cropImage" class="px-6 py-2.5 rounded-xl font-bold text-white bg-brand-gold hover:brightness-110 shadow-lg shadow-brand-gold/30 transition-all active:scale-95">Set Profile Photo</button>
+                    <button @click="cancelCrop" class="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors">{{ t('onboarding.actions.cancel') }}</button>
+                    <button @click="cropImage" class="px-6 py-2.5 rounded-xl font-bold text-white bg-brand-gold hover:brightness-110 shadow-lg shadow-brand-gold/30 transition-all active:scale-95">{{ t('onboarding.cropper.setProfilePhoto') }}</button>
               </div>
           </div>
       </div>
@@ -567,17 +568,17 @@
     <Teleport to="body">
       <div v-if="showGiveAccess" class="fixed inset-0 z-100 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
-          <h3 class="text-2xl font-black text-slate-900 mb-2">Give Access</h3>
-          <p class="text-slate-500 text-sm mb-6">Create login credentials for <span class="font-bold text-brand-gold">{{ giveAccessTarget?.name }}</span></p>
+                    <h3 class="text-2xl font-black text-slate-900 mb-2">{{ t('onboarding.giveAccess.title') }}</h3>
+                    <p class="text-slate-500 text-sm mb-6">{{ t('onboarding.giveAccess.description') }} <span class="font-bold text-brand-gold">{{ giveAccessTarget?.name }}</span></p>
           
           <div class="space-y-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Username</label>
-              <input v-model="giveAccessUsername" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all" placeholder="Enter username">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{{ t('onboarding.giveAccess.username') }}</label>
+                            <input v-model="giveAccessUsername" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all" :placeholder="t('onboarding.giveAccess.usernamePlaceholder')">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Password</label>
-              <input v-model="giveAccessPassword" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all" placeholder="Set a temporary password">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{{ t('onboarding.giveAccess.password') }}</label>
+                            <input v-model="giveAccessPassword" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all" :placeholder="t('onboarding.giveAccess.passwordPlaceholder')">
             </div>
           </div>
 
@@ -586,9 +587,9 @@
 
           <div class="flex gap-3 mt-6">
             <button @click="submitGiveAccess" :disabled="giveAccessLoading" class="flex-1 py-3.5 bg-brand-gold text-white font-bold rounded-2xl hover:brightness-110 active:scale-95 transition-all disabled:opacity-50">
-              {{ giveAccessLoading ? 'Creating...' : 'Create Account' }}
+                            {{ giveAccessLoading ? t('onboarding.giveAccess.creating') : t('onboarding.giveAccess.createAccount') }}
             </button>
-            <button @click="showGiveAccess = false" class="px-6 py-3.5 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all">Cancel</button>
+                        <button @click="showGiveAccess = false" class="px-6 py-3.5 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all">{{ t('onboarding.actions.cancel') }}</button>
           </div>
         </div>
       </div>
@@ -601,13 +602,25 @@
 import { useRouter, useRoute } from 'vue-router'
 import { watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
-import { useRuntimeConfig } from '#imports'
+import { useRuntimeConfig, useHead } from '#imports'
+import { useI18n } from 'vue-i18n'
 import { Cropper, CircleStencil } from 'vue-advanced-cropper'
+import {
+    FAMILY_RELATION_DEFINITIONS,
+    FAMILY_RELATION_TYPES,
+    IN_LAW_RELATION_TYPES,
+    MARRIED_TO_ELIGIBLE_RELATIONS,
+} from '../data/relations'
 import 'vue-advanced-cropper/dist/style.css'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const { t } = useI18n()
+
+useHead(() => ({
+    title: t('onboarding.meta.title')
+}))
 
 // Give Access modal state
 const showGiveAccess = ref(false)
@@ -629,7 +642,7 @@ function openGiveAccess(member) {
 
 async function submitGiveAccess() {
     if (!giveAccessUsername.value || !giveAccessPassword.value) {
-        giveAccessError.value = 'Username and password are required.'
+        giveAccessError.value = t('onboarding.giveAccess.errors.requiredFields')
         return
     }
     giveAccessLoading.value = true
@@ -653,6 +666,153 @@ const normalizeRelationLabel = (value, fallback = 'Other') => {
     const normalized = (value || '').trim()
     if (!normalized) return fallback
     return normalized.slice(0, 50)
+}
+
+const RELATIONS_WITH_TREE_POSITION = new Set(
+    FAMILY_RELATION_TYPES.filter(label => !['Child', 'Member', 'Other'].includes(label))
+)
+
+const normalizeRelationInputText = (value) => {
+    return (value || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, ' ')
+        .replace(/\b(my|our|the|a|an|is|this|that)\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+}
+
+const regexEscape = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const RELATION_KEYWORD_PATTERNS = FAMILY_RELATION_DEFINITIONS
+    .flatMap((relation) => relation.keywords.map((keyword) => ({
+        label: relation.label,
+        keyword,
+        regex: new RegExp(`\\b${keyword.split(/\s+/).map(regexEscape).join('\\s+')}\\b`, 'i'),
+    })))
+    .sort((a, b) => b.keyword.length - a.keyword.length)
+
+const relationLabelByLower = new Map(
+    FAMILY_RELATION_TYPES.map((label) => [label.toLowerCase(), label])
+)
+
+const toGenderedChildRelation = (gender) => gender === 'F' ? 'Daughter' : 'Son'
+const toGenderedParentRelation = (gender) => gender === 'F' ? 'Mother' : 'Father'
+const toGenderedGrandchildRelation = (gender) => gender === 'F' ? 'Granddaughter' : 'Grandson'
+
+const toGenderedGrandparentRelation = (gender, side = 'paternal') => {
+    const isFemale = gender === 'F'
+    if (side === 'maternal') return isFemale ? 'Maternal Grandmother' : 'Maternal Grandfather'
+    if (side === 'paternal') return isFemale ? 'Paternal Grandmother' : 'Paternal Grandfather'
+    return isFemale ? 'Grandmother' : 'Grandfather'
+}
+
+const normalizeKnownRelationLabel = (value) => {
+    const normalized = normalizeRelationInputText(value)
+    if (!normalized) return null
+    return relationLabelByLower.get(normalized) || null
+}
+
+const mapKeywordToCanonicalRelation = (input, gender) => {
+    const normalizedInput = normalizeRelationInputText(input)
+    if (!normalizedInput) return null
+
+    for (const matcher of RELATION_KEYWORD_PATTERNS) {
+        if (!matcher.regex.test(normalizedInput)) continue
+
+        if (matcher.label === 'Child') return toGenderedChildRelation(gender)
+        if (matcher.label === 'Member' || matcher.label === 'Other') return null
+        return matcher.label
+    }
+
+    if (/\bparent\b/i.test(normalizedInput)) return toGenderedParentRelation(gender)
+    if (/\bgrandparent\b/i.test(normalizedInput)) return toGenderedGrandparentRelation(gender)
+    if (/\bgrandchild\b/i.test(normalizedInput)) return toGenderedGrandchildRelation(gender)
+    if (/\bsibling\b/i.test(normalizedInput)) return gender === 'F' ? 'Sister' : 'Brother'
+    if (/\bspouse\b|\bhusband\b|\bwife\b|\bpartner\b/i.test(normalizedInput)) return 'Spouse'
+
+    return null
+}
+
+const mapParsedRelationToCanonical = (rawInput, parsed, gender) => {
+    if (!parsed) return null
+
+    const parsedAsKnownLabel = normalizeKnownRelationLabel(parsed.relation)
+    if (parsedAsKnownLabel) {
+        if (parsedAsKnownLabel === 'Child') return toGenderedChildRelation(gender)
+        if (parsedAsKnownLabel === 'Member' || parsedAsKnownLabel === 'Other') return null
+        return parsedAsKnownLabel
+    }
+
+    const byKeyword = mapKeywordToCanonicalRelation(rawInput, gender)
+    if (byKeyword) return byKeyword
+
+    if (parsed.relation === 'parent' || parsed.offset === -1) {
+        return toGenderedParentRelation(gender)
+    }
+
+    if (parsed.relation === 'child' || parsed.offset === 1) {
+        return toGenderedChildRelation(gender)
+    }
+
+    if (parsed.relation === 'grandparent' || parsed.relation === 'great-grandparent' || parsed.offset <= -2) {
+        return toGenderedGrandparentRelation(gender, parsed.side)
+    }
+
+    if (parsed.relation === 'grandchild' || parsed.relation === 'great-grandchild' || parsed.offset >= 2) {
+        return toGenderedGrandchildRelation(gender)
+    }
+
+    return null
+}
+
+let relationshipParserInstancePromise = null
+
+const getRelationshipParser = async () => {
+    if (!import.meta.client) return null
+
+    if (!relationshipParserInstancePromise) {
+        relationshipParserInstancePromise = import('~/composables/useRelationshipParser.client')
+            .then((mod) => mod.useRelationshipParser())
+            .catch(() => null)
+    }
+
+    return relationshipParserInstancePromise
+}
+
+const resolveCanonicalManagedRelation = async (inputRelation, gender) => {
+    const fallbackRelation = toGenderedChildRelation(gender)
+    const rawRelation = normalizeRelationLabel(inputRelation || '', '')
+    if (!rawRelation) return fallbackRelation
+
+    const exactKnown = normalizeKnownRelationLabel(rawRelation)
+    if (exactKnown) {
+        if (exactKnown === 'Child') return fallbackRelation
+        if (RELATIONS_WITH_TREE_POSITION.has(exactKnown)) return exactKnown
+    }
+
+    const byKeyword = mapKeywordToCanonicalRelation(rawRelation, gender)
+    if (byKeyword) return byKeyword
+
+    const parser = await getRelationshipParser()
+    if (parser) {
+        const parserInput = /\bmy\b/i.test(rawRelation) ? rawRelation : `This is my ${rawRelation}`
+        try {
+            const parsed = await parser.parseRelationship(parserInput)
+            const mapped = mapParsedRelationToCanonical(rawRelation, parsed, gender)
+            if (mapped) return mapped
+        } catch (error) {
+            console.debug('Relationship parser fallback used for managed member relation.', error)
+        }
+    }
+
+    return normalizeRelationLabel(rawRelation, fallbackRelation)
+}
+
+const normalizeManagedRelationInput = async () => {
+    managedForm.value.relation = await resolveCanonicalManagedRelation(
+        managedForm.value.relation,
+        managedForm.value.gender
+    )
 }
 
 const step = ref(1)
@@ -687,6 +847,7 @@ const managedForm = ref({
     nickname: '',
     gender: '',
     relation: '',
+    age: '',
     date_of_birth: '',
     blood_group: '',
     occupation: '',
@@ -705,37 +866,19 @@ const resolveImage = (path) => {
 }
 
 const openAddManaged = () => {
-    editingManagedId.value = null
-    managedForm.value = {
-        first_name: '',
-        last_name: '',
-        nickname: '',
-        gender: '',
-        relation: '',
-        date_of_birth: '',
-        blood_group: '',
-        occupation: '',
-        church_parish: '',
-        bio: '',
-        is_deceased: false,
-        date_of_death: '',
-        avatar: null,
-        age: ''
-    }
-    managedAvatarPreview.value = null
-    managedModal.value = true
+    router.push('/familytree?view=visual&edit=1')
 }
 
-const editManagedMember = (m) => {
+const openManagedEditor = (m) => {
     editingManagedId.value = m.id
-    // Extract first/last name if possible
-    let f = '', l = ''
+    let f = ''
+    let l = ''
     if (m.name) {
         const parts = m.name.split(' ')
         f = parts[0]
         if (parts.length > 1) l = parts.slice(1).join(' ')
     }
-    
+
     managedForm.value = {
         first_name: f,
         last_name: l,
@@ -749,10 +892,24 @@ const editManagedMember = (m) => {
         bio: m.bio || '',
         is_deceased: m.is_deceased || false,
         date_of_death: m.date_of_death || '',
-        avatar: m.photo || m.profile_pic
+        avatar: m.photo || m.profile_pic,
+        age: m.age || ''
     }
+
+    managedUseDob.value = Boolean(managedForm.value.date_of_birth)
     managedAvatarPreview.value = resolveImage(m.photo || m.profile_pic)
     managedModal.value = true
+}
+
+const editManagedMember = (m) => {
+    openManagedEditor(m)
+}
+
+const clearManagedEditQuery = () => {
+    if (!route.query.managed_edit) return
+    const nextQuery = { ...route.query }
+    delete nextQuery.managed_edit
+    router.replace({ path: '/onboarding', query: nextQuery })
 }
 
 const onManagedFileChange = (e) => {
@@ -782,7 +939,10 @@ const saveManagedMember = async () => {
         const csrfData = await csrfRes.json().catch(() => ({}))
         const csrftoken = getCookie('csrftoken') || csrfData.csrfToken
 
-        managedForm.value.relation = normalizeRelationLabel(managedForm.value.relation || 'Child', 'Child')
+        managedForm.value.relation = await resolveCanonicalManagedRelation(
+            managedForm.value.relation || 'Child',
+            managedForm.value.gender
+        )
 
         const formData = new FormData()
         Object.keys(managedForm.value).forEach(key => {
@@ -814,18 +974,22 @@ const saveManagedMember = async () => {
             managedModal.value = false
         } else {
             const err = await res.json()
-            alert('Failed to save member: ' + (err.error || 'Unknown error'))
+            const msg = err.error || t('onboarding.errors.unknownError')
+            const hint = res.status === 400 && msg.toLowerCase().includes('relationship')
+                ? '\n\nTip: Only parent, child, spouse, or sibling relationships can be defined. Grandparents, uncles, and cousins are automatically inferred.'
+                : ''
+            alert(t('onboarding.errors.saveMemberFailed') + ' ' + msg + hint)
         }
     } catch (e) {
         console.error(e)
-        alert('Error saving managed member')
+        alert(t('onboarding.errors.errorSavingMember'))
     } finally {
         loading.value = false
     }
 }
 
 const confirmDeleteManaged = async (m) => {
-    if (confirm(`Are you sure you want to delete ${m.name}?`)) {
+    if (confirm(t('onboarding.confirm.deleteMember', { name: m.name }))) {
         try {
             const csrfRes = await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
             const csrfData = await csrfRes.json().catch(() => ({}))
@@ -842,11 +1006,11 @@ const confirmDeleteManaged = async (m) => {
                 await auth.fetchProfile()
             } else {
                  const err = await res.json().catch(() => ({}))
-                 alert("Failed to delete member: " + (err.error || err.detail || "Unknown error"))
+                 alert(t('onboarding.errors.deleteMemberFailed') + ' ' + (err.error || err.detail || t('onboarding.errors.unknownError')))
             }
         } catch (e) {
             console.error(e)
-            alert("Connection error during deletion")
+            alert(t('onboarding.errors.connectionErrorDelete'))
         }
     }
 }
@@ -873,7 +1037,7 @@ const removeParent = (id) => {
 }
 
 const getMemberName = (id) => {
-    return allMembers.value.find(m => m.id === id)?.name || 'Unknown'
+    return allMembers.value.find(m => m.id === id)?.name || t('onboarding.errors.unknown')
 }
 
 // Fixed Relationship Helpers
@@ -881,24 +1045,7 @@ const relSearch = ref('')
 const selectedRelType = ref('Father')
 const relTypeSearch = ref('')
 const showRelTypeDropdown = ref(false)
-const relationTypes = [
-    'Child',
-    'Member',
-    'Father', 'Mother', 'Son', 'Daughter',
-    'Spouse',
-    'Brother', 'Sister',
-    'Grandfather', 'Grandmother',
-    'Grandson', 'Granddaughter',
-    'Uncle', 'Aunt',
-    'Nephew', 'Niece',
-    'Cousin',
-    'Paternal Grandfather', 'Paternal Grandmother',
-    'Maternal Grandfather', 'Maternal Grandmother',
-    'Father-in-law', 'Mother-in-law',
-    'Son-in-law', 'Daughter-in-law',
-    'Brother-in-law', 'Sister-in-law',
-    'Other'
-]
+const relationTypes = FAMILY_RELATION_TYPES
 const activeRelType = computed(() => normalizeRelationLabel(relTypeSearch.value || selectedRelType.value))
 
 // Searchable dropdown state for editing existing relations
@@ -930,13 +1077,12 @@ const managedUseDob = ref(true)
 
 // In-law married-to assignment
 const marriedToMemberId = ref(null)
-const IN_LAW_TYPES = ['Sister-in-law', 'Brother-in-law', 'Daughter-in-law', 'Son-in-law']
-const isInLawType = (type) => IN_LAW_TYPES.includes(type)
+const isInLawType = (type) => IN_LAW_RELATION_TYPES.includes(type)
 
 const siblingMembers = computed(() => {
     // Return existing relationships that are siblings
     return form.value.relationships.filter(r => 
-        ['Brother', 'Sister', 'Son', 'Daughter'].includes(r.relation_type)
+        MARRIED_TO_ELIGIBLE_RELATIONS.includes(r.relation_type)
     )
 })
 
@@ -1077,9 +1223,16 @@ onMounted(async () => {
     // 6. Handle query parameters (Step 3 or Member Edit)
     const qStep = route.query.step
     const qEdit = route.query.edit
+    const qManagedEdit = route.query.managed_edit
     
     if (qStep) {
-        step.value = parseInt(qStep)
+        const parsedStep = parseInt(qStep)
+        if (parsedStep === 3) {
+            const focus = qEdit ? `&focus=${qEdit}` : ''
+            router.replace(`/familytree?view=visual&edit=1${focus}`)
+            return
+        }
+        step.value = parsedStep
     }
     
     if (qEdit && step.value === 3) {
@@ -1088,17 +1241,47 @@ onMounted(async () => {
             editManagedMember(memberToEdit)
         }
     }
+
+    if (qManagedEdit) {
+        const targetId = parseInt(String(qManagedEdit))
+        if (targetId) {
+            step.value = 2
+            const memberToEdit = managedMembers.value.find(m => m.id === targetId)
+            if (memberToEdit) {
+                openManagedEditor(memberToEdit)
+                clearManagedEditQuery()
+            }
+        }
+    }
 })
 
 // Watch for route changes (e.g. from profile menu dropdown)
 watch(() => route.query, (newQuery) => {
     if (newQuery.step) {
-        step.value = parseInt(newQuery.step)
+        const parsedStep = parseInt(newQuery.step)
+        if (parsedStep === 3) {
+            const focus = newQuery.edit ? `&focus=${newQuery.edit}` : ''
+            router.replace(`/familytree?view=visual&edit=1${focus}`)
+            return
+        }
+        step.value = parsedStep
     }
     if (newQuery.edit && step.value === 3) {
         const memberToEdit = managedMembers.value.find(m => m.id === parseInt(newQuery.edit))
         if (memberToEdit) {
             editManagedMember(memberToEdit)
+        }
+    }
+
+    if (newQuery.managed_edit) {
+        const targetId = parseInt(String(newQuery.managed_edit))
+        if (targetId) {
+            step.value = 2
+            const memberToEdit = managedMembers.value.find(m => m.id === targetId)
+            if (memberToEdit) {
+                openManagedEditor(memberToEdit)
+                clearManagedEditQuery()
+            }
         }
     }
 }, { deep: true })
@@ -1215,16 +1398,16 @@ const saveProfile = async () => {
             step.value = 3 // Go to managed members step
         } else {
             if (res.status === 403 || res.status === 401) {
-                 alert("Authentication failed. This usually happens if your session expired or if you are using '127.0.0.1' instead of 'localhost'. Please try logging in again at http://localhost:3000.")
+                 alert(t('onboarding.errors.authFailed'))
             } else {
                 const errData = await res.json().catch(() => ({}))
                 console.error("Save failed:", errData)
-                alert(`Failed to save profile: ${errData.error || 'Please try again.'}`)
+                alert(`${t('onboarding.errors.saveProfileFailed')} ${errData.error || t('onboarding.errors.tryAgain')}`)
             }
         }
     } catch (e) {
         console.error(e)
-        alert('Error saving profile: ' + e.message)
+        alert(t('onboarding.errors.errorSavingProfile') + ' ' + e.message)
     } finally {
         loading.value = false
     }

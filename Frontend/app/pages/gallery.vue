@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import { useRuntimeConfig } from '#imports'
+import { useRuntimeConfig, useHead, useRoute } from '#imports'
+import { useI18n } from 'vue-i18n'
 import GalleryImage from '~/components/GalleryImage.vue'
 import GalleryLightbox from '~/components/GalleryLightbox.vue'
 
@@ -13,6 +14,18 @@ interface GalleryItem {
 
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase as string
+const route = useRoute()
+const { t } = useI18n()
+
+useHead(() => ({
+  title: t('gallery.meta.title'),
+  meta: [
+    { name: 'description', content: t('gallery.meta.description') }
+  ],
+  link: [
+    { rel: 'canonical', href: `${config.public.siteUrl || 'http://localhost:3000'}${route.path}` }
+  ]
+}))
 
 const images = ref<GalleryItem[]>([])
 const visibleCount = ref(999)
@@ -57,7 +70,7 @@ const loadGallery = async () => {
       created_at: i.created_at || i.date || i.uploaded_at || null,
     }))
   } catch (e: any) {
-    error.value = e?.message ?? 'Failed to load gallery'
+    error.value = e?.message ?? t('gallery.errors.loadFailed')
   } finally {
     isLoading.value = false
   }
@@ -72,7 +85,7 @@ const handleFileChange = (event: Event) => {
 
 const handleUpload = async () => {
   if (!uploadForm.value.image) {
-    alert("Please select an image first.")
+    alert(t('gallery.alerts.selectImageFirst'))
     return
   }
 
@@ -93,7 +106,7 @@ const handleUpload = async () => {
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}))
-      throw new Error(errData.detail || 'Upload failed')
+      throw new Error(errData.detail || t('gallery.errors.uploadFailed'))
     }
 
     // Reset and close
@@ -101,7 +114,7 @@ const handleUpload = async () => {
     uploadForm.value = { image: null, description: '', date: new Date().toISOString().split('T')[0] }
     await loadGallery()
   } catch (e: any) {
-    alert(e.message || 'Upload failed')
+    alert(e.message || t('gallery.errors.uploadFailed'))
   } finally {
     isUploading.value = false
   }
@@ -145,11 +158,11 @@ onBeforeUnmount(() => {
     <div class="page-container">
       <div class="max-w-7xl mx-auto mb-16 text-center space-y-4">
         <h1 class="text-4xl md:text-5xl font-serif font-bold text-slate-900 leading-tight">
-            Family Gallery
+          {{ t('gallery.header.title') }}
         </h1>
         <div class="h-1.5 w-32 bg-brand-gold mx-auto rounded-full"></div>
         <p class="text-lg text-slate-500 max-w-xl mx-auto font-medium">
-            Capturing moments of our shared heritage and celebrations.
+          {{ t('gallery.header.description') }}
         </p>
 
         <div class="pt-4">
@@ -157,7 +170,7 @@ onBeforeUnmount(() => {
                 @click="showUploadModal = true"
                 class="bg-brand-gold text-white px-6 py-2.5 rounded-full font-bold hover:bg-opacity-90 transition shadow-lg"
             >
-                Upload Photo
+                {{ t('gallery.header.uploadPhoto') }}
             </button>
         </div>
       </div>
@@ -189,20 +202,20 @@ onBeforeUnmount(() => {
       <div ref="sentinel" class="h-1 w-full" />
 
       <div class="text-center py-8 text-slate-500">
-        <div v-if="isLoading">Loading...</div>
-        <div v-if="error" class="text-red-500">Error: {{ error }}</div>
-        <div v-if="!hasMore && !isLoading" class="text-gray-600">No more images</div>
+        <div v-if="isLoading">{{ t('gallery.status.loading') }}</div>
+        <div v-if="error" class="text-red-500">{{ t('gallery.status.errorPrefix') }} {{ error }}</div>
+        <div v-if="!hasMore && !isLoading" class="text-gray-600">{{ t('gallery.status.noMoreImages') }}</div>
       </div>
 
       <!-- Upload Modal -->
       <div v-if="showUploadModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showUploadModal = false"></div>
         <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 overflow-hidden">
-          <h3 class="text-2xl font-serif font-bold text-slate-900 mb-6">Upload Gallery Photo</h3>
+          <h3 class="text-2xl font-serif font-bold text-slate-900 mb-6">{{ t('gallery.upload.title') }}</h3>
           
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Photo</label>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">{{ t('gallery.upload.photoLabel') }}</label>
               <input 
                 type="file" 
                 accept="image/*" 
@@ -212,16 +225,16 @@ onBeforeUnmount(() => {
             </div>
 
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Description (Optional)</label>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">{{ t('gallery.upload.descriptionLabel') }}</label>
               <textarea 
                 v-model="uploadForm.description"
-                placeholder="Share a short memory or detail..."
+                :placeholder="t('gallery.upload.descriptionPlaceholder')"
                 class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none h-24 resize-none transition-all"
               ></textarea>
             </div>
 
             <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Event Date (Optional)</label>
+                <label class="block text-sm font-semibold text-slate-700 mb-1.5">{{ t('gallery.upload.eventDateLabel') }}</label>
                 <input 
                   type="date"
                   v-model="uploadForm.date"
@@ -234,15 +247,15 @@ onBeforeUnmount(() => {
                 @click="showUploadModal = false"
                 class="flex-1 px-6 py-3 rounded-xl border-2 border-slate-100 text-slate-600 hover:bg-slate-50 transition-all active:scale-95"
               >
-                Cancel
+                {{ t('gallery.upload.cancel') }}
               </button>
               <button 
                 @click="handleUpload"
                 :disabled="isUploading || !uploadForm.image"
                 class="flex-[2] px-6 py-3 rounded-xl bg-brand-gold text-white hover:shadow-lg hover:shadow-brand-gold/20 disabled:opacity-50 transition-all active:scale-95"
               >
-                <span v-if="isUploading">Uploading...</span>
-                <span v-else>Share Moment</span>
+                <span v-if="isUploading">{{ t('gallery.upload.uploading') }}</span>
+                <span v-else>{{ t('gallery.upload.submit') }}</span>
               </button>
             </div>
           </div>

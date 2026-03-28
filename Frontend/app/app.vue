@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import { useHead, useRoute, useRuntimeConfig } from '#imports'
+import { onMounted } from 'vue'
+import { useLanguage } from '~/composables/useLanguage'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const config = useRuntimeConfig()
 const siteUrl = config.public.siteUrl || 'http://localhost:3000'
+const { initLanguage } = useLanguage()
+const { t } = useI18n()
 
-useHead({
-  titleTemplate: (title: string | undefined) => title ? `${title} | Kollamparambil Family` : 'Kollamparambil Family',
-  title: 'Kollamparambil Family',
+onMounted(() => {
+  initLanguage()
+})
+
+useHead(() => ({
+  titleTemplate: (title: string | undefined) => title ? `${title} | ${t('app.siteName')}` : t('app.siteName'),
+  title: t('app.siteName'),
   link: [
     { rel: 'icon', type: 'image/png', href: '/favicon.png?v=3' },
     { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico?v=3' },
@@ -19,17 +28,17 @@ useHead({
   ],
   meta: [
     // Primary Meta Tags
-    { name: 'title', content: 'Kollamparambil Family' },
-    { name: 'description', content: 'Kollamparambil Family Association - Connecting our heritage and future.' },
+    { name: 'title', content: t('app.siteName') },
+    { name: 'description', content: t('app.metaDescription') },
     { name: 'keywords', content: 'Kollamparambil, Family, Heritage, Association, Kerala, India' },
-    { name: 'author', content: 'Kollamparambil Family' },
+    { name: 'author', content: t('app.siteName') },
     { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
     
     // Open Graph / Facebook
     { property: 'og:type', content: 'website' },
-    { property: 'og:title', content: 'Kollamparambil Family' },
-    { property: 'og:description', content: 'Kollamparambil Family Association - Connecting our heritage and future.' },
-    { property: 'og:site_name', content: 'Kollamparambil Family' },
+    { property: 'og:title', content: t('app.siteName') },
+    { property: 'og:description', content: t('app.metaDescription') },
+    { property: 'og:site_name', content: t('app.siteName') },
     { property: 'og:locale', content: 'en_US' },
     { property: 'og:image', content: '/images/logo.png' },
     { property: 'og:image:width', content: '1200' },
@@ -38,13 +47,13 @@ useHead({
     
     // Twitter
     { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:title', content: 'Kollamparambil Family' },
-    { name: 'twitter:description', content: 'Kollamparambil Family Association - Connecting our heritage and future.' },
+    { name: 'twitter:title', content: t('app.siteName') },
+    { name: 'twitter:description', content: t('app.metaDescription') },
     { name: 'twitter:image', content: '/images/logo.png' },
     
     // WhatsApp / Mobile
     { property: 'og:image:type', content: 'image/png' },
-    { name: 'theme-color', content: '#A08050' },
+    { name: 'theme-color', content: t('app.themeColor') },
     
     // Additional Meta
     { name: 'robots', content: 'index, follow' }
@@ -55,13 +64,13 @@ useHead({
       children: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "Organization",
-        "name": "Kollamparambil Family",
+        "name": t('app.siteName'),
         "url": siteUrl,
         "logo": `${siteUrl}/images/logo.png`
       })
     }
   ]
-})
+}))
 </script>
 
 <template>

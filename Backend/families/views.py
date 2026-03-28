@@ -23,6 +23,7 @@ from rest_framework import generics
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from datetime import date
+from .relationship_engine import BASE_RELATIONS, RelationshipEngine
 
 
 def _normalize_relation_label(value, fallback='Other', max_len=50):
@@ -38,6 +39,32 @@ def _storable_member_relation(value):
     if relation in known_member_relations:
         return relation
     return 'Other'
+
+
+def _normalize_user_relation_or_error(value):
+    relation = _normalize_relation_label(value, fallback='')
+    canonical = RelationshipEngine.canonicalize_input(relation)
+    if canonical:
+        return canonical
+
+    if RelationshipEngine.is_banned_label(relation):
+        raise ValueError('Only parent, child, spouse, or sibling can be defined directly.')
+
+    if relation:
+        raise ValueError('Unsupported relationship. Use parent, child, spouse, or sibling only.')
+    raise ValueError('Relationship is required and must be parent, child, spouse, or sibling.')
+
+
+def _safe_create_base_relationship(from_member, to_member, relation_type):
+    if relation_type not in BASE_RELATIONS:
+        return
+    if from_member.id == to_member.id:
+        return
+    Relationship.objects.get_or_create(
+        from_member=from_member,
+        to_member=to_member,
+        relation_type=relation_type,
+    )
 
 class UserProfileView(APIView):
     """
@@ -157,56 +184,31 @@ class UserProfileView(APIView):
                     Relationship.objects.filter(from_member=member).delete()
                     for item in rel_data:
                         to_id = item.get('to_member') or item.get('to_member_id')
-                        rel_type = _normalize_relation_label(item.get('relation_type'))
+                        rel_type = _normalize_user_relation_or_error(item.get('relation_type'))
                         name = item.get('name') or item.get('to_member_name')
                         
                         if not to_id and name:
-                            # Auto-create member if not found
-                            auto_gender = Relationship.GENDER_MAP.get(rel_type, 'M')
+                            # Auto-create unlinked member and connect using base relation.
                             new_member = FamilyMember.objects.create(
                                 name=name,
-                                relation=_storable_member_relation(rel_type),
-                                gender=auto_gender,
+                                relation='Other',
+                                gender='M',
                                 age=0, 
                                 created_by=request.user,
                                 family=member.family
                             )
                             to_id = new_member.id
-                        elif to_id and rel_type:
-                            # Auto-assign gender to existing member if not already set properly
-                            auto_gender = Relationship.GENDER_MAP.get(rel_type)
-                            if auto_gender:
-                                try:
-                                    target = FamilyMember.objects.get(id=to_id)
-                                    if target.gender != auto_gender:
-                                        target.gender = auto_gender
-                                        target.save(update_fields=['gender'])
-                                except FamilyMember.DoesNotExist:
-                                    pass
 
                         if to_id and rel_type:
-                            Relationship.objects.create(
-                                from_member=member,
-                                to_member_id=to_id,
-                                relation_type=rel_type
-                            )
-                            # Also add to parents M2M for tree compatibility
-                            if rel_type in ('Father', 'Mother', 'Grandfather', 'Grandmother',
-                                            'Paternal Grandfather', 'Paternal Grandmother',
-                                            'Maternal Grandfather', 'Maternal Grandmother'):
-                                member.parents.add(to_id)
-                            
-                            # Handle in-law married_to: create spouse link
-                            married_to = item.get('married_to')
-                            if married_to and rel_type in ('Sister-in-law', 'Brother-in-law', 'Son-in-law', 'Daughter-in-law'):
-                                # Create Spouse relationship between the in-law and the family member
-                                Relationship.objects.get_or_create(
-                                    from_member_id=married_to,
-                                    to_member_id=to_id,
-                                    relation_type='Spouse'
-                                )
+                            target = FamilyMember.objects.filter(id=to_id).first()
+                            if target:
+                                _safe_create_base_relationship(member, target, rel_type)
+                                if rel_type == 'PARENT':
+                                    member.parents.add(target)
+                                elif rel_type == 'CHILD':
+                                    target.parents.add(member)
                 except Exception as e:
-                    print(f"Error saving relationships: {e}")
+                    return Response({"error": str(e)}, status=400)
 
             # Update Profile Pic
             if 'profile_pic' in request.FILES:
@@ -217,6 +219,8 @@ class UserProfileView(APIView):
             member.save()
             
             return Response(FamilyMemberSerializer(member, context={'request': request}).data)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)
         except Exception as e:
             import traceback
             traceback.print_exc() # Print to server logs for debugging
@@ -245,280 +249,27 @@ class FamilyTreeView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request):
-        members = FamilyMember.objects.all()
+        members = FamilyMember.objects.all().prefetch_related('parents')
         relationships = Relationship.objects.all()
-
         viewer_member = getattr(request.user, 'member', None) if getattr(request.user, 'is_authenticated', False) else None
-        viewer_relation_map = {}
-        if viewer_member:
-            viewer_relation_map = {
-                rel.to_member_id: rel.relation_type
-                for rel in relationships.filter(from_member_id=viewer_member.id)
+
+        # Backfill base parent edges from M2M parent links so existing data still renders.
+        for child in members:
+            for parent in child.parents.all():
+                _safe_create_base_relationship(child, parent, 'PARENT')
+
+        relationships = Relationship.objects.all()
+        engine = RelationshipEngine(members=members, relationships=relationships)
+        payload = engine.build_payload(root_id=getattr(viewer_member, 'id', None))
+
+        return Response(
+            {
+                "nodes": payload.nodes,
+                "edges": payload.edges,
+                "computed_relations": payload.computed_relations,
+                "generation_depth": payload.generation_depth,
             }
-        
-        nodes = []
-        links = []
-        
-        # Track added link pairs to avoid duplicates
-        added_links = set()
-        
-        for m in members:
-            # Username for centering focus
-            username = None
-            if hasattr(m, 'user_account'):
-                username = m.user_account.username
-
-            nodes.append({
-                "id": m.id,
-                "name": m.name,
-                "photo": m.photo.url if m.photo else None,
-                "role": viewer_relation_map.get(m.id) or m.role,
-                "relation": viewer_relation_map.get(m.id) or m.relation,
-                "is_committee": m.is_committee,
-                "username": username,
-                "gender": m.gender,
-                "age": m.age,
-                "occupation": m.occupation,
-                "date_of_birth": m.date_of_birth,
-                "blood_group": m.blood_group,
-                "education": m.education,
-                "location": m.address_if_different,
-                "place_of_work": m.place_of_work,
-            })
-            
-            # Parent-child links from M2M parents field
-            for p in m.parents.all():
-                link_key = (p.id, m.id, 'parent')
-                if link_key not in added_links:
-                    links.append({"source": p.id, "target": m.id, "type": "parent"})
-                    added_links.add(link_key)
-
-        # Add all Relationship model links
-        # Only Father/Mother create direct "parent" hierarchy links
-        # Grandparents chain through Father/Mother when possible
-        DIRECT_PARENT_TYPES = {'Father', 'Mother'}
-        DIRECT_CHILD_TYPES = {'Son', 'Daughter'}
-        GRANDPARENT_TYPES = {'Grandfather', 'Grandmother', 'Paternal Grandfather', 'Paternal Grandmother', 'Maternal Grandfather', 'Maternal Grandmother'}
-        GRANDCHILD_TYPES = {'Grandson', 'Granddaughter'}
-        SPOUSE_TYPE = {'Spouse'}
-        SIBLING_TYPES = {'Brother', 'Sister'}
-        IN_LAW_SIBLING_SPOUSE = {
-            'Sister-in-law': 'Brother',   # Sister-in-law is brother's wife
-            'Brother-in-law': 'Sister',   # Brother-in-law is sister's husband
-        }
-        
-        # First pass: collect who set Father/Mother for whom
-        father_of = {}  # member_id -> father_member_id
-        mother_of = {}  # member_id -> mother_member_id
-        
-        for rel in relationships:
-            if rel.relation_type == 'Father':
-                father_of[rel.from_member_id] = rel.to_member_id
-            elif rel.relation_type == 'Mother':
-                mother_of[rel.from_member_id] = rel.to_member_id
-        
-        for rel in relationships:
-            from_id = rel.from_member_id
-            to_id = rel.to_member_id
-            rtype = rel.relation_type
-            
-            if rtype in DIRECT_PARENT_TYPES:
-                # "Alex is my Father" -> Alex is parent of me
-                link_key = (to_id, from_id, 'parent')
-                if link_key not in added_links:
-                    links.append({"source": to_id, "target": from_id, "type": "parent"})
-                    added_links.add(link_key)
-                    
-            elif rtype in DIRECT_CHILD_TYPES:
-                # "Bob is my Son" -> I am parent of Bob
-                link_key = (from_id, to_id, 'parent')
-                if link_key not in added_links:
-                    links.append({"source": from_id, "target": to_id, "type": "parent"})
-                    added_links.add(link_key)
-                    
-            elif rtype in GRANDPARENT_TYPES:
-                # Chain through correct parent based on side
-                # Paternal -> Father, Maternal -> Mother, generic -> first available
-                if 'Paternal' in rtype:
-                    parent_id = father_of.get(from_id)
-                elif 'Maternal' in rtype:
-                    parent_id = mother_of.get(from_id)
-                else:
-                    parent_id = father_of.get(from_id) or mother_of.get(from_id)
-                
-                if parent_id:
-                    link_key = (to_id, parent_id, 'parent')
-                    if link_key not in added_links:
-                        links.append({"source": to_id, "target": parent_id, "type": "parent"})
-                        added_links.add(link_key)
-                else:
-                    link_key = (to_id, from_id, 'parent')
-                    if link_key not in added_links:
-                        links.append({"source": to_id, "target": from_id, "type": "parent"})
-                        added_links.add(link_key)
-
-            elif rtype in GRANDCHILD_TYPES:
-                # "X is my Grandchild" -> I am grandparent, chain through child if known
-                link_key = (from_id, to_id, rtype.lower())
-                if link_key not in added_links:
-                    links.append({"source": from_id, "target": to_id, "type": rtype.lower()})
-                    added_links.add(link_key)
-
-            elif rtype in SPOUSE_TYPE:
-                pair = tuple(sorted([from_id, to_id]))
-                link_key = (pair[0], pair[1], 'spouse')
-                if link_key not in added_links:
-                    links.append({"source": from_id, "target": to_id, "type": "spouse"})
-                    added_links.add(link_key)
-                    
-            elif rtype in SIBLING_TYPES:
-                # Siblings share parents — make them children of the same parent
-                # If I have a Father, make Brother also a child of Father
-                father_id = father_of.get(from_id)
-                mother_id = mother_of.get(from_id)
-                
-                if father_id:
-                    link_key = (father_id, to_id, 'parent')
-                    if link_key not in added_links:
-                        links.append({"source": father_id, "target": to_id, "type": "parent"})
-                        added_links.add(link_key)
-                elif mother_id:
-                    link_key = (mother_id, to_id, 'parent')
-                    if link_key not in added_links:
-                        links.append({"source": mother_id, "target": to_id, "type": "parent"})
-                        added_links.add(link_key)
-                else:
-                    # No parent to share, just add sibling link
-                    pair = tuple(sorted([from_id, to_id]))
-                    link_key = (pair[0], pair[1], 'sibling')
-                    if link_key not in added_links:
-                        links.append({"source": from_id, "target": to_id, "type": "sibling"})
-                        added_links.add(link_key)
-            else:
-                # Handle in-law types by creating spouse links with siblings
-                sibling_match = IN_LAW_SIBLING_SPOUSE.get(rtype)
-                if sibling_match:
-                    # Find the sibling this in-law is connected to
-                    sibling_rel = relationships.filter(
-                        from_member_id=from_id, relation_type=sibling_match
-                    ).first()
-                    if sibling_rel:
-                        # Add spouse link: Brother <-> Sister-in-law
-                        pair = tuple(sorted([sibling_rel.to_member_id, to_id]))
-                        link_key = (pair[0], pair[1], 'spouse')
-                        if link_key not in added_links:
-                            links.append({"source": sibling_rel.to_member_id, "target": to_id, "type": "spouse"})
-                            added_links.add(link_key)
-
-                elif rtype in ('Uncle', 'Aunt'):
-                    # Uncle/Aunt = father's/mother's sibling → child of grandparent
-                    # Find grandparent (father's father or mother's father)
-                    father_id = father_of.get(from_id)
-                    mother_id = mother_of.get(from_id)
-                    # Check if grandfather/grandmother exists for this person
-                    gf_id = None
-                    for r in relationships:
-                        if r.from_member_id == from_id and r.relation_type in GRANDPARENT_TYPES:
-                            gf_id = r.to_member_id
-                            break
-                    # If no grandparent, try to chain through father's parent
-                    if not gf_id and father_id:
-                        for r in relationships:
-                            if r.to_member_id == father_id and r.relation_type == 'parent':
-                                gf_id = r.from_member_id if r.from_member_id != from_id else None
-                                if gf_id:
-                                    break
-                    
-                    if gf_id:
-                        link_key = (gf_id, to_id, 'parent')
-                        if link_key not in added_links:
-                            links.append({"source": gf_id, "target": to_id, "type": "parent"})
-                            added_links.add(link_key)
-                    elif father_id:
-                        # Fallback: make uncle sibling of father (child of same parent)
-                        # Find any parent link for father
-                        for link in links:
-                            if link['type'] == 'parent' and link['target'] == father_id:
-                                gp_id = link['source']
-                                lk = (gp_id, to_id, 'parent')
-                                if lk not in added_links:
-                                    links.append({"source": gp_id, "target": to_id, "type": "parent"})
-                                    added_links.add(lk)
-                                break
-
-                elif rtype == 'Cousin':
-                    # Cousin = uncle/aunt's child → find uncle/aunt and make cousin their child
-                    uncle_rel = relationships.filter(
-                        from_member_id=from_id, relation_type__in=['Uncle', 'Aunt']
-                    ).first()
-                    if uncle_rel:
-                        link_key = (uncle_rel.to_member_id, to_id, 'parent')
-                        if link_key not in added_links:
-                            links.append({"source": uncle_rel.to_member_id, "target": to_id, "type": "parent"})
-                            added_links.add(link_key)
-
-                elif rtype in ('Father-in-law', 'Mother-in-law'):
-                    # Father-in-law/Mother-in-law = spouse's parent
-                    # Find the user's spouse
-                    spouse_rel = relationships.filter(
-                        from_member_id=from_id, relation_type='Spouse'
-                    ).first()
-                    if spouse_rel:
-                        link_key = (to_id, spouse_rel.to_member_id, 'parent')
-                        if link_key not in added_links:
-                            links.append({"source": to_id, "target": spouse_rel.to_member_id, "type": "parent"})
-                            added_links.add(link_key)
-
-                elif rtype in ('Son-in-law', 'Daughter-in-law'):
-                    # Son/Daughter-in-law = child's spouse
-                    # Find the child (Son/Daughter) this in-law is married to
-                    child_rel = relationships.filter(
-                        from_member_id=from_id, relation_type__in=['Son', 'Daughter']
-                    ).first()
-                    if child_rel:
-                        pair = tuple(sorted([child_rel.to_member_id, to_id]))
-                        link_key = (pair[0], pair[1], 'spouse')
-                        if link_key not in added_links:
-                            links.append({"source": child_rel.to_member_id, "target": to_id, "type": "spouse"})
-                            added_links.add(link_key)
-
-                elif rtype in ('Nephew', 'Niece'):
-                    # Nephew/Niece = sibling's child
-                    sibling_rel = relationships.filter(
-                        from_member_id=from_id, relation_type__in=['Brother', 'Sister']
-                    ).first()
-                    if sibling_rel:
-                        link_key = (sibling_rel.to_member_id, to_id, 'parent')
-                        if link_key not in added_links:
-                            links.append({"source": sibling_rel.to_member_id, "target": to_id, "type": "parent"})
-                            added_links.add(link_key)
-
-                else:
-                    # Truly unknown types - add generic link
-                    link_key = (from_id, to_id, rtype)
-                    if link_key not in added_links:
-                        links.append({"source": from_id, "target": to_id, "type": rtype.lower()})
-                        added_links.add(link_key)
-
-        # Auto-detect co-parents (share same child) and add spouse links
-        from collections import defaultdict
-        children_parents = defaultdict(set)
-        for link in links:
-            if link['type'] == 'parent':
-                children_parents[link['target']].add(link['source'])
-        
-        for child_id, parent_ids in children_parents.items():
-            if len(parent_ids) > 1:
-                parent_list = list(parent_ids)
-                for i in range(len(parent_list)):
-                    for j in range(i + 1, len(parent_list)):
-                        pair = tuple(sorted([parent_list[i], parent_list[j]]))
-                        link_key = (pair[0], pair[1], 'spouse')
-                        if link_key not in added_links:
-                            links.append({"source": parent_list[i], "target": parent_list[j], "type": "spouse"})
-                            added_links.add(link_key)
-
-        return Response({"nodes": nodes, "links": links})
+        )
 
 
 class FamilyMediaList(generics.ListCreateAPIView):
@@ -535,222 +286,309 @@ class FamilyMediaDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 def _create_auto_relationship(member, creator_member, relation_override=None):
-    """
-    Auto-create reciprocal Relationship records based on the managed member's
-    `relation` field relative to the creator.  This makes the member appear
-    connected in the family tree.
-
-    Interpretation: `member.relation` describes what `member` IS to the creator.
-    E.g. relation="Son" means "this member is the creator's Son".
-    """
     if not creator_member:
         return
 
-    relation = _normalize_relation_label(relation_override if relation_override is not None else member.relation)
-    if not relation or relation in ('Other', 'Head', 'Member', 'Child'):
-        return
+    relation_label = relation_override if relation_override is not None else member.relation
+    relation = _normalize_user_relation_or_error(relation_label)
 
-    # Clean up any previous auto-created relationships between these two
     Relationship.objects.filter(
         Q(from_member=member, to_member=creator_member) |
         Q(from_member=creator_member, to_member=member)
-    ).delete()
-    # Also clear parents M2M between these two
+    ).exclude(relation_type__in=BASE_RELATIONS).delete()
+
     member.parents.remove(creator_member)
     creator_member.parents.remove(member)
 
-    creator_gender = creator_member.gender  # 'M', 'F', or 'O'
-
-    # Map: what the member IS to the creator → what Relationship to create
-    if relation in ('Son', 'Daughter'):
-        # Member is creator's child → creator is parent of member
-        parent_type = 'Father' if creator_gender == 'M' else 'Mother'
-        Relationship.objects.get_or_create(
-            from_member=member, to_member=creator_member,
-            relation_type=parent_type
-        )
-        member.parents.add(creator_member)
-
-    elif relation in ('Father', 'Mother'):
-        # Member is creator's parent → member is parent of creator
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type=relation
-        )
+    if relation == 'PARENT':
+        _safe_create_base_relationship(member, creator_member, 'PARENT')
         creator_member.parents.add(member)
-
-    elif relation == 'Spouse':
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type='Spouse'
-        )
-
-    elif relation in ('Brother', 'Sister'):
-        # Sibling: share parents with creator
-        # Find creator's parents and make member a child of them too
+    elif relation == 'CHILD':
+        _safe_create_base_relationship(member, creator_member, 'CHILD')
+        member.parents.add(creator_member)
+    elif relation == 'SPOUSE':
+        _safe_create_base_relationship(member, creator_member, 'SPOUSE')
+        _safe_create_base_relationship(creator_member, member, 'SPOUSE')
+    elif relation == 'SIBLING':
+        _safe_create_base_relationship(member, creator_member, 'SIBLING')
+        _safe_create_base_relationship(creator_member, member, 'SIBLING')
         for parent in creator_member.parents.all():
             member.parents.add(parent)
-            parent_type = 'Father' if parent.gender == 'M' else 'Mother'
-            Relationship.objects.get_or_create(
-                from_member=member, to_member=parent,
-                relation_type=parent_type
+            _safe_create_base_relationship(member, parent, 'PARENT')
+
+
+def _member_has_account(member):
+    return hasattr(member, 'user_account') and member.user_account is not None
+
+
+def _can_manage_member(user, member):
+    if not getattr(user, 'is_authenticated', False):
+        return False
+    if _member_has_account(member) and member.user_account == user:
+        return True
+    if member.created_by == user and not member.is_independent and not _member_has_account(member):
+        return True
+    return False
+
+
+def _normalized_gender(value, default='M'):
+    gender = (value or default or 'O').strip().upper()
+    if gender not in {'M', 'F', 'O'}:
+        return 'O'
+    return gender
+
+
+def _get_member_parent_queryset(member):
+    parent_ids = set(member.parents.values_list('id', flat=True))
+    parent_ids.update(
+        Relationship.objects.filter(from_member=member, relation_type='PARENT').values_list('to_member_id', flat=True)
+    )
+    return FamilyMember.objects.filter(id__in=parent_ids)
+
+
+def _validate_relation_constraints(member, relation, requested_gender='O', target_member=None):
+    if relation == 'SPOUSE':
+        spouse_links = Relationship.objects.filter(relation_type='SPOUSE').filter(
+            Q(from_member=member) | Q(to_member=member)
+        )
+        if target_member and spouse_links.filter(Q(from_member=target_member) | Q(to_member=target_member)).exists():
+            return "These members are already linked as spouse."
+        if spouse_links.exists():
+            return "This member already has a spouse linked in the tree."
+
+    if relation == 'PARENT':
+        existing_parents = _get_member_parent_queryset(member)
+        if target_member and existing_parents.filter(id=target_member.id).exists():
+            return "These members are already linked as parent."
+
+        if existing_parents.count() >= 2:
+            return "This member already has two parents linked in the tree."
+
+        if requested_gender in {'M', 'F'} and existing_parents.filter(gender=requested_gender).exists():
+            parent_label = 'father' if requested_gender == 'M' else 'mother'
+            return f"This member already has a {parent_label} linked in the tree."
+
+    return None
+
+
+def _apply_relation_link(anchor_member, target_member, relation):
+    if relation == 'PARENT':
+        _safe_create_base_relationship(anchor_member, target_member, 'PARENT')
+        anchor_member.parents.add(target_member)
+    elif relation == 'CHILD':
+        _safe_create_base_relationship(anchor_member, target_member, 'CHILD')
+        target_member.parents.add(anchor_member)
+    elif relation == 'SPOUSE':
+        _safe_create_base_relationship(anchor_member, target_member, 'SPOUSE')
+        _safe_create_base_relationship(target_member, anchor_member, 'SPOUSE')
+    elif relation == 'SIBLING':
+        _safe_create_base_relationship(anchor_member, target_member, 'SIBLING')
+        _safe_create_base_relationship(target_member, anchor_member, 'SIBLING')
+        for parent in anchor_member.parents.all():
+            target_member.parents.add(parent)
+            _safe_create_base_relationship(target_member, parent, 'PARENT')
+
+
+class FamilyMemberContextView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        member = get_object_or_404(FamilyMember.objects.prefetch_related('parents', 'children'), pk=pk)
+
+        can_manage = _can_manage_member(request.user, member)
+        has_account = _member_has_account(member)
+
+        parents = list(member.parents.all())
+        siblings = (
+            FamilyMember.objects.filter(parents__in=parents)
+            .exclude(id=member.id)
+            .distinct()
+            if parents
+            else FamilyMember.objects.none()
+        )
+        children = member.children.all()
+
+        return Response(
+            {
+                "member": FamilyMemberSerializer(member, context={'request': request}).data,
+                "parents": FamilyMemberSerializer(parents, many=True, context={'request': request}).data,
+                "siblings": FamilyMemberSerializer(siblings, many=True, context={'request': request}).data,
+                "children": FamilyMemberSerializer(children, many=True, context={'request': request}).data,
+                "allowed_actions": {
+                    "can_manage": can_manage,
+                    "can_add_parent": can_manage,
+                    "can_add_spouse": can_manage,
+                    "can_add_sibling": can_manage,
+                    "can_add_child": can_manage,
+                    "can_remove": can_manage,
+                },
+                "ownership_status": {
+                    "is_independent": member.is_independent,
+                    "has_account": has_account,
+                    "created_by_me": member.created_by_id == request.user.id,
+                    "is_self": has_account and member.user_account == request.user,
+                },
+            }
+        )
+
+
+class FamilyMemberSearchView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        query = (request.query_params.get('q') or '').strip()
+        exclude_id = request.query_params.get('exclude_id')
+
+        members = FamilyMember.objects.all().order_by('name')
+        if query:
+            members = members.filter(name__icontains=query)
+
+        if exclude_id:
+            try:
+                members = members.exclude(id=int(exclude_id))
+            except (TypeError, ValueError):
+                pass
+
+        members = members[:20]
+        payload = []
+        for member in members:
+            payload.append(
+                {
+                    "id": member.id,
+                    "name": member.name,
+                    "gender": member.gender,
+                    "relation": member.relation,
+                    "age": member.age,
+                    "photo": member.photo.url if member.photo else None,
+                }
             )
-        # Also create a sibling relationship for reference
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type=relation
+
+        return Response({"results": payload})
+
+
+class FamilyTreeAddRelativeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        member = get_object_or_404(FamilyMember.objects.prefetch_related('parents', 'children'), pk=pk)
+        if not _can_manage_member(request.user, member):
+            return Response({"error": "You do not have permission to edit this member."}, status=403)
+
+        data = request.data
+        relation = _normalize_user_relation_or_error(data.get('relation_type') or data.get('relation'))
+        requested_gender = _normalized_gender(data.get('gender'))
+        if relation not in BASE_RELATIONS:
+            return Response({"error": "Unsupported relation type."}, status=400)
+
+        constraint_error = _validate_relation_constraints(member, relation, requested_gender=requested_gender)
+        if constraint_error:
+            return Response({"error": constraint_error}, status=400)
+
+        first_name = (data.get('first_name') or '').strip()
+        last_name = (data.get('last_name') or '').strip()
+        full_name = (data.get('name') or f"{first_name} {last_name}".strip()).strip()
+        if not full_name:
+            return Response({"error": "Member name is required."}, status=400)
+
+        new_member = FamilyMember.objects.create(
+            family=member.family,
+            name=full_name,
+            nickname=data.get('nickname', ''),
+            age=data.get('age') if data.get('age') not in ('', None) else None,
+            gender=requested_gender,
+            relation='Other',
+            date_of_birth=data.get('date_of_birth') or None,
+            date_of_death=data.get('date_of_death') or None,
+            blood_group=data.get('blood_group') or None,
+            is_deceased=data.get('is_deceased', 'false') in (True, 'true', 'True', '1', 1),
+            occupation=data.get('occupation') or None,
+            education=data.get('education') or None,
+            phone_no=data.get('phone_no') or None,
+            email_id=data.get('email_id') or None,
+            address_if_different=data.get('address') or data.get('address_if_different') or None,
+            bio=data.get('bio') or None,
+            church_parish=data.get('church_parish') or None,
+            created_by=request.user,
         )
 
-    elif relation in ('Grandfather', 'Grandmother',
-                       'Paternal Grandfather', 'Paternal Grandmother',
-                       'Maternal Grandfather', 'Maternal Grandmother'):
-        # Member is creator's grandparent → chain through creator's parent
-        if 'Paternal' in relation:
-            parent = creator_member.parents.filter(gender='M').first()
-        elif 'Maternal' in relation:
-            parent = creator_member.parents.filter(gender='F').first()
-        else:
-            parent = creator_member.parents.first()
+        _apply_relation_link(member, new_member, relation)
 
-        if parent:
-            parent.parents.add(member)
-            gp_type = 'Father' if member.gender == 'M' else 'Mother'
-            Relationship.objects.get_or_create(
-                from_member=parent, to_member=member,
-                relation_type=gp_type
-            )
-        else:
-            # No intermediate parent exists — create direct link as fallback
-            gp_type = 'Grandfather' if member.gender == 'M' else 'Grandmother'
-            Relationship.objects.get_or_create(
-                from_member=creator_member, to_member=member,
-                relation_type=gp_type
-            )
+        if 'profile_pic' in request.FILES:
+            new_member.photo = request.FILES['profile_pic']
+            new_member.save(update_fields=['photo'])
 
-    elif relation in ('Grandson', 'Granddaughter'):
-        # Member is creator's grandchild → find creator's child and make member their child
-        child_type = 'Son' if member.gender == 'M' else 'Daughter'
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type=child_type
+        return Response(
+            {
+                "member": FamilyMemberSerializer(new_member, context={'request': request}).data,
+                "anchor_member_id": member.id,
+                "relation_type": relation,
+            },
+            status=status.HTTP_201_CREATED,
         )
 
-    elif relation in ('Uncle', 'Aunt'):
-        # Uncle/Aunt = creator's parent's sibling → child of grandparent
-        parent = creator_member.parents.first()
-        if parent:
-            for gp in parent.parents.all():
-                member.parents.add(gp)
-                gp_type = 'Father' if gp.gender == 'M' else 'Mother'
-                Relationship.objects.get_or_create(
-                    from_member=member, to_member=gp,
-                    relation_type=gp_type
-                )
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type=relation
+
+class FamilyTreeLinkExistingMemberView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        member = get_object_or_404(FamilyMember.objects.prefetch_related('parents', 'children'), pk=pk)
+        if not _can_manage_member(request.user, member):
+            return Response({"error": "You do not have permission to edit this member."}, status=403)
+
+        data = request.data
+        relation = _normalize_user_relation_or_error(data.get('relation_type') or data.get('relation'))
+        if relation not in BASE_RELATIONS:
+            return Response({"error": "Unsupported relation type."}, status=400)
+
+        target_member_id = data.get('target_member_id')
+        try:
+            target_member_id = int(target_member_id)
+        except (TypeError, ValueError):
+            return Response({"error": "Valid target_member_id is required."}, status=400)
+
+        target_member = get_object_or_404(FamilyMember, pk=target_member_id)
+        if target_member.id == member.id:
+            return Response({"error": "Cannot link a member to itself."}, status=400)
+
+        requested_gender = _normalized_gender(target_member.gender, default='O')
+        constraint_error = _validate_relation_constraints(
+            member,
+            relation,
+            requested_gender=requested_gender,
+            target_member=target_member,
+        )
+        if constraint_error:
+            return Response({"error": constraint_error}, status=400)
+
+        _apply_relation_link(member, target_member, relation)
+
+        return Response(
+            {
+                "member": FamilyMemberSerializer(target_member, context={'request': request}).data,
+                "anchor_member_id": member.id,
+                "relation_type": relation,
+                "linked_existing": True,
+            },
+            status=status.HTTP_200_OK,
         )
 
-    elif relation in ('Nephew', 'Niece'):
-        # Nephew/Niece = sibling's child → find sibling and make member their child
-        sibling_rel = Relationship.objects.filter(
-            from_member=creator_member, relation_type__in=['Brother', 'Sister']
-        ).first()
-        if sibling_rel:
-            member.parents.add(sibling_rel.to_member)
-            parent_type = 'Father' if sibling_rel.to_member.gender == 'M' else 'Mother'
-            Relationship.objects.get_or_create(
-                from_member=member, to_member=sibling_rel.to_member,
-                relation_type=parent_type
-            )
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type=relation
-        )
 
-    elif relation == 'Cousin':
-        # Cousin = uncle/aunt's child
-        uncle_rel = Relationship.objects.filter(
-            from_member=creator_member, relation_type__in=['Uncle', 'Aunt']
-        ).first()
-        if uncle_rel:
-            member.parents.add(uncle_rel.to_member)
-            parent_type = 'Father' if uncle_rel.to_member.gender == 'M' else 'Mother'
-            Relationship.objects.get_or_create(
-                from_member=member, to_member=uncle_rel.to_member,
-                relation_type=parent_type
-            )
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type='Cousin'
-        )
+class FamilyTreeRemoveMemberView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-    elif relation in ('Father-in-law', 'Mother-in-law'):
-        # Creator's spouse's parent
-        spouse_rel = Relationship.objects.filter(
-            from_member=creator_member, relation_type='Spouse'
-        ).first()
-        if spouse_rel:
-            spouse_rel.to_member.parents.add(member)
-            parent_type = 'Father' if member.gender == 'M' else 'Mother'
-            Relationship.objects.get_or_create(
-                from_member=spouse_rel.to_member, to_member=member,
-                relation_type=parent_type
-            )
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type=relation
-        )
+    def delete(self, request, pk):
+        member = get_object_or_404(FamilyMember, pk=pk)
+        if not _can_manage_member(request.user, member):
+            return Response({"error": "You do not have permission to remove this member."}, status=403)
 
-    elif relation in ('Son-in-law', 'Daughter-in-law'):
-        # Spouse of creator's child
-        child_types = ['Son', 'Daughter']
-        child_rel = Relationship.objects.filter(
-            from_member=creator_member, relation_type__in=child_types
-        ).first()
-        # Also check reverse: child might have declared creator as parent
-        if not child_rel:
-            child_rel_rev = Relationship.objects.filter(
-                to_member=creator_member, relation_type__in=['Father', 'Mother']
-            ).first()
-            if child_rel_rev:
-                Relationship.objects.get_or_create(
-                    from_member=child_rel_rev.from_member, to_member=member,
-                    relation_type='Spouse'
-                )
-        elif child_rel:
-            Relationship.objects.get_or_create(
-                from_member=child_rel.to_member, to_member=member,
-                relation_type='Spouse'
-            )
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type=relation
-        )
+        if _member_has_account(member) and member.user_account == request.user:
+            return Response({"error": "You cannot remove your own account member."}, status=400)
 
-    elif relation in ('Brother-in-law', 'Sister-in-law'):
-        # Spouse of creator's sibling
-        sibling_type = 'Sister' if relation == 'Brother-in-law' else 'Brother'
-        sibling_rel = Relationship.objects.filter(
-            from_member=creator_member, relation_type=sibling_type
-        ).first()
-        if sibling_rel:
-            Relationship.objects.get_or_create(
-                from_member=sibling_rel.to_member, to_member=member,
-                relation_type='Spouse'
-            )
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type=relation
-        )
+        if _member_has_account(member) and member.user_account != request.user:
+            return Response({"error": "This member has a user account and cannot be removed by guardian."}, status=403)
 
-    else:
-        # Keep custom relations connected in the graph when they don't map to
-        # one of the explicit genealogical rule branches above.
-        Relationship.objects.get_or_create(
-            from_member=creator_member, to_member=member,
-            relation_type=relation
-        )
+        member.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ManagedMembersView(APIView):
@@ -777,14 +615,14 @@ class ManagedMembersView(APIView):
             f_name = data.get('first_name', '')
             l_name = data.get('last_name', '')
             full_name = data.get('name', f"{f_name} {l_name}".strip())
-            relation_label = _normalize_relation_label(data.get('relation', 'Child'), fallback='Child')
+            relation_label = _normalize_user_relation_or_error(data.get('relation', 'child'))
 
             member = FamilyMember.objects.create(
                 family=family,
                 name=full_name,
                 age=data.get('age', 0),
                 gender=data.get('gender', 'M'),
-                relation=_storable_member_relation(relation_label),
+                relation='Other',
                 date_of_birth=data.get('date_of_birth', '2000-01-01'),
                 blood_group=data.get('blood_group', 'Unknown'),
                 occupation=data.get('occupation', ''),
@@ -823,14 +661,14 @@ class ManagedMembersView(APIView):
                         rel_data = json.loads(rel_data)
                     for item in rel_data:
                         to_id = item.get('to_member') or item.get('to_member_id')
-                        rel_type = _normalize_relation_label(item.get('relation_type'))
+                        rel_type = _normalize_user_relation_or_error(item.get('relation_type'))
                         name = item.get('name') or item.get('to_member_name')
 
                         if not to_id and name:
                             # Auto-create member if not found
                             new_member = FamilyMember.objects.create(
                                 name=name,
-                                relation=_storable_member_relation(rel_type),
+                                relation='Other',
                                 age=0, 
                                 created_by=request.user,
                                 family=member.family
@@ -838,15 +676,15 @@ class ManagedMembersView(APIView):
                             to_id = new_member.id
 
                         if to_id and rel_type:
-                            Relationship.objects.create(
-                                from_member=member,
-                                to_member_id=to_id,
-                                relation_type=rel_type
-                            )
-                            if rel_type in ['Father', 'Mother']:
-                                member.parents.add(to_id)
+                            target = FamilyMember.objects.filter(id=to_id).first()
+                            if target:
+                                _safe_create_base_relationship(member, target, rel_type)
+                                if rel_type == 'PARENT':
+                                    member.parents.add(target)
+                                elif rel_type == 'CHILD':
+                                    target.parents.add(member)
                 except Exception as e:
-                    print(f"Error saving relationships: {e}")
+                    return Response({"error": str(e)}, status=400)
 
             # Profile Pic
             if 'profile_pic' in request.FILES:
@@ -857,6 +695,8 @@ class ManagedMembersView(APIView):
             member.save()
 
             return Response(FamilyMemberSerializer(member, context={'request': request}).data, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
@@ -896,8 +736,8 @@ class ManagedMemberDetailView(APIView):
             if 'age' in data: member.age = data['age']
             if 'gender' in data: member.gender = data['gender']
             if 'relation' in data:
-                input_relation = _normalize_relation_label(data['relation'])
-                member.relation = _storable_member_relation(input_relation)
+                input_relation = _normalize_user_relation_or_error(data['relation'])
+                member.relation = 'Other'
                 # Re-create auto-relationship when relation changes
                 member.save()  # Save relation first
                 creator_member = getattr(request.user, 'member', None)
@@ -926,14 +766,14 @@ class ManagedMemberDetailView(APIView):
                     Relationship.objects.filter(from_member=member).delete()
                     for item in rel_data:
                         to_id = item.get('to_member') or item.get('to_member_id')
-                        rel_type = _normalize_relation_label(item.get('relation_type'))
+                        rel_type = _normalize_user_relation_or_error(item.get('relation_type'))
                         name = item.get('name') or item.get('to_member_name')
 
                         if not to_id and name:
                             # Auto-create member if not found
                             new_member = FamilyMember.objects.create(
                                 name=name,
-                                relation=_storable_member_relation(rel_type),
+                                relation='Other',
                                 age=0, 
                                 created_by=request.user,
                                 family=member.family
@@ -941,15 +781,15 @@ class ManagedMemberDetailView(APIView):
                             to_id = new_member.id
 
                         if to_id and rel_type:
-                            Relationship.objects.create(
-                                from_member=member,
-                                to_member_id=to_id,
-                                relation_type=rel_type
-                            )
-                            if rel_type in ['Father', 'Mother']:
-                                member.parents.add(to_id)
+                            target = FamilyMember.objects.filter(id=to_id).first()
+                            if target:
+                                _safe_create_base_relationship(member, target, rel_type)
+                                if rel_type == 'PARENT':
+                                    member.parents.add(target)
+                                elif rel_type == 'CHILD':
+                                    target.parents.add(member)
                 except Exception as e:
-                    print(f"Error saving relationships: {e}")
+                    return Response({"error": str(e)}, status=400)
 
             if 'parents' in data:
                 if hasattr(data, 'getlist'):
@@ -968,6 +808,8 @@ class ManagedMemberDetailView(APIView):
 
             member.save()
             return Response(FamilyMemberSerializer(member, context={'request': request}).data)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 

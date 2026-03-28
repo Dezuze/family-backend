@@ -5,7 +5,9 @@ import { useRuntimeConfig } from '#imports'
 export const useFamilyStore = defineStore('family', {
   state: () => ({
     members: [] as FamilyMember[],
-    links: [] as any[], // Add links state
+    edges: [] as any[],
+    computedRelations: [] as any[],
+    generationDepth: 0,
     loading: false,
     error: null as string | null
   }),
@@ -25,9 +27,11 @@ export const useFamilyStore = defineStore('family', {
         })
         if (response.ok) {
             const data = await response.json()
-            // Data is { nodes: [], links: [] }
+          // Data is { nodes: [], edges: [], computed_relations: [], generation_depth: number }
             this.members = data.nodes || []
-            this.links = data.links || [] // Store links
+          this.edges = data.edges || []
+          this.computedRelations = data.computed_relations || []
+          this.generationDepth = data.generation_depth || 0
         } else {
             this.error = 'Failed to load family data'
         }

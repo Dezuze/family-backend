@@ -190,7 +190,7 @@ class ManagedMembersViewTests(TestCase):
         res = self.client.post('/api/families/managed/', {
             "first_name": "Grandpa",
             "last_name": "Joe",
-            "relation": "Grandfather",
+            "relation": "Parent",
             "gender": "M",
             "is_deceased": True,
             "date_of_death": "2020-01-15"
@@ -274,12 +274,12 @@ class ManagedMembersViewTests(TestCase):
         self.assertEqual(res.status_code, 201)
         son_id = res.data['id']
 
-        # Verify Relationship exists: Son says guardian is Father (guardian is default M)
+        # Son means child edge from member to creator.
         self.assertTrue(
             Relationship.objects.filter(
                 from_member_id=son_id,
                 to_member=self.guardian_member,
-                relation_type='Father'
+                relation_type='CHILD'
             ).exists()
         )
         # Verify parents M2M is set
@@ -302,7 +302,7 @@ class ManagedMembersViewTests(TestCase):
             Relationship.objects.filter(
                 from_member=self.guardian_member,
                 to_member_id=spouse_id,
-                relation_type='Spouse'
+                relation_type='SPOUSE'
             ).exists()
         )
 
@@ -318,12 +318,12 @@ class ManagedMembersViewTests(TestCase):
         self.assertEqual(res.status_code, 201)
         father_id = res.data['id']
 
-        # Verify: creator says this member is Father
+        # Verify: creator has parent edge to the new member.
         self.assertTrue(
             Relationship.objects.filter(
-                from_member=self.guardian_member,
-                to_member_id=father_id,
-                relation_type='Father'
+                from_member_id=father_id,
+                to_member=self.guardian_member,
+                relation_type='PARENT'
             ).exists()
         )
         # Verify parents M2M: creator's parent should include new member
@@ -332,8 +332,8 @@ class ManagedMembersViewTests(TestCase):
             self.guardian_member.parents.all()
         )
 
-    def test_create_custom_relation_creates_generic_relationship(self):
-        """Custom labels like 'great great great grandfather' should be accepted."""
+    def test_create_custom_relation_is_rejected(self):
+        """Derived labels are rejected; only parent/child/spouse/sibling can be defined."""
         self.client.force_authenticate(user=self.guardian)
         custom_relation = "great great great grandfather"
         res = self.client.post('/api/families/managed/', {
@@ -342,38 +342,32 @@ class ManagedMembersViewTests(TestCase):
             "relation": custom_relation,
             "gender": "M"
         }, format='multipart')
-        self.assertEqual(res.status_code, 201)
-        custom_id = res.data['id']
+        self.assertEqual(res.status_code, 400)
 
-        # Custom relation should stay perspective-based, not a global member label.
-        created = FamilyMember.objects.get(id=custom_id)
-        self.assertEqual(created.relation, 'Other')
-
-        self.assertTrue(
-            Relationship.objects.filter(
-                from_member=self.guardian_member,
-                to_member_id=custom_id,
-                relation_type=custom_relation
-            ).exists()
-        )
-
-    def test_custom_relation_in_tree_is_viewer_perspective_only(self):
+    def test_derived_relation_in_tree_is_computed_from_base_edges(self):
         self.client.force_authenticate(user=self.guardian)
-        custom_relation = "great great great grandfather"
-        res = self.client.post('/api/families/managed/', {
-            "first_name": "Perspective",
-            "last_name": "Ancestor",
-            "relation": custom_relation,
-            "gender": "M"
-        }, format='multipart')
-        self.assertEqual(res.status_code, 201)
-        custom_id = res.data['id']
+        parent = FamilyMember.objects.create(
+            family=self.family,
+            name="Parent Node",
+            relation="Other",
+            gender="M",
+            created_by=self.guardian,
+        )
+        grandparent = FamilyMember.objects.create(
+            family=self.family,
+            name="Grandparent Node",
+            relation="Other",
+            gender="F",
+            created_by=self.guardian,
+        )
+        Relationship.objects.create(from_member=self.guardian_member, to_member=parent, relation_type='PARENT')
+        Relationship.objects.create(from_member=parent, to_member=grandparent, relation_type='PARENT')
 
         tree_for_guardian = self.client.get('/api/families/tree/')
         self.assertEqual(tree_for_guardian.status_code, 200)
-        guardian_node = next((n for n in tree_for_guardian.data['nodes'] if n['id'] == custom_id), None)
+        guardian_node = next((n for n in tree_for_guardian.data['nodes'] if n['id'] == grandparent.id), None)
         self.assertIsNotNone(guardian_node)
-        self.assertEqual(guardian_node['role'], custom_relation)
+        self.assertEqual(guardian_node['relation'], 'Grandparent')
 
         other_member = FamilyMember.objects.create(
             family=self.family, name="Other Viewer", age=31, relation="Head", gender="M"
@@ -386,9 +380,9 @@ class ManagedMembersViewTests(TestCase):
 
         tree_for_other = self.client.get('/api/families/tree/')
         self.assertEqual(tree_for_other.status_code, 200)
-        other_node = next((n for n in tree_for_other.data['nodes'] if n['id'] == custom_id), None)
+        other_node = next((n for n in tree_for_other.data['nodes'] if n['id'] == grandparent.id), None)
         self.assertIsNotNone(other_node)
-        self.assertNotEqual(other_node['role'], custom_relation)
+        self.assertNotEqual(other_node['relation'], 'Grandparent')
 
     def test_son_appears_in_tree(self):
         """A managed Son should appear connected in /api/families/tree/."""
@@ -402,10 +396,10 @@ class ManagedMembersViewTests(TestCase):
 
         res = self.client.get('/api/families/tree/')
         self.assertEqual(res.status_code, 200)
-        links = res.data['links']
+        edges = res.data['edges']
 
         # There should be a parent link from guardian to the new son
-        parent_links = [l for l in links if l['type'] == 'parent' and l['source'] == self.guardian_member.id]
+        parent_links = [l for l in edges if l['type'] == 'parent' and l['source'] == self.guardian_member.id]
         self.assertTrue(len(parent_links) > 0, "Son should be linked as child of guardian in tree")
 
 
@@ -428,6 +422,9 @@ class FamilyTreeViewTests(TestCase):
         res = self.client.get('/api/families/tree/')
         self.assertEqual(res.status_code, 200)
         self.assertIn('nodes', res.data)
+        self.assertIn('edges', res.data)
+        self.assertIn('computed_relations', res.data)
+        self.assertIn('generation_depth', res.data)
 
     def test_tree_unauthenticated(self):
         res = self.client.get('/api/families/tree/')
@@ -496,14 +493,14 @@ class PerspectiveBranchingTests(TestCase):
             Relationship.objects.filter(
                 from_member=self.user2_member,
                 to_member_id=user1_father_id,
-                relation_type='Father'
+                relation_type='PARENT'
             ).exists()
         )
         self.assertTrue(
             Relationship.objects.filter(
-                from_member=self.user2_member,
-                to_member_id=user2_father_id,
-                relation_type='Father'
+                from_member_id=user2_father_id,
+                to_member=self.user2_member,
+                relation_type='PARENT'
             ).exists()
         )
 
@@ -521,7 +518,7 @@ class PerspectiveBranchingTests(TestCase):
         self.client.force_authenticate(user=self.user2)
         res2 = self.client.post('/api/families/profile/', {
             "relationships": [
-                {"to_member": target_member_id, "relation_type": "Father"}
+                {"to_member": target_member_id, "relation_type": "Parent"}
             ]
         }, format='json')
         self.assertEqual(res2.status_code, 200)
@@ -530,7 +527,7 @@ class PerspectiveBranchingTests(TestCase):
             Relationship.objects.filter(
                 from_member=self.user2_member,
                 to_member_id=target_member_id,
-                relation_type='Father'
+                relation_type='PARENT'
             ).exists()
         )
         self.user2_member.refresh_from_db()
@@ -578,3 +575,408 @@ class PermissionsTests(TestCase):
             "first_name": "Blocked"
         }, format='multipart')
         self.assertEqual(res.status_code, 403)
+
+
+class TreeEditEndpointsTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.family = Family.objects.create(sl_no="1", branch="Main", member_no="F-EDIT-001")
+        self.guardian_member = FamilyMember.objects.create(
+            family=self.family, name="Guardian", age=40, relation="Head"
+        )
+        self.guardian = User.objects.create_user(
+            username="tree_guard", email="tree_guard@example.com", password="Pass123!", member=self.guardian_member
+        )
+        self.other_member = FamilyMember.objects.create(
+            family=self.family, name="Other Root", age=33, relation="Head"
+        )
+        self.other_user = User.objects.create_user(
+            username="tree_other", email="tree_other@example.com", password="Pass123!", member=self.other_member
+        )
+
+    def test_context_endpoint_returns_relatives(self):
+        parent = FamilyMember.objects.create(family=self.family, name="Parent", relation="Father")
+        sibling = FamilyMember.objects.create(family=self.family, name="Sibling", relation="Brother")
+        child = FamilyMember.objects.create(family=self.family, name="Child", relation="Son")
+
+        self.guardian_member.parents.add(parent)
+        sibling.parents.add(parent)
+        child.parents.add(self.guardian_member)
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.get(f'/api/families/member-context/{self.guardian_member.id}/')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['member']['id'], self.guardian_member.id)
+        self.assertEqual(len(res.data['parents']), 1)
+        self.assertEqual(len(res.data['siblings']), 1)
+        self.assertEqual(len(res.data['children']), 1)
+
+    def test_add_child_from_tree_edit(self):
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/add-relative/',
+            {
+                "name": "Tree Child",
+                "relation": "child",
+                "gender": "M",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 201)
+        child_id = res.data['member']['id']
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member=self.guardian_member,
+                to_member_id=child_id,
+                relation_type='CHILD'
+            ).exists()
+        )
+
+    def test_add_parent_from_tree_edit(self):
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/add-relative/',
+            {
+                "name": "Tree Parent",
+                "relation_type": "PARENT",
+                "gender": "F",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 201)
+        parent_id = res.data['member']['id']
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member=self.guardian_member,
+                to_member_id=parent_id,
+                relation_type='PARENT'
+            ).exists()
+        )
+
+    def test_add_sibling_inherits_parents(self):
+        parent = FamilyMember.objects.create(family=self.family, name="Parent", relation="Father")
+        self.guardian_member.parents.add(parent)
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/add-relative/',
+            {
+                "name": "Tree Sibling",
+                "relation": "sibling",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 201)
+        sibling = FamilyMember.objects.get(id=res.data['member']['id'])
+        self.assertIn(parent, sibling.parents.all())
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member=self.guardian_member,
+                to_member=sibling,
+                relation_type='SIBLING'
+            ).exists()
+        )
+
+    def test_remove_tree_member(self):
+        managed = FamilyMember.objects.create(
+            family=self.family,
+            name="Managed Kid",
+            relation="Son",
+            created_by=self.guardian,
+            is_independent=False,
+        )
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.delete(f'/api/families/tree-edit/{managed.id}/remove/')
+        self.assertEqual(res.status_code, 204)
+        self.assertFalse(FamilyMember.objects.filter(id=managed.id).exists())
+
+    def test_remove_member_with_account_is_blocked(self):
+        managed = FamilyMember.objects.create(
+            family=self.family,
+            name="Managed Kid",
+            relation="Son",
+            created_by=self.guardian,
+            is_independent=False,
+        )
+        User.objects.create_user(
+            username="managed_login",
+            email="managed_login@example.com",
+            password="Pass123!",
+            member=managed,
+        )
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.delete(f'/api/families/tree-edit/{managed.id}/remove/')
+        self.assertEqual(res.status_code, 403)
+
+    def test_cannot_add_relative_to_foreign_member(self):
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.other_member.id}/add-relative/',
+            {
+                "name": "Unauthorized Child",
+                "relation_type": "CHILD",
+                "gender": "M",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 403)
+
+    def test_cannot_remove_foreign_member(self):
+        foreign_dependent = FamilyMember.objects.create(
+            family=self.family,
+            name="Foreign Dependent",
+            relation="Son",
+            created_by=self.other_user,
+            is_independent=False,
+        )
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.delete(f'/api/families/tree-edit/{foreign_dependent.id}/remove/')
+        self.assertEqual(res.status_code, 403)
+
+    def test_add_parent_keeps_existing_spouse_link(self):
+        spouse = FamilyMember.objects.create(
+            family=self.family,
+            name="Existing Spouse",
+            relation="Spouse",
+            created_by=self.guardian,
+        )
+        Relationship.objects.create(
+            from_member=self.guardian_member,
+            to_member=spouse,
+            relation_type='SPOUSE',
+        )
+        Relationship.objects.create(
+            from_member=spouse,
+            to_member=self.guardian_member,
+            relation_type='SPOUSE',
+        )
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/add-relative/',
+            {
+                "name": "Tree Father",
+                "relation_type": "PARENT",
+                "gender": "M",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 201)
+        father_id = res.data['member']['id']
+
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member=self.guardian_member,
+                to_member=spouse,
+                relation_type='SPOUSE',
+            ).exists()
+        )
+        self.assertFalse(
+            Relationship.objects.filter(
+                from_member=self.guardian_member,
+                to_member_id=father_id,
+                relation_type='SPOUSE',
+            ).exists()
+        )
+
+    def test_cannot_add_second_spouse_from_tree_edit(self):
+        spouse = FamilyMember.objects.create(
+            family=self.family,
+            name="Existing Spouse",
+            relation="Spouse",
+            created_by=self.guardian,
+        )
+        Relationship.objects.create(
+            from_member=self.guardian_member,
+            to_member=spouse,
+            relation_type='SPOUSE',
+        )
+        Relationship.objects.create(
+            from_member=spouse,
+            to_member=self.guardian_member,
+            relation_type='SPOUSE',
+        )
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/add-relative/',
+            {
+                "name": "Another Spouse",
+                "relation_type": "SPOUSE",
+                "gender": "F",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('already has a spouse', str(res.data.get('error', '')).lower())
+
+    def test_cannot_add_second_father_from_tree_edit(self):
+        father = FamilyMember.objects.create(
+            family=self.family,
+            name="Existing Father",
+            relation="Father",
+            gender="M",
+            created_by=self.guardian,
+        )
+        Relationship.objects.create(
+            from_member=self.guardian_member,
+            to_member=father,
+            relation_type='PARENT',
+        )
+        self.guardian_member.parents.add(father)
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/add-relative/',
+            {
+                "name": "Another Father",
+                "relation_type": "PARENT",
+                "gender": "M",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('already has a father', str(res.data.get('error', '')).lower())
+
+    def test_member_search_returns_matches(self):
+        FamilyMember.objects.create(family=self.family, name="Tree Person", relation="Other")
+        FamilyMember.objects.create(family=self.family, name="Another Person", relation="Other")
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.get('/api/families/member-search/?q=tree')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('results', res.data)
+        self.assertTrue(any(item['name'] == 'Tree Person' for item in res.data['results']))
+
+    def test_link_existing_parent_success(self):
+        father = FamilyMember.objects.create(
+            family=self.family,
+            name="Existing Father",
+            relation="Father",
+            gender="M",
+            created_by=self.other_user,
+        )
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/link-existing/',
+            {
+                "target_member_id": father.id,
+                "relation_type": "PARENT",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(
+            Relationship.objects.filter(
+                from_member=self.guardian_member,
+                to_member=father,
+                relation_type='PARENT',
+            ).exists()
+        )
+
+    def test_link_existing_rejects_second_spouse(self):
+        spouse = FamilyMember.objects.create(
+            family=self.family,
+            name="Existing Spouse",
+            relation="Spouse",
+            gender="F",
+            created_by=self.guardian,
+        )
+        another = FamilyMember.objects.create(
+            family=self.family,
+            name="Another Person",
+            relation="Other",
+            gender="F",
+            created_by=self.guardian,
+        )
+        Relationship.objects.create(
+            from_member=self.guardian_member,
+            to_member=spouse,
+            relation_type='SPOUSE',
+        )
+        Relationship.objects.create(
+            from_member=spouse,
+            to_member=self.guardian_member,
+            relation_type='SPOUSE',
+        )
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/link-existing/',
+            {
+                "target_member_id": another.id,
+                "relation_type": "SPOUSE",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('already has a spouse', str(res.data.get('error', '')).lower())
+
+    def test_link_existing_requires_anchor_permission(self):
+        target = FamilyMember.objects.create(
+            family=self.family,
+            name="Target",
+            relation="Other",
+            gender="M",
+            created_by=self.guardian,
+        )
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.other_member.id}/link-existing/',
+            {
+                "target_member_id": target.id,
+                "relation_type": "SIBLING",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 403)
+
+    def test_link_existing_rejects_self_link(self):
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/link-existing/',
+            {
+                "target_member_id": self.guardian_member.id,
+                "relation_type": "SIBLING",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('cannot link a member to itself', str(res.data.get('error', '')).lower())
+
+    def test_link_existing_rejects_second_father(self):
+        father_one = FamilyMember.objects.create(
+            family=self.family,
+            name="Father One",
+            relation="Father",
+            gender="M",
+            created_by=self.guardian,
+        )
+        father_two = FamilyMember.objects.create(
+            family=self.family,
+            name="Father Two",
+            relation="Father",
+            gender="M",
+            created_by=self.other_user,
+        )
+        self.guardian_member.parents.add(father_one)
+        Relationship.objects.create(
+            from_member=self.guardian_member,
+            to_member=father_one,
+            relation_type='PARENT',
+        )
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/link-existing/',
+            {
+                "target_member_id": father_two.id,
+                "relation_type": "PARENT",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('already has a father', str(res.data.get('error', '')).lower())

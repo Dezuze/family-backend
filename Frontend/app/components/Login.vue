@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
+import { useI18n } from 'vue-i18n'
 import { Cropper, CircleStencil } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
 import 'vue-advanced-cropper/dist/theme.classic.css'
@@ -9,6 +10,7 @@ import 'vue-advanced-cropper/dist/theme.classic.css'
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const { t } = useI18n()
 
 const open = ref(false)
 const email = ref('')
@@ -88,10 +90,10 @@ const passwordStrengthColor = computed(() => {
 const passwordStrengthLabel = computed(() => {
   const s = passwordStrength.value
   if (s === 0) return ''
-  if (s <= 1) return 'Weak'
-  if (s === 2) return 'Fair'
-  if (s === 3) return 'Good'
-  return 'Strong'
+  if (s <= 1) return t('login.passwordStrength.weak')
+  if (s === 2) return t('login.passwordStrength.fair')
+  if (s === 3) return t('login.passwordStrength.good')
+  return t('login.passwordStrength.strong')
 })
 
 const userPhoto = computed<string>(() => {
@@ -127,8 +129,8 @@ const submit = async () => {
   if (res && res.ok) {
     close()
   } else {
-    const msg = (res && res.error) || 'Invalid email or password'
-    error.value = typeof msg === 'string' ? msg : 'Invalid email or password'
+    const msg = (res && res.error) || t('login.errors.invalidCredentials')
+    error.value = typeof msg === 'string' ? msg : t('login.errors.invalidCredentials')
   }
 }
 
@@ -170,23 +172,23 @@ const copyInvite = async () => {
         if (res.ok) {
             const data = await res.json()
             const link = `${window.location.origin}/?token=${data.token}`
-            const message = `Hey! Join our family directory here: ${link}`
+            const message = t('nav.inviteMessage', { link })
             await navigator.clipboard.writeText(message)
-            alert('Invite link and message copied to clipboard! You can now paste it directly into WhatsApp.')
+            alert(t('login.alerts.inviteCopied'))
         } else {
           const err = await res.json().catch(() => ({}))
-          alert(err.error || 'Failed to generate invite token. Please make sure your profile is completed.')
+          alert(err.error || t('login.errors.inviteFailed'))
         }
     } catch (e) {
         console.error("Invite generation failed", e)
-        alert('Error generating invite.')
+        alert(t('login.errors.inviteError'))
     }
 }
 
 const register = async () => {
   error.value = ''
   if (!regName.value || !regEmail.value || !regPassword.value || !sponsorId.value) {
-    error.value = 'Please fill all fields, including Sponsor ID.'
+    error.value = t('login.errors.fillAllFields')
     return
   }
 
@@ -203,8 +205,8 @@ const register = async () => {
 
   if (!signupResult || !signupResult.ok) {
     const err = signupResult?.error
-    const msg = err?.error || err?.detail || 'Signup failed'
-    error.value = typeof msg === 'string' ? msg : 'Signup failed'
+    const msg = err?.error || err?.detail || t('login.errors.signupFailed')
+    error.value = typeof msg === 'string' ? msg : t('login.errors.signupFailed')
     return
   }
 
@@ -260,7 +262,7 @@ defineExpose({ toggle })
           class="w-full max-w-70 mx-auto lg:max-w-none lg:pl-10 font-bold text-white py-2 lg:py-3 block text-sm lg:text-base
                  transition lg:rounded-br-[80px] lg:rounded-tr-[10px] lg:hover:rounded-br-[100px] lg:hover:rounded-tr-[10px] hover:brightness-110 active:scale-95"
         >
-          Login
+          {{ t('login.actions.login') }}
         </button>
       </div>
 
@@ -279,25 +281,25 @@ defineExpose({ toggle })
             
             <button @click="copyInvite" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all text-brand-gold font-bold flex items-center gap-2 text-xs lg:text-sm">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Invite Member
+                  {{ t('nav.inviteMember') }}
             </button>
 
-            <button @click="router.push('/onboarding?step=3'); menuOpen = false" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2 font-semibold text-xs lg:text-sm">
+            <button @click="router.push('/familytree?view=visual&edit=1'); menuOpen = false" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2 font-semibold text-xs lg:text-sm">
                 <svg class="w-3.5 h-3.5 text-brand-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-                Add Family Member
+              {{ t('nav.addFamilyMember') }}
             </button>
 
             <!-- Managed Members Section -->
             <div v-if="auth.isAuthenticated && (auth.user?.managed_members?.length || 0) > 0" class="border-t border-slate-100 mt-1 pt-1">
                 <div class="px-3 py-1 text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 flex justify-between items-center">
-                    <span>Managed Members</span>
+                  <span>{{ t('nav.managedMembers') }}</span>
                     <span class="bg-slate-100 text-slate-500 px-1.5 rounded-full text-[9px]">{{ auth.user?.managed_members?.length || 0 }}</span>
                 </div>
                 <div class="max-h-32 lg:max-h-48 overflow-y-auto custom-scrollbar">
                     <button 
                         v-for="m in (auth.user?.managed_members || [])" 
                         :key="m.id"
-                        @click="router.push(`/onboarding?step=3&edit=${m.id}`); menuOpen = false"
+                        @click="router.push(`/familytree?view=visual&edit=1&focus=${m.id}`); menuOpen = false"
                         class="w-full text-left px-2 py-1.5 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2 group"
                     >
                         <div class="w-7 h-7 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200 group-hover:border-brand-gold/30 transition-colors">
@@ -308,8 +310,8 @@ defineExpose({ toggle })
                             <span class="font-bold text-slate-700 group-hover:text-brand-gold transition-colors truncate text-xs">{{ m.name }}</span>
                             <div class="flex items-center gap-1">
                                 <span class="text-[9px] text-slate-400 font-medium">{{ m.relation }}</span>
-                                <span v-if="m.has_account" class="text-[8px] text-blue-500 font-bold">• Login</span>
-                                <span v-if="m.is_independent" class="text-[8px] text-green-500 font-bold">• Independent</span>
+                              <span v-if="m.has_account" class="text-[8px] text-blue-500 font-bold">• {{ t('login.labels.loginShort') }}</span>
+                              <span v-if="m.is_independent" class="text-[8px] text-green-500 font-bold">• {{ t('login.labels.independentShort') }}</span>
                             </div>
                         </div>
                         <svg class="w-3 h-3 text-slate-300 group-hover:text-brand-gold transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
@@ -320,11 +322,11 @@ defineExpose({ toggle })
             <div class="border-t border-slate-50 mt-1 pt-1">
                 <button @click="openEdit" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2 font-semibold text-xs lg:text-sm">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    Edit profile
+                  {{ t('nav.editProfile') }}
                 </button>
                 <button @click="logout" class="w-full text-left px-3 py-2 hover:bg-red-50 rounded-xl transition-all text-red-600 flex items-center gap-2 font-semibold text-xs lg:text-sm">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    Logout
+                  {{ t('nav.logout') }}
                 </button>
             </div>
           </div>
@@ -347,11 +349,11 @@ defineExpose({ toggle })
     <Transition name="scale-fade">
       <div v-if="open" class="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 w-80 shadow-xl">
       <template v-if="!registering">
-        <h2 class="text-xl font-bold mb-4 text-brand-gold">Login</h2>
+        <h2 class="text-xl font-bold mb-4 text-brand-gold">{{ t('login.actions.login') }}</h2>
         <input
           v-model="email"
           type="email"
-          placeholder="Email"
+          :placeholder="t('login.fields.email')"
           class="w-full mb-3 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-gold"
         />
 
@@ -359,7 +361,7 @@ defineExpose({ toggle })
           <input
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="Password"
+            :placeholder="t('login.fields.password')"
             class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-gold pr-10"
           />
           <button
@@ -386,30 +388,30 @@ defineExpose({ toggle })
           class="w-full bg-linear-to-b from-brand-gold to-brand-gold-dark py-2 rounded-lg text-white font-bold
                  transition hover:brightness-110 active:scale-95"
         >
-          Continue
+          {{ t('login.actions.continue') }}
         </button>
 
         <div class="mt-4 text-center text-sm">
-          <button @click="registering = true" class="text-brand-gold-dark font-medium">Create an account</button>
+          <button @click="registering = true" class="text-brand-gold-dark font-medium">{{ t('login.actions.createAccount') }}</button>
         </div>
       </template>
 
       <template v-else>
-        <h2 class="text-xl font-bold mb-4 text-brand-gold">Create Account</h2>
+        <h2 class="text-xl font-bold mb-4 text-brand-gold">{{ t('login.actions.createAccountTitle') }}</h2>
 
         <div class="mb-4 text-xs text-gray-500">
-           Enter your Invite Token to join.
+           {{ t('login.help.inviteTokenPrompt') }}
         </div>
 
-        <input v-model="sponsorId" placeholder="Invite Token" class="w-full mb-3 px-3 py-2 border rounded-lg border-brand-gold bg-brand-gold/5" />
-        <input v-model="regName" placeholder="Full name" class="w-full mb-3 px-3 py-2 border rounded-lg" />
-        <input v-model="regEmail" placeholder="Email" class="w-full mb-3 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-gold" />
+        <input v-model="sponsorId" :placeholder="t('login.fields.inviteToken')" class="w-full mb-3 px-3 py-2 border rounded-lg border-brand-gold bg-brand-gold/5" />
+        <input v-model="regName" :placeholder="t('login.fields.fullName')" class="w-full mb-3 px-3 py-2 border rounded-lg" />
+        <input v-model="regEmail" :placeholder="t('login.fields.email')" class="w-full mb-3 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-gold" />
         
         <div class="mb-3">
-            <label class="block text-xs text-gray-500 mb-1">Profile Photo (Optional)</label>
+            <label class="block text-xs text-gray-500 mb-1">{{ t('login.fields.profilePhotoOptional') }}</label>
             
             <div v-if="avatarSrc && !croppingAvatar" class="relative group w-20 h-20 mx-auto mb-2">
-                <img :src="avatarSrc" :alt="regName || 'Avatar preview'" class="w-full h-full object-cover rounded-full border-2 border-brand-gold" />
+                <img :src="avatarSrc" :alt="regName || t('login.fields.avatarPreviewAlt')" class="w-full h-full object-cover rounded-full border-2 border-brand-gold" />
                 <button @click="avatarSrc = null; regAvatar = null" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
@@ -430,7 +432,7 @@ defineExpose({ toggle })
           <input
             v-model="regPassword"
             :type="showRegPassword ? 'text' : 'password'"
-            placeholder="Password"
+            :placeholder="t('login.fields.password')"
             class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-gold pr-10"
           />
           <button
@@ -451,7 +453,7 @@ defineExpose({ toggle })
         <!-- Password Strength Meter -->
         <div v-if="regPassword" class="mb-3">
           <div class="flex justify-between text-xs mb-1">
-            <span class="text-gray-500">Security</span>
+            <span class="text-gray-500">{{ t('login.passwordStrength.label') }}</span>
             <span :class="passwordStrength >= 3 ? 'text-brand-gold font-bold' : 'text-gray-500'">{{ passwordStrengthLabel }}</span>
           </div>
           <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
@@ -466,8 +468,8 @@ defineExpose({ toggle })
         <div v-if="error" class="text-sm text-red-600 mb-2">{{ error }}</div>
 
         <div class="flex gap-2">
-          <button @click.prevent="register" class="flex-1 bg-linear-to-b from-brand-gold to-brand-gold-dark text-white py-2 rounded font-bold hover:brightness-110 active:scale-95 transition-all">Create</button>
-          <button @click.prevent="registering = false" class="flex-1 bg-slate-100 py-2 rounded">Cancel</button>
+          <button @click.prevent="register" class="flex-1 bg-linear-to-b from-brand-gold to-brand-gold-dark text-white py-2 rounded font-bold hover:brightness-110 active:scale-95 transition-all">{{ t('login.actions.create') }}</button>
+          <button @click.prevent="registering = false" class="flex-1 bg-slate-100 py-2 rounded">{{ t('login.actions.cancel') }}</button>
         </div>
       </template>
     </div>
@@ -477,7 +479,7 @@ defineExpose({ toggle })
       <div v-if="croppingAvatar" class="fixed inset-0 z-60 bg-black/90 flex flex-col items-center justify-center p-4">
           <div class="w-full max-w-md bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
               <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center shrink-0">
-                  <span class="font-bold text-slate-800">Crop Profile Photo</span>
+              <span class="font-bold text-slate-800">{{ t('login.cropper.title') }}</span>
                   <button @click="cancelCrop" class="text-slate-400 hover:text-slate-600">
                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </button>
@@ -494,8 +496,8 @@ defineExpose({ toggle })
                   />
               </div>
               <div class="p-4 flex gap-3 shrink-0">
-                  <button @click="cropImage" class="flex-1 bg-brand-gold text-white py-2 rounded-lg font-bold hover:brightness-110 active:scale-95 transition-all">Apply Crop</button>
-                  <button @click="cancelCrop" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg font-bold hover:bg-slate-200 active:scale-95 transition-all">Cancel</button>
+                  <button @click="cropImage" class="flex-1 bg-brand-gold text-white py-2 rounded-lg font-bold hover:brightness-110 active:scale-95 transition-all">{{ t('login.cropper.apply') }}</button>
+                  <button @click="cancelCrop" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg font-bold hover:bg-slate-200 active:scale-95 transition-all">{{ t('login.actions.cancel') }}</button>
               </div>
           </div>
       </div>

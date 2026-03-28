@@ -10,40 +10,40 @@
       <Transition name="scale-fade" appear>
         <div class="relative bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl border border-slate-100 flex flex-col">
           <h2 class="text-2xl font-serif font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <span v-if="initialData">✏️ Edit {{ type === 'news' ? 'News' : 'Event' }}</span>
-            <span v-else-if="type === 'news'">📰 Add News</span>
-            <span v-else>📅 Add Event</span>
+            <span v-if="initialData">{{ t('addPostModal.heading.edit', { type: type === 'news' ? t('shared.types.news') : t('shared.types.event') }) }}</span>
+            <span v-else-if="type === 'news'">{{ t('addPostModal.heading.addNews') }}</span>
+            <span v-else>{{ t('addPostModal.heading.addEvent') }}</span>
           </h2>
 
           <form @submit.prevent="submit" class="space-y-5">
             <!-- Title -->
             <div>
-              <label class="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Title</label>
+              <label class="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wider">{{ t('addPostModal.fields.titleLabel') }}</label>
               <input 
                 v-model="form.title" 
                 type="text" 
                 required
                 class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold/40 transition-shadow"
-                placeholder="Enter a descriptive title..."
+                :placeholder="t('addPostModal.fields.titlePlaceholder')"
               />
             </div>
 
             <!-- Description -->
             <div>
-              <label class="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Description</label>
+              <label class="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wider">{{ t('addPostModal.fields.descriptionLabel') }}</label>
               <textarea 
                 v-model="form.description" 
                 required
                 rows="4"
                 class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold/40 transition-shadow resize-none"
-                placeholder="Share the details..."
+                :placeholder="t('addPostModal.fields.descriptionPlaceholder')"
               ></textarea>
             </div>
 
             <!-- Event Specific Fields -->
             <div v-if="type === 'event'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Date & Time</label>
+                <label class="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wider">{{ t('addPostModal.fields.dateTimeLabel') }}</label>
                 <input 
                   v-model="form.event_date" 
                   type="datetime-local" 
@@ -52,19 +52,19 @@
                 />
               </div>
               <div>
-                <label class="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Location</label>
+                <label class="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wider">{{ t('addPostModal.fields.locationLabel') }}</label>
                 <input 
                   v-model="form.location" 
                   type="text" 
                   class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold/40 transition-shadow"
-                  placeholder="Community Hall"
+                  :placeholder="t('addPostModal.fields.locationPlaceholder')"
                 />
               </div>
             </div>
 
             <!-- Image Upload (Optional) -->
             <div>
-              <label class="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Cover Image (Optional)</label>
+              <label class="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wider">{{ t('addPostModal.fields.coverImageLabel') }}</label>
               <div class="relative group">
                 <input 
                   type="file" 
@@ -82,14 +82,14 @@
                 @click="close"
                 class="px-6 py-3 rounded-xl text-slate-500 font-bold hover:bg-slate-50 transition-colors order-2 sm:order-1"
               >
-                Cancel
+                {{ t('addPostModal.actions.cancel') }}
               </button>
               <button 
                 type="submit" 
                 :disabled="loading"
                 class="px-8 py-3 rounded-xl bg-linear-to-b from-brand-gold to-brand-gold-dark text-white font-bold shadow-lg shadow-brand-gold/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 order-1 sm:order-2"
               >
-                {{ loading ? 'Saving...' : (initialData ? 'Save Changes' : 'Post Now') }}
+                {{ loading ? t('addPostModal.actions.saving') : (initialData ? t('addPostModal.actions.saveChanges') : t('addPostModal.actions.postNow')) }}
               </button>
             </div>
           </form>
@@ -102,6 +102,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
 import { useRuntimeConfig } from '#imports'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   isOpen: boolean
@@ -114,6 +115,7 @@ const emit = defineEmits(['close', 'refresh'])
 
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
+const { t } = useI18n()
 
 const loading = ref(false)
 const form = reactive({
@@ -124,14 +126,17 @@ const form = reactive({
   image: null as File | null
 })
 
-function close() {
-  emit('close')
-  // Reset form
+function resetForm() {
   form.title = ''
   form.description = ''
   form.event_date = ''
   form.location = ''
   form.image = null
+}
+
+function close() {
+  emit('close')
+  resetForm()
 }
 
 function handleFileChange(event: Event) {
@@ -149,7 +154,8 @@ watch(() => props.isOpen, (newVal) => {
     form.location = props.initialData.location || ''
     form.image = null
   } else if (newVal) {
-    close() // Reset if opening fresh
+    // Fresh create mode: clear fields without emitting a close event.
+    resetForm()
   }
 })
 
@@ -200,14 +206,14 @@ async function submit() {
     })
 
     if (!res.ok) {
-      throw new Error(`Failed to ${props.initialData ? 'update' : 'create'} post`)
+      throw new Error(t('addPostModal.errors.submitFailed'))
     }
 
     emit('refresh')
     close()
   } catch (e) {
     console.error(e)
-    alert('Error creating post')
+    alert(t('addPostModal.errors.createFailed'))
   } finally {
     loading.value = false
   }

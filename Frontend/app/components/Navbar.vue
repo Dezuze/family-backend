@@ -3,11 +3,18 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Login from '~/components/Login.vue'
 import { useAuthStore } from '~/stores/auth'
+import { useLanguage } from '~/composables/useLanguage'
 
 const mobileOpen = ref(false)
 const router = useRouter()
 const auth = useAuthStore()
+const { currentLanguage, setLanguage } = useLanguage()
 const loginRef = ref<InstanceType<typeof Login> | null>(null)
+
+const onLanguageChange = (event: Event) => {
+  const value = (event.target as HTMLSelectElement).value
+  setLanguage(value === 'ml' ? 'ml' : 'en')
+}
 
 const displayName = computed(() => auth.user?.name ?? auth.user?.email ?? '')
 const initials = computed(() => {
@@ -48,8 +55,8 @@ const links = [
   { name: 'Contact', to: '/contact' },
 ]
 
-const restricted = ['Gallery', 'Family Tree', 'Donation']
-const visibleLinks = computed(() => links.filter((l) => !restricted.includes(l.name) || auth.isAuthenticated))
+const restrictedPaths = new Set(['/gallery', '/familytree', '/donate'])
+const visibleLinks = computed(() => links.filter((l) => !restrictedPaths.has(l.to) || auth.isAuthenticated))
 const managedMembers = computed(() => (auth.user as any)?.managed_members || [])
 
 // Mobile menu actions
@@ -125,27 +132,47 @@ onUnmounted(() => {
 <template>
   <!-- NAVBAR -->
   <nav 
-    class="fixed top-0 left-0 right-0 w-full lg:w-170 z-50 bg-transparent transition-transform duration-300 ease-in-out"
+    class="fixed top-0 left-0 right-0 w-full lg:w-200 z-50 bg-transparent transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
     :class="[ showNavbar ? 'translate-y-0' : '-translate-y-full' ]"
   >
       <!-- Desktop Navbar -->
-      <div class="hidden bg-white lg:flex lg:rounded-br-[80px] lg:rounded-tr-[10px] lg:hover:rounded-br-[100px] lg:hover:rounded-tr-[10px] px-4 items-center relative h-15 shadow-sm">
+      <div class="hidden bg-white lg:flex lg:rounded-br-[80px] lg:rounded-tr-[10px] lg:hover:rounded-br-[100px] lg:hover:rounded-tr-[10px] px-4 items-center relative h-15 shadow-sm transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
         <div class="flex items-center gap-4 h-full">
           <NuxtLink to="/" class="flex font-fleur text-2xl items-center text-right h-full">
            Kollamparambil<br>Family
          </NuxtLink>
-          <div class="flex absolute items-center right-5">
+          <div class="flex absolute items-center right-5 gap-1">
             <NuxtLink
               v-for="link in visibleLinks"
               :key="link.to"
               :to="link.to"
-              class="py-2 px-2 rounded-md text-sm font-bold text-slate-800 hover:bg-slate-50 hover:text-brand-gold hover:shadow-sm transition"
+              class="py-2 px-2 rounded-md text-sm font-bold text-slate-800 hover:bg-slate-50 hover:text-brand-gold hover:shadow-sm transition-all duration-300 active:scale-95"
             >
               {{ link.name }}
             </NuxtLink>
+
+            <label class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white pl-2 pr-1 py-1 text-slate-600 shadow-sm">
+              <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12h18M12 3a15.3 15.3 0 014 9 15.3 15.3 0 01-4 9 15.3 15.3 0 01-4-9 15.3 15.3 0 014-9z" />
+              </svg>
+              <div class="relative">
+                <select
+                  :value="currentLanguage"
+                  aria-label="Language"
+                  class="appearance-none rounded-full border border-slate-200 bg-white pl-2.5 pr-5 py-0.5 font-semibold text-xs w-13 text-slate-700 outline-hidden transition-all duration-300 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/25"
+                  @change="onLanguageChange"
+                >
+                  <option value="en">EN</option>
+                  <option value="ml">മല</option>
+                </select>
+                <svg class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </label>
           </div>
         </div>
-        <div class="flex -z-20 ml-120 items-center gap-3">
+        <div class="flex -z-20 ml-150 items-center gap-3">
           <Login ref="loginRef" />
         </div>
       </div>
@@ -161,12 +188,12 @@ onUnmounted(() => {
 
         <button
           @click="mobileOpen = !mobileOpen"
-          class="relative flex items-center justify-center h-10 w-10 rounded-full transition-all duration-200"
+          class="relative flex items-center justify-center h-10 w-10 rounded-full transition-all duration-300"
           :class="mobileOpen ? 'bg-slate-100' : ''"
         >
           <template v-if="auth.isAuthenticated">
               <div 
-              class="h-9 w-9 rounded-full overflow-hidden shrink-0 transition-all duration-200"
+              class="h-9 w-9 rounded-full overflow-hidden shrink-0 transition-all duration-300"
               :class="mobileOpen ? 'ring-2 ring-brand-gold ring-offset-1' : 'border-2 border-brand-gold/50 shadow-sm'"
             >
               <img v-if="userPhoto" :src="userPhoto" :alt="displayName || 'User photo'" class="w-full h-full object-cover" @error="(e) => (e.target as any).style.display='none'" />
@@ -176,9 +203,9 @@ onUnmounted(() => {
           <template v-else>
             <!-- Animated hamburger / close icon -->
             <div class="flex flex-col justify-center items-center w-6 h-6 gap-1.5">
-              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? 'rotate-45 translate-y-1' : ''"></span>
-              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? 'opacity-0' : ''"></span>
-              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300" :class="mobileOpen ? '-rotate-45 -translate-y-1' : ''"></span>
+              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300 ease-out" :class="mobileOpen ? 'rotate-45 translate-y-1' : ''"></span>
+              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300 ease-out" :class="mobileOpen ? 'opacity-0' : ''"></span>
+              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300 ease-out" :class="mobileOpen ? '-rotate-45 -translate-y-1' : ''"></span>
             </div>
           </template>
         </button>
@@ -206,11 +233,31 @@ onUnmounted(() => {
             :key="link.to"
             :to="link.to"
             @click="mobileOpen = false"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-[15px] text-slate-700 hover:bg-slate-50 hover:text-brand-gold active:bg-slate-100 transition-all"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm md:text-base text-slate-700 hover:bg-slate-50 hover:text-brand-gold active:bg-slate-100 transition-all duration-300"
           >
             <span class="w-1.5 h-1.5 rounded-full bg-brand-gold/40 shrink-0"></span>
             {{ link.name }}
           </NuxtLink>
+        </div>
+
+        <div class="px-4 pb-3">
+          <label class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">
+              <span class="uppercase tracking-wide text-slate-500">Language</span>
+            <div class="relative">
+              <select
+                :value="currentLanguage"
+                aria-label="Language"
+                class="appearance-none rounded-full border border-slate-200 bg-white pl-2.5 pr-6 py-1 text-xs font-semibold text-slate-700 outline-hidden transition-all duration-300 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/25"
+                @change="onLanguageChange"
+              >
+                <option value="en">EN</option>
+                <option value="ml">മല</option>
+              </select>
+              <svg class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </label>
         </div>
 
         <div class="mx-5 border-t border-slate-100"></div>
@@ -225,20 +272,20 @@ onUnmounted(() => {
             </div>
             <div class="flex flex-col flex-1 min-w-0">
               <span class="font-bold text-slate-800 text-sm truncate">{{ displayName }}</span>
-              <span class="text-[11px] text-slate-400">Logged in</span>
+              <span class="text-xs text-slate-400">Logged in</span>
             </div>
           </div>
 
           <!-- Quick Actions -->
-          <button @click="mobileCopyInvite" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-brand-gold hover:bg-brand-gold/5 active:bg-brand-gold/10 transition-all">
+          <button @click="mobileCopyInvite" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-brand-gold hover:bg-brand-gold/5 active:bg-brand-gold/10 transition-all duration-300">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Invite Member
           </button>
-          <button @click="mobileNav('/onboarding?step=3')" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-all">
+          <button @click="mobileNav('/familytree?view=visual&edit=1')" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-all duration-300">
             <svg class="w-4 h-4 text-brand-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
             Add Family Member
           </button>
-          <button @click="mobileNav('/onboarding')" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-all">
+          <button @click="mobileNav('/onboarding')" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-all duration-300">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
             Edit Profile
           </button>
@@ -253,7 +300,7 @@ onUnmounted(() => {
               <button 
                 v-for="m in managedMembers" 
                 :key="m.id"
-                @click="mobileNav(`/onboarding?step=3&edit=${m.id}`)"
+                @click="mobileNav(`/onboarding?managed_edit=${m.id}`)"
                 class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2.5"
               >
                 <div class="w-7 h-7 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
@@ -262,7 +309,7 @@ onUnmounted(() => {
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-slate-700 text-xs truncate">{{ m.name }}</div>
-                  <div class="text-[10px] text-slate-400">{{ m.relation }}</div>
+                    <div class="text-xs text-slate-400">{{ m.relation }}</div>
                 </div>
                 <svg class="w-3 h-3 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
               </button>
@@ -271,7 +318,7 @@ onUnmounted(() => {
 
           <!-- Logout -->
           <div class="mt-1 pt-2 border-t border-slate-100">
-            <button @click="mobileLogout" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-red-500 hover:bg-red-50 active:bg-red-100 transition-all w-full">
+            <button @click="mobileLogout" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 active:bg-red-100 transition-all duration-300 w-full">
               <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
               Logout
             </button>
@@ -282,7 +329,7 @@ onUnmounted(() => {
         <div v-else class="px-5 py-4">
           <button 
             @click="mobileLogin"
-            class="w-full py-3 rounded-2xl font-bold text-white text-sm bg-linear-to-b from-brand-gold to-brand-gold-dark shadow-lg hover:brightness-110 active:scale-95 transition-all"
+            class="w-full py-3 rounded-2xl font-bold text-white text-sm bg-linear-to-b from-brand-gold to-brand-gold-dark shadow-lg hover:brightness-110 active:scale-95 transition-all duration-300"
           >
             Login
           </button>
@@ -300,7 +347,7 @@ onUnmounted(() => {
 <style scoped>
 .slide-enter-active,
 .slide-leave-active {
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
 }
 .slide-enter-from,
 .slide-leave-to {
@@ -309,7 +356,7 @@ onUnmounted(() => {
 }
 .fade-backdrop-enter-active,
 .fade-backdrop-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.32s ease;
 }
 .fade-backdrop-enter-from,
 .fade-backdrop-leave-to {

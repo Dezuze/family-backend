@@ -5,18 +5,18 @@
       <!-- Header -->
       <div class="max-w-7xl mx-auto mb-16 text-center space-y-4">
         <h1 class="text-4xl md:text-5xl font-serif font-bold text-slate-900 leading-tight">
-            Committee Members
+          {{ t('committee.header.title') }}
         </h1>
         <div class="h-1.5 w-32 bg-brand-gold mx-auto rounded-full"></div>
         <p class="text-lg text-slate-500 max-w-xl mx-auto font-medium">
-            Term 2025 - 2027
+          {{ t('committee.header.term') }}
         </p>
       </div>
 
       <!-- Controls -->
       <div class="flex justify-center mb-10">
         <div class="relative w-full max-w-md">
-           <input v-model="query" type="search" placeholder="Search committee..." 
+          <input v-model="query" type="search" :placeholder="t('committee.searchPlaceholder')" 
                   class="w-full pl-10 pr-4 py-3 rounded-full bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-brand-gold focus:border-transparent outline-none shadow-md transition-all" />
            <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
@@ -52,7 +52,7 @@
                 <img 
                   v-if="m.photo" 
                   :src="m.photo" 
-                  :alt="m.name || 'Member photo'"
+                  :alt="m.name || t('committee.alt.memberPhoto')"
                   class="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-110" 
                 />
                 <div v-else class="w-full h-full flex items-center justify-center bg-linear-to-b from-slate-100 to-slate-200 text-brand-gold/20">
@@ -70,7 +70,7 @@
                          ? 'bg-brand-gold text-white border-brand-gold-dark' 
                          : 'bg-white/90 text-slate-800 border-slate-200'"
                     >
-                      {{ m.role || 'Member' }}
+                      {{ m.role || t('committee.labels.member') }}
                     </span>
                 </div>
 
@@ -90,7 +90,7 @@
                     {{ m.name }}
                   </h3>
                   <p class="text-[10px] font-sans font-extrabold uppercase tracking-[0.2em] text-brand-gold/80 mb-3">
-                    {{ m.role || 'Committee Member' }}
+                    {{ m.role || t('committee.labels.committeeMember') }}
                   </p>
                 </div>
 
@@ -101,7 +101,7 @@
                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                       </div>
                       <span class="text-xs font-bold text-slate-500">
-                        {{ m.phone_no ? 'Verified Contact' : 'Directory Only' }}
+                        {{ m.phone_no ? t('committee.labels.verifiedContact') : t('committee.labels.directoryOnly') }}
                       </span>
                    </div>
                    <button 
@@ -130,7 +130,7 @@
         <!-- Empty State -->
         <template v-else>
           <div class="col-span-full text-center text-slate-500 py-20">
-            No committee members found
+            {{ t('committee.empty.noMembers') }}
           </div>
         </template>
       </div>
@@ -146,7 +146,7 @@
             <img 
               v-if="selectedMember.photo" 
               :src="selectedMember.photo" 
-              :alt="selectedMember.name || 'Member photo'"
+              :alt="selectedMember.name || t('committee.alt.memberPhoto')"
               class="w-full h-full object-cover object-top" 
             />
             <div v-else class="w-full h-full flex items-center justify-center bg-linear-to-b from-slate-100 to-slate-200 text-brand-gold/10">
@@ -160,7 +160,7 @@
 
             <div class="absolute bottom-6 left-8">
                <span class="px-4 py-1 bg-brand-gold text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-3 inline-block">
-                 {{ selectedMember.role || 'Committee' }}
+                 {{ selectedMember.role || t('committee.labels.committee') }}
                </span>
                <h2 class="text-3xl font-serif font-bold text-white drop-shadow-md">{{ selectedMember.name }}</h2>
             </div>
@@ -174,8 +174,8 @@
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                    </div>
                    <div>
-                      <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Contact Number</span>
-                      <span class="text-lg font-bold text-slate-900">{{ selectedMember.phone_no || 'Not Publicly Listed' }}</span>
+                     <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">{{ t('committee.modal.contactNumber') }}</span>
+                     <span class="text-lg font-bold text-slate-900">{{ selectedMember.phone_no || t('committee.modal.notPubliclyListed') }}</span>
                    </div>
                 </div>
 
@@ -184,8 +184,8 @@
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-10V4m0 10V4m-4 6h4m-4 4h4m1 1h1m-7 1h1"></path></svg>
                    </div>
                    <div>
-                      <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Representation</span>
-                      <span class="text-lg font-bold text-slate-900">Kollamparambil Executive Body</span>
+                     <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">{{ t('committee.modal.representation') }}</span>
+                     <span class="text-lg font-bold text-slate-900">{{ t('committee.modal.executiveBody') }}</span>
                    </div>
                 </div>
              </div>
@@ -195,7 +195,7 @@
                   @click="closeDetails"
                   class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm tracking-widest uppercase hover:bg-brand-gold transition-colors shadow-xl"
                 >
-                  Close Profile
+                  {{ t('committee.modal.closeProfile') }}
                 </button>
              </div>
           </div>
@@ -208,20 +208,22 @@
 
 <script setup lang="ts">
 import { useHead, useRuntimeConfig, useRoute } from '#imports'
+import { useI18n } from 'vue-i18n'
 import type { FamilyMember } from '~/types/family'
 
 const runtimeConfig = useRuntimeConfig()
 const route = useRoute()
+const { t } = useI18n()
 
-useHead({
-  title: 'Committee',
+useHead(() => ({
+  title: t('committee.meta.title'),
   meta: [
-    { name: 'description', content: 'Committee members and leadership of the Kollamparambil Family Association. Meet the team for 2025-2027.' }
+    { name: 'description', content: t('committee.meta.description') }
   ],
   link: [
     { rel: 'canonical', href: `${runtimeConfig.public.siteUrl || 'http://localhost:3000'}${route.path}` }
   ]
-})
+}))
 
 // Types
 type LayoutType = 'grid' | 'list' | 'compact'

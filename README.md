@@ -1,8 +1,8 @@
-# Kollamparambil Family 🏘️✨
+# Kollamparambil Family
 
 A modern, private social platform and directory for the Kollamparambil family. This system features a rich interactive family tree, automated member directory, event management, and a high-end administrative dashboard.
 
-## 🚀 Features
+## Features
 
 * **Premium Admin UI**: Rebuilt using `django-unfold` with native tabbed layouts, smooth transitions, and professional typography.
 * **Smart Sync**: Automated data linkage between Users, Family Members, and Family Heads.
@@ -54,6 +54,36 @@ All relationship types are converted to hierarchical `parent` / `spouse` links:
 - **DOB or Age Toggle**: Members can be added with either Date of Birth or direct Age input.
 - **"Married To?" Picker**: When adding in-laws, a dropdown lets you specify which sibling they're married to.
 
+## Ownership And Permissions
+
+### Member Lifecycle
+- **Managed member**: Created by a guardian, defaults to non-independent.
+- **Independent member**: Can be set independent and no longer managed by guardian flows.
+- **Account owner**: A member linked to a user account can self-manage profile-related updates.
+
+### Edit Rules
+- Account owners can manage themselves.
+- Guardians can manage members they created when those members are not independent and do not already have their own account.
+- Tree editing and sensitive actions use these same ownership checks.
+
+## Link Existing Members In Tree
+
+Tree Editor supports two add-relative modes:
+- **Create New**: Creates a new member and links them.
+- **Link Existing**: Searches current tree-visible members by name and links an existing profile.
+
+### Relation Constraints
+- **Spouse**: Maximum one spouse per member.
+- **Parents**: Maximum one father, one mother, and two total parents.
+- **Self-link prevention**: A member cannot be linked to themselves.
+- **Duplicate relation prevention**: Existing relation edges are rejected.
+
+### Families API Endpoints
+- `GET /api/families/member-search/?q={query}&exclude_id={id}`
+- `POST /api/families/tree-edit/{id}/add-relative/`
+- `POST /api/families/tree-edit/{id}/link-existing/`
+- `GET /api/families/member-context/{id}/`
+
 ## 🌐 Social Media & SEO
 
 * **Open Graph Tags**: Full Facebook and WhatsApp link preview support.
@@ -102,6 +132,8 @@ The application will be available at: http://localhost:3000
 # Backend (Django)
 cd Backend
 python manage.py test --verbosity 2
+python manage.py test families --verbosity 2
+python manage.py test families.tests.TreeEditEndpointsTests --verbosity 2
 
 # Frontend (Vitest)
 cd Frontend
@@ -133,6 +165,6 @@ The backend uses a **Smart Sync** architecture:
 - **Environment Variables**: Secure configuration via .env files.
 - **Static Assets**: Optimized for CDN delivery.
 
-## 🛡️ License
+## License
 
 Private - For Kollamparambil Family use only.

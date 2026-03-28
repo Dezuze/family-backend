@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { FAMILY_RELATION_TYPES } from './data/relations'
 
 // ─── Auth Store Tests ───
 describe('Auth Store Logic', () => {
@@ -67,16 +68,10 @@ describe('User Interface Types', () => {
 
 // ─── Relation Options ───
 describe('Relation Options', () => {
-  const RELATION_OPTIONS = [
-    'Head', 'Spouse', 'Father', 'Mother', 'Son', 'Daughter',
-    'Brother', 'Sister', 'Grandfather', 'Grandmother',
-    'Grandson', 'Granddaughter', 'Uncle', 'Aunt',
-    'Nephew', 'Niece', 'Cousin', 'Father-in-law', 'Mother-in-law',
-    'Son-in-law', 'Daughter-in-law', 'Brother-in-law', 'Sister-in-law', 'Other'
-  ]
+  const RELATION_OPTIONS = FAMILY_RELATION_TYPES
 
-  it('should have 24 predefined options', () => {
-    expect(RELATION_OPTIONS).toHaveLength(24)
+  it('should have complete predefined relation options', () => {
+    expect(RELATION_OPTIONS).toHaveLength(29)
   })
 
   it('should include common family relations', () => {
@@ -85,6 +80,8 @@ describe('Relation Options', () => {
     expect(RELATION_OPTIONS).toContain('Son')
     expect(RELATION_OPTIONS).toContain('Daughter')
     expect(RELATION_OPTIONS).toContain('Brother-in-law')
+    expect(RELATION_OPTIONS).toContain('Paternal Grandfather')
+    expect(RELATION_OPTIONS).toContain('Maternal Grandmother')
   })
 
   it('should not contain duplicates', () => {

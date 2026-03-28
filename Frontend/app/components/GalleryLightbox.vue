@@ -2,12 +2,12 @@
   <div class="gl-overlay" @click.self="close">
     <div class="gl-inner">
         <!-- Close button -->
-        <button class="gl-close" @click.stop="close" aria-label="Close">
+        <button class="gl-close" @click.stop="close" :aria-label="t('gallery.lightbox.close')">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
 
         <!-- Prev button -->
-        <button class="gl-prev" @click.stop="prev" aria-label="Previous">
+        <button class="gl-prev" @click.stop="prev" :aria-label="t('gallery.lightbox.previous')">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
         </button>
 
@@ -22,7 +22,7 @@
             :class="{ 'opacity-0': loading }"
             :style="{ backgroundImage: `url(${image.photo})` }" 
             role="img" 
-            :aria-label="image.title || 'Image'"
+            :aria-label="image.title || t('gallery.lightbox.imageFallback')"
           ></div>
           
           <!-- Hidden image to track loading (decorative preload) -->
@@ -33,7 +33,7 @@
         </div>
 
         <!-- Next button -->
-        <button class="gl-next" @click.stop="next" aria-label="Next">
+        <button class="gl-next" @click.stop="next" :aria-label="t('gallery.lightbox.next')">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
         </button>
 
@@ -47,6 +47,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface GalleryItem {
   id: number
@@ -57,6 +58,7 @@ interface GalleryItem {
 
 const props = defineProps<{ image: GalleryItem }>()
 const emit = defineEmits(['close', 'next', 'prev'])
+const { locale, t } = useI18n()
 
 const loading = ref(true)
 
@@ -98,7 +100,12 @@ const onTouchEnd = (e: TouchEvent) => {
 
 const formattedDate = computed(() => {
   if (!props.image?.created_at) return ''
-  try { return new Date(props.image.created_at).toLocaleString() } catch { return props.image.created_at as any }
+  try {
+    const dateLocale = locale.value === 'ml' ? 'ml-IN' : 'en-US'
+    return new Date(props.image.created_at).toLocaleString(dateLocale)
+  } catch {
+    return props.image.created_at as any
+  }
 })
 
 const onKey = (e: KeyboardEvent) => {

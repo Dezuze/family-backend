@@ -3,11 +3,11 @@
     <!-- Header Section -->
     <div class="max-w-7xl mx-auto mb-16 text-center space-y-4">
         <h1 class="text-4xl md:text-5xl font-serif font-bold text-slate-900 leading-tight">
-            Annual Kudumbayogam
+          {{ t('yogam.header.title') }}
         </h1>
         <div class="h-1.5 w-32 bg-brand-gold mx-auto rounded-full"></div>
         <p class="text-lg text-slate-500 max-w-xl mx-auto font-medium">
-            Stay updated with the highlights and schedules of our annual family gatherings, bringing everyone together in celebration.
+          {{ t('yogam.header.description') }}
         </p>
         
         <div v-if="auth.isAuthenticated" class="pt-6 flex justify-center">
@@ -15,7 +15,7 @@
                 @click="isAddModalOpen = true"
                 class="bg-brand-gold text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-brand-gold/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
             >
-                <span class="text-xl leading-none">+</span> Add Highlight
+                <span class="text-xl leading-none">+</span> {{ t('yogam.header.addHighlight') }}
             </button>
         </div>
     </div>
@@ -77,7 +77,7 @@
 
             <div class="mt-auto pt-4 border-t border-slate-100">
                <button class="text-sm font-semibold text-slate-700 group-hover:text-brand-gold transition-colors flex items-center gap-2">
-                   View Highlights
+                 {{ t('yogam.card.viewHighlights') }}
                    <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                </button>
             </div>
@@ -89,8 +89,8 @@
       <template v-else>
         <div class="col-span-full max-w-md mx-auto mt-2 text-center p-10 bg-white rounded-2xl border border-slate-200 shadow-sm">
           <svg class="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-          <h3 class="text-xl font-serif text-slate-800 mb-2">No Yogam History Yet</h3>
-          <p class="text-slate-500 text-sm">Highlights of our annual gatherings will appear here.</p>
+          <h3 class="text-xl font-serif text-slate-800 mb-2">{{ t('yogam.empty.title') }}</h3>
+          <p class="text-slate-500 text-sm">{{ t('yogam.empty.description') }}</p>
         </div>
       </template>
     </div>
@@ -106,7 +106,7 @@
           </button>
 
           <div class="relative h-64 sm:h-80 shrink-0">
-            <img :src="resolveImage(selectedEvent.image) || 'https://placehold.co/800x600/f1f5f9/d4af37?text=Annual+Meeting'" :alt="selectedEvent.title || 'Annual meeting image'" class="w-full h-full object-cover" />
+            <img :src="resolveImage(selectedEvent.image) || 'https://placehold.co/800x600/f1f5f9/d4af37?text=Annual+Meeting'" :alt="selectedEvent.title || t('yogam.modal.imageAlt')" class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             
              <div class="absolute bottom-4 left-6">
@@ -132,13 +132,13 @@
                    @click="openEdit"
                    class="bg-slate-50 text-slate-600 px-6 py-2.5 rounded-xl font-bold text-xs border border-slate-200 hover:bg-slate-100 transition-colors"
                 >
-                   Edit
+                   {{ t('yogam.modal.edit') }}
                 </button>
                 <button 
                    @click="deletePost(selectedEvent.id)"
                    class="bg-red-50 text-red-600 px-6 py-2.5 rounded-xl font-bold text-xs border border-red-100 hover:bg-red-100 transition-colors"
                 >
-                   Delete
+                   {{ t('yogam.modal.delete') }}
                 </button>
              </div>
           </div>
@@ -160,6 +160,8 @@
 
 <script setup lang="ts">
 import { useRuntimeConfig, useHead, ref, onMounted, useRoute } from '#imports'
+import { useI18n } from 'vue-i18n'
+import { computed } from 'vue'
 import AddPostModal from '~/components/AddPostModal.vue'
 import { useAuthStore } from '~/stores/auth'
 
@@ -167,12 +169,14 @@ const auth = useAuthStore()
 const config = useRuntimeConfig()
 const route = useRoute()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
+const { t, locale } = useI18n()
+const activeDateLocale = computed(() => locale.value === 'ml' ? 'ml-IN' : 'en-US')
 
-useHead({
-  title: 'Annual Kudumbayogam',
-  meta: [{ name: 'description', content: 'Highlights, schedules, and memories from our Annual Kudumbayogam — the family’s annual gathering.' }],
+useHead(() => ({
+  title: t('yogam.meta.title'),
+  meta: [{ name: 'description', content: t('yogam.meta.description') }],
   link: [{ rel: 'canonical', href: `${config.public.siteUrl || 'http://localhost:3000'}${route.path}` }]
-})
+}))
 
 interface EventItem {
   id: number
@@ -211,7 +215,7 @@ const closeAddModal = () => {
   editingEvent.value = null
 }
 
-const getMonth = (dateStr: string) => new Date(dateStr).toLocaleString('default', { month: 'short' })
+const getMonth = (dateStr: string) => new Date(dateStr).toLocaleString(activeDateLocale.value, { month: 'short' })
 const getDay = (dateStr: string) => new Date(dateStr).getDate()
 const getYear = (dateStr: string) => new Date(dateStr).getFullYear()
 
@@ -255,7 +259,7 @@ function getCookie(name: string) {
 }
 
 const deletePost = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this highlight?')) return
+  if (!confirm(t('yogam.alerts.confirmDelete'))) return
     
     try {
     const csrfRes = await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
@@ -274,7 +278,7 @@ const deletePost = async (id: number) => {
             closeDetails()
             refreshEvents()
         } else {
-            alert('Failed to delete')
+          alert(t('yogam.alerts.deleteFailed'))
         }
     } catch (e) {
         console.error("Delete failed", e)
@@ -285,7 +289,4 @@ onMounted(() => {
     refreshEvents()
 })
 
-useHead({
-  title: 'Annual Kudumbayogam - Kollaparambil Family',
-})
 </script>

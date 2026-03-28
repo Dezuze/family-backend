@@ -11,6 +11,8 @@ html {
 
 body {
   @apply bg-slate-100 text-slate-800;
+  font-family: Inter, "Noto Sans Malayalam", sans-serif;
+  line-height: 1.6;
 }
 
 .page-enter-active,

@@ -10,7 +10,7 @@
   >
     <img
       :data-src="image.photo"
-      :alt="image.title || 'Gallery image'"
+      :alt="image.title || t('gallery.imageAlt')"
       loading="lazy"
       class="gallery-img"
       @load="loaded = true"
@@ -26,6 +26,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface GalleryItem {
   id: number
@@ -38,11 +39,13 @@ const props = defineProps<{ image: GalleryItem }>()
 const emit = defineEmits(['open'])
 const imgEl = ref<HTMLImageElement | null>(null)
 const loaded = ref(false)
+const { locale, t } = useI18n()
 
 const formattedDate = computed(() => {
   if (!props.image?.created_at) return ''
   try {
-    return new Date(props.image.created_at).toLocaleDateString()
+    const dateLocale = locale.value === 'ml' ? 'ml-IN' : 'en-US'
+    return new Date(props.image.created_at).toLocaleDateString(dateLocale)
   } catch {
     return props.image.created_at
   }
