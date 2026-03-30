@@ -203,7 +203,7 @@
                         type="button"
                         class="rounded-lg px-2 py-1.5 text-xs font-bold transition-all duration-300"
                         :class="addRelativeMode === 'link' ? 'bg-brand-gold text-white' : 'text-slate-600 hover:bg-slate-100'"
-                        @click="addRelativeMode = 'link'; addRelativeName = ''; resetLinkTarget(); linkSearchQuery = ''; editorError = ''; editorSuccess = ''"
+                        @click="addRelativeMode = 'link'; resetAddRelativeForm(); resetLinkTarget(); linkSearchQuery = ''; editorError = ''; editorSuccess = ''"
                     >
                         {{ t('familyTree.editor.mode.link') }}
                     </button>
@@ -216,12 +216,40 @@
                 </select>
                 <p v-if="duplicateRelationWarning" class="text-[11px] font-semibold text-amber-700">{{ duplicateRelationWarning }}</p>
                 <template v-if="addRelativeMode === 'create'">
-                    <input v-model="addRelativeName" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('familyTree.editor.placeholders.relativeName')" />
-                    <select v-model="addRelativeGender" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input v-model="addRelativeForm.first_name" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.firstName')" />
+                        <input v-model="addRelativeForm.last_name" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.lastName')" />
+                    </div>
+                    <input v-model="addRelativeForm.nickname" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.nickname')" />
+                    <select v-model="addRelativeForm.gender" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
                         <option value="M">{{ t('onboarding.gender.male') }}</option>
                         <option value="F">{{ t('onboarding.gender.female') }}</option>
                         <option value="O">{{ t('onboarding.gender.other') }}</option>
                     </select>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" class="rounded-xl border px-2 py-2 text-xs font-bold" :class="addRelativeUseDob ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-600'" @click="addRelativeUseDob = true">{{ t('onboarding.fields.dateOfBirth') }}</button>
+                        <button type="button" class="rounded-xl border px-2 py-2 text-xs font-bold" :class="!addRelativeUseDob ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-600'" @click="addRelativeUseDob = false">{{ t('onboarding.managedModal.age') }}</button>
+                    </div>
+                    <input v-if="addRelativeUseDob" v-model="addRelativeForm.date_of_birth" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
+                    <input v-else v-model="addRelativeForm.age" type="number" min="0" max="150" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.managedModal.enterAge')" />
+                    <select v-model="addRelativeForm.blood_group" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
+                        <option value="">{{ t('onboarding.placeholders.selectBloodGroup') }}</option>
+                        <option value="Unknown">{{ t('onboarding.bloodGroup.unknown') }}</option>
+                        <option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
+                    </select>
+                    <input v-model="addRelativeForm.occupation" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.occupation')" />
+                    <input v-model="addRelativeForm.education" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.education')" />
+                    <input v-model="addRelativeForm.phone_no" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.phoneNumber')" />
+                    <input v-model="addRelativeForm.email_id" type="email" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.email')" />
+                    <input v-model="addRelativeForm.church_parish" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.parishChurch')" />
+                    <textarea v-model="addRelativeForm.address" rows="2" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.address')"></textarea>
+                    <textarea v-model="addRelativeForm.bio" rows="2" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.bio')"></textarea>
+                    <label class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
+                        <input v-model="addRelativeForm.is_deceased" type="checkbox" class="accent-brand-gold" />
+                        {{ t('onboarding.managedModal.isDeceased') }}
+                    </label>
+                    <input v-if="addRelativeForm.is_deceased" v-model="addRelativeForm.date_of_death" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
+                    <input type="file" accept="image/*" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs" @change="onAddRelativeAvatarChange" />
                 </template>
                 <template v-else>
                     <div class="relative">
@@ -291,6 +319,24 @@
                 >
                     {{ t('familyTree.editor.becomeIndependent') }}
                 </button>
+
+                <button
+                    class="w-full rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold transition-all duration-300 hover:bg-brand-gold/5 active:scale-95 disabled:opacity-50"
+                    :disabled="inviteLoading"
+                    @click="generateInviteLink"
+                >
+                    {{ inviteLoading ? t('onboarding.giveAccess.creating') : t('nav.inviteMember') }}
+                </button>
+                <div v-if="inviteLink" class="rounded-xl border border-slate-200 bg-white p-2">
+                    <p class="break-all text-[11px] font-medium text-slate-600">{{ inviteLink }}</p>
+                    <button
+                        type="button"
+                        class="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50"
+                        @click="copyInviteLink"
+                    >
+                        {{ t('familyTree.editor.copyLink', 'Copy Link') }}
+                    </button>
+                </div>
             </div>
 
             <button
@@ -393,8 +439,26 @@ const searchResults = ref<FamilyMember[]>([])
 
 const addRelationType = ref<'PARENT' | 'SPOUSE' | 'SIBLING' | 'CHILD'>('CHILD')
 const addRelativeMode = ref<'create' | 'link'>('create')
-const addRelativeName = ref('')
-const addRelativeGender = ref<'M' | 'F' | 'O'>('M')
+const addRelativeForm = ref({
+    first_name: '',
+    last_name: '',
+    nickname: '',
+    gender: 'M' as 'M' | 'F' | 'O',
+    age: '',
+    date_of_birth: '',
+    blood_group: '',
+    occupation: '',
+    education: '',
+    phone_no: '',
+    email_id: '',
+    address: '',
+    bio: '',
+    church_parish: '',
+    is_deceased: false,
+    date_of_death: '',
+})
+const addRelativeUseDob = ref(true)
+const addRelativeAvatar = ref<File | null>(null)
 const linkSearchQuery = ref('')
 const linkSearchResults = ref<any[]>([])
 const linkSearchLoading = ref(false)
@@ -423,6 +487,8 @@ const allowedActions = ref({
 const accessUsername = ref('')
 const accessPassword = ref('')
 const accessLoading = ref(false)
+const inviteLoading = ref(false)
+const inviteLink = ref('')
 
 const canShowGiveAccess = computed(() => {
     if (!selectedMember.value) return false
@@ -496,7 +562,7 @@ const duplicateRelationWarning = computed(() => {
         }
         const pendingParentGender = addRelativeMode.value === 'link'
             ? (selectedLinkTarget.value?.gender || 'O')
-            : addRelativeGender.value
+            : addRelativeForm.value.gender
         if (pendingParentGender === 'M' && selectedMemberHasFather.value) {
             return t('familyTree.editor.warnings.fatherExists')
         }
@@ -513,8 +579,37 @@ const canSubmitAddRelative = computed(() => {
     if (addRelativeMode.value === 'link') {
         return !!selectedLinkTarget.value
     }
-    return true
+    const fullName = `${addRelativeForm.value.first_name} ${addRelativeForm.value.last_name}`.trim()
+    return fullName.length > 0
 })
+
+const resetAddRelativeForm = () => {
+    addRelativeForm.value = {
+        first_name: '',
+        last_name: '',
+        nickname: '',
+        gender: 'M',
+        age: '',
+        date_of_birth: '',
+        blood_group: '',
+        occupation: '',
+        education: '',
+        phone_no: '',
+        email_id: '',
+        address: '',
+        bio: '',
+        church_parish: '',
+        is_deceased: false,
+        date_of_death: '',
+    }
+    addRelativeUseDob.value = true
+    addRelativeAvatar.value = null
+}
+
+const onAddRelativeAvatarChange = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    addRelativeAvatar.value = target.files?.[0] || null
+}
 
 // --- Computed Data ---
 // Flatten the store's tree data into a simple array of nodes and links.
@@ -729,7 +824,8 @@ const addRelativeFromPanel = async () => {
         editorError.value = t('familyTree.editor.errors.managePermission')
         return
     }
-    if (addRelativeMode.value === 'create' && !addRelativeName.value.trim()) {
+    const fullName = `${addRelativeForm.value.first_name} ${addRelativeForm.value.last_name}`.trim()
+    if (addRelativeMode.value === 'create' && !fullName) {
         editorError.value = t('familyTree.editor.errors.relativeNameRequired')
         return
     }
@@ -751,26 +847,53 @@ const addRelativeFromPanel = async () => {
         const endpoint = addRelativeMode.value === 'link'
             ? `${apiBase}/api/families/tree-edit/${selectedMember.value.id}/link-existing/`
             : `${apiBase}/api/families/tree-edit/${selectedMember.value.id}/add-relative/`
-        const body = addRelativeMode.value === 'link' && selectedLinkTarget.value
-            ? {
+        let res: Response
+        if (addRelativeMode.value === 'link' && selectedLinkTarget.value) {
+            const body = {
                 target_member_id: selectedLinkTarget.value.id,
                 relation_type: addRelationType.value,
             }
-            : {
-                name: addRelativeName.value.trim(),
-                gender: addRelativeGender.value,
-                relation_type: addRelationType.value,
-            }
+            res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...csrfHeaders,
+                },
+                credentials: 'include',
+                body: JSON.stringify(body),
+            })
+        } else {
+            const formData = new FormData()
+            formData.append('relation_type', addRelationType.value)
+            formData.append('name', fullName)
+            formData.append('first_name', addRelativeForm.value.first_name)
+            formData.append('last_name', addRelativeForm.value.last_name)
+            formData.append('nickname', addRelativeForm.value.nickname)
+            formData.append('gender', addRelativeForm.value.gender)
+            if (addRelativeUseDob.value && addRelativeForm.value.date_of_birth) formData.append('date_of_birth', addRelativeForm.value.date_of_birth)
+            if (!addRelativeUseDob.value && addRelativeForm.value.age) formData.append('age', addRelativeForm.value.age)
+            if (addRelativeForm.value.blood_group) formData.append('blood_group', addRelativeForm.value.blood_group)
+            if (addRelativeForm.value.occupation) formData.append('occupation', addRelativeForm.value.occupation)
+            if (addRelativeForm.value.education) formData.append('education', addRelativeForm.value.education)
+            if (addRelativeForm.value.phone_no) formData.append('phone_no', addRelativeForm.value.phone_no)
+            if (addRelativeForm.value.email_id) formData.append('email_id', addRelativeForm.value.email_id)
+            if (addRelativeForm.value.address) formData.append('address', addRelativeForm.value.address)
+            if (addRelativeForm.value.bio) formData.append('bio', addRelativeForm.value.bio)
+            if (addRelativeForm.value.church_parish) formData.append('church_parish', addRelativeForm.value.church_parish)
+            formData.append('is_deceased', addRelativeForm.value.is_deceased ? 'true' : 'false')
+            if (addRelativeForm.value.is_deceased && addRelativeForm.value.date_of_death) formData.append('date_of_death', addRelativeForm.value.date_of_death)
+            if (addRelativeAvatar.value) formData.append('profile_pic', addRelativeAvatar.value)
 
-        const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...csrfHeaders,
-            },
-            credentials: 'include',
-            body: JSON.stringify(body),
-        })
+            res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    ...csrfHeaders,
+                },
+                credentials: 'include',
+                body: formData,
+            })
+        }
+
         const payload = await res.json().catch(() => ({}))
         if (!res.ok) {
             editorError.value = payload.error || t('familyTree.editor.errors.addRelativeFailed')
@@ -778,7 +901,7 @@ const addRelativeFromPanel = async () => {
         }
 
         if (addRelativeMode.value === 'create') {
-            addRelativeName.value = ''
+            resetAddRelativeForm()
         } else {
             linkSearchQuery.value = ''
             resetLinkTarget()
@@ -799,6 +922,45 @@ const addRelativeFromPanel = async () => {
         console.error(err)
     } finally {
         editorLoading.value = false
+    }
+}
+
+const generateInviteLink = async () => {
+    inviteLoading.value = true
+    editorError.value = ''
+    editorSuccess.value = ''
+    try {
+        const csrfHeaders = await withCsrfHeaders()
+        const res = await fetch(`${apiBase}/api/auth/generate-invite-token/`, {
+            method: 'POST',
+            headers: {
+                ...csrfHeaders,
+            },
+            credentials: 'include',
+        })
+        const payload = await res.json().catch(() => ({}))
+        if (!res.ok) {
+            editorError.value = payload.error || t('login.errors.inviteFailed')
+            return
+        }
+
+        inviteLink.value = `${window.location.origin}/?token=${payload.token}`
+        editorSuccess.value = t('login.alerts.inviteCopied')
+    } catch (err) {
+        editorError.value = t('login.errors.inviteError')
+        console.error(err)
+    } finally {
+        inviteLoading.value = false
+    }
+}
+
+const copyInviteLink = async () => {
+    if (!inviteLink.value) return
+    try {
+        await navigator.clipboard.writeText(inviteLink.value)
+        editorSuccess.value = t('login.alerts.inviteCopied')
+    } catch (err) {
+        editorError.value = t('login.errors.inviteError')
     }
 }
 
@@ -950,18 +1112,8 @@ const focusFromQuery = () => {
       const g = svg.append("g")
 
       const hasParent = new Set(links.value.filter(l => l.type === 'parent').map(l => l.target))
-      const potentialRoots = nodes.value.filter(n => !hasParent.has(n.id))
-      const roots = potentialRoots.filter((r, idx) => {
-          const spouseLink = links.value.find(l => (l.source === r.id || l.target === r.id) && l.type === 'spouse')
-          if (spouseLink) {
-              const spouseId = spouseLink.source === r.id ? spouseLink.target : spouseLink.source
-              const spouseObj = potentialRoots.find(pr => pr.id === spouseId)
-              if (spouseObj && potentialRoots.indexOf(spouseObj) < idx) {
-                  return false
-              }
-          }
-          return true
-      })
+      const rootCandidates = nodes.value.filter(n => !hasParent.has(n.id))
+      const candidateRoots = rootCandidates.length ? rootCandidates : nodes.value
       
       const getChildrenIds = (parentId: number): number[] => {
          return links.value
@@ -969,72 +1121,39 @@ const focusFromQuery = () => {
             .map((l: any) => l.target)
       }
 
-      const buildHierarchy = (id: number, visited: Set<number> = new Set()): any => {
-         if (visited.has(id)) return null 
-         visited.add(id)
+      const buildHierarchy = (id: number, path: Set<number>, assigned: Set<number>): any => {
+         if (path.has(id) || assigned.has(id)) return null
          const node = nodes.value.find((n: any) => n.id === id)
+         if (!node) return null
+         const nextPath = new Set(path)
+         nextPath.add(id)
+         assigned.add(id)
          const childrenIds = getChildrenIds(id)
          return {
             ...node,
-            children: childrenIds.map(cid => buildHierarchy(cid, visited)).filter(Boolean)
+            children: childrenIds.map(cid => buildHierarchy(cid, nextPath, assigned)).filter(Boolean)
          }
       }
 
       const forest: any[] = []
-      const globalVisited = new Set<number>()
+      const assigned = new Set<number>()
       
-      potentialRoots.sort((a: any, b: any) => {
+      candidateRoots.sort((a: any, b: any) => {
           const childrenA = getChildrenIds(a.id).length
           const childrenB = getChildrenIds(b.id).length
           return childrenB - childrenA
       })
 
-      // Track which nodes are part of a "real" tree (have children or are children)
-      const treeNodeIds = new Set<number>()
-      
-      potentialRoots.forEach((rootNode: any) => {
-          if (globalVisited.has(rootNode.id)) return
-          
-          // Check if this root is a spouse of any node already in a real tree
-          const isSpouseOfTreeNode = links.value.some((l: any) => 
-              l.type === 'spouse' && (
-                  (l.source === rootNode.id && treeNodeIds.has(l.target)) ||
-                  (l.target === rootNode.id && treeNodeIds.has(l.source))
-              )
-          )
-          if (isSpouseOfTreeNode) {
-              globalVisited.add(rootNode.id) // Mark visited so it doesn't float
-              return
-          }
-          
-          const treeData = buildHierarchy(rootNode.id, globalVisited)
-          if (treeData) {
-              forest.push(treeData)
-              // Track all nodes in this tree that have actual hierarchy (children)
-              const collectIds = (node: any) => {
-                  treeNodeIds.add(node.id)
-                  if (node.children) node.children.forEach(collectIds)
-              }
-              collectIds(treeData)
-          }
-      })
-
-      // Any remaining unvisited nodes that are spouses of tree nodes should not float
-      const spouseRendered = new Set<number>()
-      links.value.filter(l => l.type === 'spouse').forEach((l: any) => {
-          if (treeNodeIds.has(l.source) || globalVisited.has(l.source)) {
-              spouseRendered.add(l.target)
-          }
-          if (treeNodeIds.has(l.target) || globalVisited.has(l.target)) {
-              spouseRendered.add(l.source)
-          }
+      candidateRoots.forEach((rootNode: any) => {
+          if (assigned.has(rootNode.id)) return
+          const treeData = buildHierarchy(rootNode.id, new Set<number>(), assigned)
+          if (treeData) forest.push(treeData)
       })
 
       nodes.value.forEach((node: any) => {
-          if (!globalVisited.has(node.id) && !spouseRendered.has(node.id)) {
-              forest.push({...node, children: []})
-              globalVisited.add(node.id)
-          }
+          if (assigned.has(node.id)) return
+          const treeData = buildHierarchy(node.id, new Set<number>(), assigned)
+          if (treeData) forest.push(treeData)
       })
 
       // Build a set of node IDs that have spouses for dynamic separation
@@ -1136,10 +1255,8 @@ const focusFromQuery = () => {
           const isUser = auth.user && d.username === auth.user.username
           const isMale = d.gender === 'M'
           const isFemale = d.gender === 'F'
-          const relationLabel = String(d.role || d.relation || t('familyTree.labels.member'))
-          const shortRelation = relationLabel.length > 20 ? `${relationLabel.slice(0, 20)}...` : relationLabel
           const genderSymbol = isMale ? 'M' : (isFemale ? 'F' : 'O')
-          const firstName = String(d.name || '').trim().split(' ')[0] || t('familyTree.labels.member')
+          const fullName = String(d.name || '').trim() || t('familyTree.labels.member')
           
           // Color scheme based on gender
           const cardFill = isUser ? '#F9EFC8' : (isMale ? '#EEF4FB' : isFemale ? '#FCEFF3' : '#EEF2F7')
@@ -1208,7 +1325,7 @@ const focusFromQuery = () => {
 
           // Name
           group.append("text")
-                        .text(firstName)
+                        .text(fullName)
                         .attr("x", 0).attr("y", 26)
             .attr("text-anchor", "middle")
             .attr("fill", accentColor)
@@ -1217,22 +1334,10 @@ const focusFromQuery = () => {
             .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
             .style("pointer-events", "none")
           
-          // Role / Relation
-          group.append("text")
-                        .text(shortRelation)
-                        .attr("x", 0).attr("y", 44)
-            .attr("text-anchor", "middle")
-                        .attr("fill", isUser ? '#8C6D2C' : '#66768B')
-                        .attr("font-weight", "700")
-                        .attr("font-size", "10.5px")
-            .attr("text-transform", "uppercase")
-            .attr("letter-spacing", "0.5px")
-            .style("pointer-events", "none")
-
           // Gender & Age pill
                     const pillWidth = 72
                     const pillHeight = 22
-                    const pillY = 64
+                                        const pillY = 52
           group.append("rect")
             .attr("x", -pillWidth/2).attr("y", pillY - pillHeight/2)
             .attr("width", pillWidth).attr("height", pillHeight).attr("rx", 10)
@@ -1338,7 +1443,7 @@ watch(addRelativeMode, (mode) => {
         linkSearchQuery.value = ''
         resetLinkTarget()
     } else {
-        addRelativeName.value = ''
+        resetAddRelativeForm()
     }
 })
 

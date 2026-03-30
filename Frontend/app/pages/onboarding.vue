@@ -7,8 +7,6 @@
               <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300', step >= 1 ? 'bg-brand-gold text-white shadow-lg scale-110' : 'bg-white text-slate-400 border border-slate-200']">1</div>
               <div class="h-0.5 w-12 bg-slate-200"></div>
               <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300', step >= 2 ? 'bg-brand-gold text-white shadow-lg scale-110' : 'bg-white text-slate-400 border border-slate-200']">2</div>
-              <div class="h-0.5 w-12 bg-slate-200"></div>
-              <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300', step >= 3 ? 'bg-brand-gold text-white shadow-lg scale-110' : 'bg-white text-slate-400 border border-slate-200']">3</div>
          </div>
 
         <div class="bg-white/70 backdrop-blur-2xl p-8 md:p-12 rounded-[40px] shadow-[0_20px_40px_rgba(0,0,0,0.05)] border border-white/60 relative overflow-hidden transition-all duration-500">
@@ -132,7 +130,7 @@
                          </div>
 
                          <!-- Flexible Relationship Selection -->
-                         <div class="group pt-4">
+                         <div v-if="false" class="group pt-4">
                              <label class="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 ml-1">{{ t('onboarding.relationships.connectRelatives') }}</label>
                              <div class="space-y-6">
                                  <!-- Selected Relationships List -->
@@ -300,7 +298,7 @@
                     </div>
 
                     <!-- Step 3: Managed Members Dashboard -->
-                     <div v-if="step === 3" class="space-y-8 animate-fade-in">
+                     <div v-if="false && step === 3" class="space-y-8 animate-fade-in">
                         <div class="bg-linear-to-br from-brand-gold/10 to-brand-gold/5 p-8 rounded-4xl border border-brand-gold/10 mb-8">
                              <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                                  <div>
@@ -1395,7 +1393,7 @@ const saveProfile = async () => {
             await auth.fetchProfile()
             await fetchManagedMembers()
             
-            step.value = 3 // Go to managed members step
+            await router.push('/familytree?view=visual&edit=1')
         } else {
             if (res.status === 403 || res.status === 401) {
                  alert(t('onboarding.errors.authFailed'))

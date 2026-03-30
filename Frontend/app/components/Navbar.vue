@@ -300,7 +300,7 @@ onUnmounted(() => {
               <button 
                 v-for="m in managedMembers" 
                 :key="m.id"
-                @click="mobileNav(`/onboarding?managed_edit=${m.id}`)"
+                @click="mobileNav(`/familytree?view=visual&edit=1&focus=${m.id}`)"
                 class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2.5"
               >
                 <div class="w-7 h-7 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
