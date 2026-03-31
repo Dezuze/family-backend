@@ -20,8 +20,8 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Create a non-root user
-RUN addgroup --system appgroup && adduser --system --group appuser
+# Create a non-root user with home directory
+RUN addgroup --system appgroup && adduser --system --group --home /app appuser
 
 RUN apt-get update && apt-get install -y \
     libpq-dev \
@@ -48,4 +48,4 @@ USER appuser
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["gunicorn", "backapi.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "backapi.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--chdir", "/app"]

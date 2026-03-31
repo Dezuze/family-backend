@@ -1,6 +1,7 @@
 import random
 from dataclasses import dataclass
 import json
+from typing import Any, Optional
 
 from django.contrib.auth import get_user_model
 from django.core.management import BaseCommand, CommandError, call_command
@@ -74,7 +75,7 @@ class Command(BaseCommand):
         # Build upward generations using a lineage chain while adding siblings,
         # so each ancestor couple has multiple children instead of single-child chains.
         self.stdout.write(self.style.NOTICE(f"Creating {up_depth} generations upward..."))
-        current_member_id = anchor_member.id
+        current_member_id = int(anchor_member.pk)
         for gen in range(1, up_depth + 1):
             father = self._add_relative(
                 client,
@@ -135,11 +136,11 @@ class Command(BaseCommand):
 
         # Build downward generations with broad branching and no leaf-only spouse rows.
         self.stdout.write(self.style.NOTICE(f"Creating {down_depth} generations downward..."))
-        anchor = FamilyMember.objects.get(id=anchor_member.id)
+        anchor = FamilyMember.objects.get(pk=anchor_member.pk)
         anchor_spouse_gender = "F" if anchor.gender == "M" else "M"
         anchor_spouse = self._add_relative(
             client,
-            anchor_id=anchor.id,
+            anchor_id=int(anchor.pk),
             relation_type="SPOUSE",
             full_name=self._name("RootSpouse", 0, anchor_spouse_gender),
             gender=anchor_spouse_gender,
@@ -149,7 +150,7 @@ class Command(BaseCommand):
         if not anchor_spouse:
             limit_hit = True
 
-        active_couples = [(anchor.id, anchor_spouse["id"])] if anchor_spouse else []
+        active_couples = [(int(anchor.pk), int(anchor_spouse["id"]))] if anchor_spouse else []
 
         for gen in range(1, down_depth + 1):
             if limit_hit or not active_couples:
@@ -245,7 +246,14 @@ class Command(BaseCommand):
     def _bootstrap_user_and_anchor(self, username: str, password: str, email: str):
         User = get_user_model()
 
-        family = Family.objects.create(sl_no="1", branch="Seed Branch", member_no="SEED-0001")
+        existing_user = User.objects.filter(username=username).first()
+        if existing_user and getattr(existing_user, "member", None):
+            return existing_user, existing_user.member
+
+        family = Family.objects.filter(member_no="SEED-0001").first()
+        if not family:
+            family = Family.objects.create(sl_no="1", branch="Seed Branch", member_no="SEED-0001")
+
         anchor_member = FamilyMember.objects.create(
             family=family,
             name="Seed Anchor",
@@ -271,7 +279,16 @@ class Command(BaseCommand):
     def _can_create_more(self) -> bool:
         return FamilyMember.objects.count() < self.max_members
 
-    def _add_relative(self, client: APIClient, anchor_id: int, relation_type: str, full_name: str, gender: str, age: int, stats: SeedStats):
+    def _add_relative(
+        self,
+        client: APIClient,
+        anchor_id: int,
+        relation_type: str,
+        full_name: str,
+        gender: str,
+        age: int,
+        stats: SeedStats,
+    ) -> Optional[dict[str, Any]]:
         if not self._can_create_more():
             return None
 
@@ -289,7 +306,7 @@ class Command(BaseCommand):
             "church_parish": random.choice(["St. Mary", "St. Joseph", "Holy Family", "St. Peter"]),
         }
 
-        res = client.post(f"/api/families/tree-edit/{anchor_id}/add-relative/", payload, format="json")
+        res: Any = client.post(f"/api/families/tree-edit/{anchor_id}/add-relative/", payload, format="json")
         stats.add_relative_calls += 1
 
         if res.status_code != 201:
@@ -298,7 +315,7 @@ class Command(BaseCommand):
                 f"status={res.status_code} body={self._response_body(res)}"
             )
 
-        body = self._response_body(res)
+        body: Any = self._response_body(res)
         data = body.get("member") if isinstance(body, dict) else None
         if not data or "id" not in data:
             raise CommandError("add-relative succeeded but member payload missing id.")
@@ -306,12 +323,12 @@ class Command(BaseCommand):
         stats.members_created += 1
         return data
 
-    def _link_existing(self, client: APIClient, anchor_id: int, relation_type: str, target_id: int, stats: SeedStats):
+    def _link_existing(self, client: APIClient, anchor_id: int, relation_type: str, target_id: int, stats: SeedStats) -> None:
         payload = {
             "relation_type": relation_type,
             "target_member_id": target_id,
         }
-        res = client.post(f"/api/families/tree-edit/{anchor_id}/link-existing/", payload, format="json")
+        res: Any = client.post(f"/api/families/tree-edit/{anchor_id}/link-existing/", payload, format="json")
         stats.link_existing_calls += 1
 
         if res.status_code != 200:
@@ -320,7 +337,7 @@ class Command(BaseCommand):
                 f"status={res.status_code} body={self._response_body(res)}"
             )
 
-    def _response_body(self, response):
+    def _response_body(self, response: Any) -> Any:
         if hasattr(response, "data"):
             return response.data
 
@@ -342,8 +359,8 @@ class Command(BaseCommand):
 
         reverse_spouse_duplicates = 0
         seen = set()
-        for rel in Relationship.objects.filter(relation_type="SPOUSE"):
-            pair = tuple(sorted((rel.from_member_id, rel.to_member_id)))
+        for from_id, to_id in Relationship.objects.filter(relation_type="SPOUSE").values_list("from_member_id", "to_member_id"):
+            pair = tuple(sorted((int(from_id), int(to_id))))
             if pair in seen:
                 reverse_spouse_duplicates += 1
             else:
