@@ -89,7 +89,9 @@ class RelationshipEngine:
                 # from member says: to member is my child
                 self._add_parent(parent_id=a, child_id=b)
             elif rtype == "SPOUSE":
-                self.spouse_pairs.add(self._pair(a, b))
+                # Always canonicalize spouse pairs to prevent duplicates
+                canonical_pair = self._pair(a, b)
+                self.spouse_pairs.add(canonical_pair)
             elif rtype == "SIBLING":
                 self.sibling_pairs.add(self._pair(a, b))
 
@@ -257,6 +259,7 @@ class RelationshipEngine:
             nodes.append(
                 {
                     "id": member.id,
+                    "member_id": member.member_id,
                     "name": member.name,
                     "photo": member.photo.url if member.photo else None,
                     "role": viewer_label or member.role,

@@ -60,11 +60,17 @@ def _safe_create_base_relationship(from_member, to_member, relation_type):
         return
     if from_member.id == to_member.id:
         return
-    Relationship.objects.get_or_create(
-        from_member=from_member,
-        to_member=to_member,
-        relation_type=relation_type,
-    )
+    try:
+        obj, created = Relationship.objects.get_or_create(
+            from_member=from_member,
+            to_member=to_member,
+            relation_type=relation_type,
+        )
+        if created:
+            obj.full_clean()
+    except Exception:
+        # If validation fails, the relationship already exists in reverse
+        pass
 
 class UserProfileView(APIView):
     """
@@ -379,8 +385,12 @@ def _apply_relation_link(anchor_member, target_member, relation):
         _safe_create_base_relationship(anchor_member, target_member, 'CHILD')
         target_member.parents.add(anchor_member)
     elif relation == 'SPOUSE':
-        _safe_create_base_relationship(anchor_member, target_member, 'SPOUSE')
-        _safe_create_base_relationship(target_member, anchor_member, 'SPOUSE')
+        # Only create relationship in one direction (canonical: min_id -> max_id)
+        # to prevent bidirectional duplicates
+        if anchor_member.id < target_member.id:
+            _safe_create_base_relationship(anchor_member, target_member, 'SPOUSE')
+        else:
+            _safe_create_base_relationship(target_member, anchor_member, 'SPOUSE')
     elif relation == 'SIBLING':
         _safe_create_base_relationship(anchor_member, target_member, 'SIBLING')
         _safe_create_base_relationship(target_member, anchor_member, 'SIBLING')

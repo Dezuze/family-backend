@@ -19,7 +19,7 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = FamilyMember
         fields = [
-            'id', 'name', 'nickname', 'age', 'gender', 'relation', 'role', 'is_committee',
+            'id', 'member_id', 'name', 'nickname', 'age', 'gender', 'relation', 'role', 'is_committee',
             'date_of_birth', 'date_of_death', 'blood_group', 'is_deceased', 'is_independent', 'has_account',
             'phone_no', 'email_id', 'photo',
             'profile_pic', 'bio', 'occupation', 'education', 'address_if_different', 
@@ -30,6 +30,7 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
             'created_by': {'read_only': True},
             'date_of_birth': {'required': False, 'allow_null': True},
             'date_of_death': {'required': False, 'allow_null': True},
+            'member_id': {'read_only': True},
         }
 
     def get_profile_pic(self, obj):
@@ -59,7 +60,7 @@ class FamilyTreeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FamilyMember
-        fields = ['id', 'name', 'role', 'is_committee', 'photo', 'parents', 'children']
+        fields = ['id', 'member_id', 'name', 'role', 'is_committee', 'photo', 'parents', 'children']
         depth = 1 
 
 from .models import FamilyMedia

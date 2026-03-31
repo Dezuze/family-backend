@@ -97,6 +97,11 @@ class FamilyMember(models.Model):
     church_parish = models.CharField(max_length=100, blank=True, null=True)
 
     photo = models.ImageField(upload_to="members/photos/", blank=True, null=True)
+    
+    # Member ID in format "III 2" (Roman numeral generation + number)
+    # For spouses: "III 2W" (original ID + W suffix)
+    member_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='managed_members',
@@ -222,6 +227,25 @@ class Relationship(models.Model):
 
     class Meta:
         unique_together = ('from_member', 'to_member', 'relation_type')
+
+    def clean(self):
+        """Prevent duplicate spouse relationships in reverse direction."""
+        from django.core.exceptions import ValidationError
+        
+        # Only validate SPOUSE relationships to prevent bidirectional duplicates
+        if (self.relation_type or '').strip().upper() == 'SPOUSE':
+            # Check if reverse relationship already exists
+            reverse_exists = Relationship.objects.filter(
+                from_member_id=self.to_member_id,
+                to_member_id=self.from_member_id,
+                relation_type='Spouse'
+            ).exclude(id=self.id).exists()
+            
+            if reverse_exists:
+                raise ValidationError(
+                    f'A spouse relationship already exists between {self.to_member.name} and {self.from_member.name}. '
+                    'Relationship is bidirectional.'
+                )
 
     def __str__(self):
         return f'{self.from_member.name} -> {self.relation_type} -> {self.to_member.name}'
