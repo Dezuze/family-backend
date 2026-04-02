@@ -674,8 +674,7 @@ watch(searchQuery, (val) => {
 
 /**
  * Search-to-Focus: smoothly pan/zoom the tree to center on a member.
- * Searches across ALL forest trees (not just the first) and handles
- * both direct tree nodes and spouse-rendered cards.
+ * Searches across ALL forest trees (not just the first).
  */
 const focusOnMember = (targetMember: any) => {
     searchQuery.value = '' // clear search
@@ -698,19 +697,6 @@ const focusOnMember = (targetMember: any) => {
             targetY = 100 + targetNode.y
             found = true
             break
-        }
-        
-        // Check if target is a spouse rendered next to a tree node
-        const spouseLink = links.value.find((l: any) => l.type === 'spouse' && (l.source === targetMember.id || l.target === targetMember.id))
-        if (spouseLink) {
-            const partnerId = spouseLink.source === targetMember.id ? spouseLink.target : spouseLink.source
-            const partnerNode = root.descendants().find((d: any) => d.data.id === partnerId)
-            if (partnerNode) {
-                targetX = xOffset + partnerNode.x + 180
-                targetY = 100 + partnerNode.y
-                found = true
-                break
-            }
         }
     }
 
@@ -1156,23 +1142,10 @@ const focusFromQuery = () => {
           if (treeData) forest.push(treeData)
       })
 
-      // Build a set of node IDs that have spouses for dynamic separation
-      const nodesWithSpouse = new Set<number>()
-      links.value.filter(l => l.type === 'spouse').forEach((l: any) => {
-          nodesWithSpouse.add(l.source)
-          nodesWithSpouse.add(l.target)
-      })
-
       const treeLayout = d3.tree<any>()
         .nodeSize([200, 300])
         .separation((a: any, b: any) => {
-            // Base separation = 1 (200px)
-            // If either node has a spouse, add extra space for the spouse card
-            const aHasSpouse = nodesWithSpouse.has(a.data?.id)
-            const bHasSpouse = nodesWithSpouse.has(b.data?.id)
-            if (aHasSpouse && bHasSpouse) return 2.5 // Both have spouses: 500px
-            if (aHasSpouse || bHasSpouse) return 2.2 // One has spouse: 440px
-            return a.parent === b.parent ? 1.5 : 2  // Siblings: 300px, cousins: 400px
+            return a.parent === b.parent ? 1.5 : 2
         })
 
       const forestGroups = forest.map((treeData) => {
@@ -1185,10 +1158,8 @@ const focusFromQuery = () => {
       const getTreeBounds = (root: any) => {
           let minX = Infinity, maxX = -Infinity
           root.descendants().forEach((d: any) => {
-              // Account for node card (75px half-width) plus possible spouse offset (180+75)
               const nodeLeft = d.x - 75
-              const hasSpouse = nodesWithSpouse.has(d.data?.id)
-              const nodeRight = hasSpouse ? d.x + 180 + 75 : d.x + 75
+              const nodeRight = d.x + 75
               if (nodeLeft < minX) minX = nodeLeft
               if (nodeRight > maxX) maxX = nodeRight
           })
@@ -1228,18 +1199,6 @@ const focusFromQuery = () => {
 
           nodeGroup.each(function(this: any, d: any) {
               renderCard(d3.select(this), 0, d.data)
-              const spouse = getSpouse(d.data.id)
-               if (spouse) {
-                   const sel = d3.select(this)
-                   const spouseOffset = 180 
-                         const halfCard = 164 / 2
-                   sel.append("line")
-                             .attr("x1", halfCard).attr("x2", spouseOffset - halfCard) 
-                      .attr("y1", 0).attr("y2", 0)
-                      .attr("stroke", "#c9a96e").attr("stroke-width", 2).attr("stroke-dasharray", "6,4")
-                      .attr("stroke-linecap", "round")
-                   renderCard(sel, spouseOffset, spouse)
-               }
           })
 
           // Advance offset past this tree's right edge
@@ -1352,13 +1311,6 @@ const focusFromQuery = () => {
             .attr("font-weight", "700")
       }
 
-      function getSpouse(id: number) {
-          const l = links.value.find((l: any) => l.type === 'spouse' && (l.source === id || l.target === id))
-          if (!l) return null
-          const spouseId = l.source === id ? l.target : l.source
-          return nodes.value.find((n: any) => n.id === spouseId)
-      }
-      
       // Store forest data globally for search-to-focus
       globalForestData = forestGroups.map((root, i) => ({
           root,
@@ -1376,11 +1328,6 @@ const focusFromQuery = () => {
               const nodeUsername = d.data.username
               if (nodeUsername === auth.user?.username) {
                   userCoords = { x: xOffset + (d.x || 0), y: 100 + (d.y || 0), found: true }
-                  return
-              }
-              const spouse = getSpouse(d.data.id)
-              if (spouse && (spouse as any).username === auth.user?.username) {
-                  userCoords = { x: xOffset + (d.x || 0) + 180, y: 100 + (d.y || 0), found: true }
               }
           })
       }

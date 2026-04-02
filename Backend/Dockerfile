@@ -35,8 +35,9 @@ RUN pip install --no-cache /wheels/*
 
 COPY . .
 
-# Create static and media dirs and set permissions
-RUN mkdir -p /app/staticfiles /app/media && \
+# Recreate static/media dirs to avoid file or broken symlink collisions from context copies
+RUN rm -rf /app/staticfiles /app/media && \
+    mkdir -p /app/staticfiles /app/media && \
     chown -R appuser:appgroup /app
 
 # Entrypoint script

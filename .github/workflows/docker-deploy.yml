@@ -111,7 +111,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: "docker-compose.yml,traefik/traefik.yml,management/docker-compose.yml"
+          source: "infra/production/docker-compose.yml,infra/production/traefik/traefik.yml,infra/management/docker-compose.yml"
           target: "~/app"
 
       - name: Deploy via SSH
@@ -132,16 +132,16 @@ jobs:
               # touch .env 
             fi
             echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
-            docker compose --env-file .env --env-file .env_deploy config >/dev/null
-            docker compose --env-file .env --env-file .env_deploy pull
-            docker compose --env-file .env --env-file .env_deploy up -d --remove-orphans
-            docker compose exec -T backend python manage.py migrate --noinput || echo "Migrations failed, check logs"
-            docker compose ps
-            docker compose exec -T backend curl -fsS http://localhost:8000/health/ >/dev/null
+            mkdir -p ~/app/infra/production/traefik/letsencrypt ~/management ~/management/portainer_data
+            docker compose -f infra/production/docker-compose.yml --env-file .env --env-file .env_deploy config >/dev/null
+            docker compose -f infra/production/docker-compose.yml --env-file .env --env-file .env_deploy pull
+            docker compose -f infra/production/docker-compose.yml --env-file .env --env-file .env_deploy up -d --remove-orphans
+            docker compose -f infra/production/docker-compose.yml exec -T backend python manage.py migrate --noinput || echo "Migrations failed, check logs"
+            docker compose -f infra/production/docker-compose.yml ps
+            docker compose -f infra/production/docker-compose.yml exec -T backend curl -fsS http://localhost:8000/health/ >/dev/null
 
             # Keep Portainer management stack source-controlled from this repository.
-            mkdir -p ~/management ~/management/portainer_data
-            cp ~/app/management/docker-compose.yml ~/management/docker-compose.yml
+            cp ~/app/infra/management/docker-compose.yml ~/management/docker-compose.yml
             cd ~/management
             docker compose config >/dev/null
             docker compose up -d --remove-orphans portainer

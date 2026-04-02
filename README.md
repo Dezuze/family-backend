@@ -159,7 +159,7 @@ The backend uses a **Smart Sync** architecture:
 
 ## 📱 Deployment & Production
 
-- **Docker Ready**: Includes docker-compose.yml for containerized deployment.
+- **Docker Ready**: Includes `infra/production/docker-compose.yml` for containerized deployment and `infra/management/docker-compose.yml` for Portainer.
 - **CI/CD**: GitHub Actions workflows for automated testing and deployment.
 - **Traefik Integration**: Automatic SSL/TLS certificate management.
 - **Environment Variables**: Secure configuration via .env files.
