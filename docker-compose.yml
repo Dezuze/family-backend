@@ -1,6 +1,7 @@
 services:
   traefik:
     image: traefik:v3.6.12
+    container_name: traefik
     # Settings moved to traefik/traefik.yml
     ports:
       - "80:80"
