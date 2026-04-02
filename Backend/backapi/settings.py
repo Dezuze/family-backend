@@ -18,11 +18,36 @@ except ImportError:
 
 # Security: Trust the 'X-Forwarded-Proto' header for determining SSL (Traefik handles this)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
 # Quick development settings - replace for production
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-key-change-in-prod')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+
+def _csv_env(name, default=''):
+    return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
+
+
+def _unique(values):
+    result = []
+    for value in values:
+        if value and value not in result:
+            result.append(value)
+    return result
+
+
+_domain = os.environ.get('DOMAIN', '').strip().rstrip('.')
+_host_defaults = ['localhost', '127.0.0.1']
+if _domain:
+    _host_defaults.extend([
+        _domain,
+        f'www.{_domain}',
+        f'api.{_domain}',
+        f'www.api.{_domain}',
+    ])
+
+ALLOWED_HOSTS = _unique(_csv_env('DJANGO_ALLOWED_HOSTS', ','.join(_host_defaults)))
 if 'test' in sys.argv:
     ALLOWED_HOSTS.append('testserver')
 
@@ -35,6 +60,7 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'same-origin'
 
 INSTALLED_APPS = [
     'unfold',
@@ -77,16 +103,41 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'backapi.urls'
 
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+_cors_defaults = ['http://localhost:3000', 'http://127.0.0.1:3000']
+if _domain:
+    _cors_defaults.extend([
+        f'https://{_domain}',
+        f'https://www.{_domain}',
+        f'https://api.{_domain}',
+        f'https://www.api.{_domain}',
+    ])
+
+CORS_ALLOWED_ORIGINS = _unique(_csv_env('CORS_ALLOWED_ORIGINS', ','.join(_cors_defaults)))
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = os.environ.get(
-    'CSRF_TRUSTED_ORIGINS', 
-    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000'
-).split(',')
+_csrf_defaults = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+if _domain:
+    _csrf_defaults.extend([
+        f'https://{_domain}',
+        f'https://www.{_domain}',
+        f'https://api.{_domain}',
+        f'https://www.api.{_domain}',
+    ])
+
+CSRF_TRUSTED_ORIGINS = _unique(_csv_env('CSRF_TRUSTED_ORIGINS', ','.join(_csrf_defaults)))
 CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+_cookie_domain = os.environ.get('DJANGO_COOKIE_DOMAIN', '').strip()
+if _cookie_domain:
+    SESSION_COOKIE_DOMAIN = _cookie_domain
+    CSRF_COOKIE_DOMAIN = _cookie_domain
 
 TEMPLATES = [
     {

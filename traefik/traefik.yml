@@ -2,6 +2,12 @@ api:
   dashboard: false
   insecure: false
 
+log:
+  level: INFO
+
+accessLog:
+  bufferingSize: 100
+
 entryPoints:
   web:
     address: ":80"
@@ -13,11 +19,20 @@ entryPoints:
 
   websecure:
     address: ":443"
+    http:
+      tls:
+        options: default
 
 providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
+
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      sniStrict: true
 
 certificatesResolvers:
   myresolver:

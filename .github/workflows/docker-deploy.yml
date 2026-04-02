@@ -132,9 +132,12 @@ jobs:
               # touch .env 
             fi
             echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
+            docker compose --env-file .env --env-file .env_deploy config >/dev/null
             docker compose --env-file .env --env-file .env_deploy pull
             docker compose --env-file .env --env-file .env_deploy up -d --remove-orphans
             docker compose exec -T backend python manage.py migrate --noinput || echo "Migrations failed, check logs"
+            docker compose ps
+            docker compose exec -T backend curl -fsS http://localhost:8000/health/ >/dev/null
             docker system prune -f
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
