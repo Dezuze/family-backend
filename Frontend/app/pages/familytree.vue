@@ -140,7 +140,7 @@
 
      <!-- Member Modal -->
      <MemberDetailsModal 
-          v-if="selectedMember" 
+                    v-if="selectedMember && !editMode" 
         :member="selectedMember" 
           :canEdit="editMode && allowedActions.can_manage"
         @edit="openQuickEditForSelected"
@@ -183,6 +183,7 @@
                     Is deceased
                 </label>
                 <input v-if="quickEditForm.is_deceased" v-model="quickEditForm.date_of_death" type="date" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <input type="file" accept="image/*" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" @change="onQuickEditAvatarChange" />
             </div>
 
             <p v-if="quickEditError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{{ quickEditError }}</p>
@@ -232,6 +233,15 @@
                 <div class="text-base font-black text-slate-900">{{ selectedMember.name }}</div>
                 <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ selectedMember.relation || selectedMember.role || t('familyTree.labels.member') }}</div>
             </div>
+
+            <button
+                class="w-full rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="!allowedActions.can_manage"
+                :class="allowedActions.can_manage ? 'border-brand-gold/40 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/15' : 'border-slate-200 text-slate-400'"
+                @click="openQuickEditForSelected"
+            >
+                Edit Profile
+            </button>
 
             <div class="grid grid-cols-2 gap-2">
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_parent" :class="addRelationType === 'PARENT' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('PARENT')">{{ t('familyTree.editor.actions.parent') }}</button>
@@ -549,6 +559,7 @@ const quickEditLoading = ref(false)
 const quickEditError = ref('')
 const quickEditSuccess = ref('')
 const quickEditMemberId = ref<number | null>(null)
+const quickEditAvatar = ref<File | null>(null)
 const quickEditForm = ref({
     first_name: '',
     last_name: '',
@@ -832,7 +843,13 @@ const openQuickEditForSelected = () => {
     }
     quickEditError.value = ''
     quickEditSuccess.value = ''
+    quickEditAvatar.value = null
     quickEditOpen.value = true
+}
+
+const onQuickEditAvatarChange = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    quickEditAvatar.value = target.files?.[0] || null
 }
 
 const saveQuickEditMember = async () => {
@@ -846,26 +863,29 @@ const saveQuickEditMember = async () => {
         const fd = new FormData()
         const fullName = `${quickEditForm.value.first_name} ${quickEditForm.value.last_name}`.trim()
 
-        if (quickEditForm.value.first_name) fd.append('first_name', quickEditForm.value.first_name)
-        if (quickEditForm.value.last_name) fd.append('last_name', quickEditForm.value.last_name)
+        fd.append('first_name', quickEditForm.value.first_name || '')
+        fd.append('last_name', quickEditForm.value.last_name || '')
         fd.append('member_id', quickEditForm.value.member_id || '')
         if (!quickEditForm.value.first_name && !quickEditForm.value.last_name && fullName) fd.append('name', fullName)
-        if (quickEditForm.value.nickname) fd.append('nickname', quickEditForm.value.nickname)
-        if (quickEditForm.value.gender) fd.append('gender', quickEditForm.value.gender)
-        if (quickEditForm.value.date_of_birth) fd.append('date_of_birth', quickEditForm.value.date_of_birth)
-        if (quickEditForm.value.age) fd.append('age', quickEditForm.value.age)
-        if (quickEditForm.value.blood_group) fd.append('blood_group', quickEditForm.value.blood_group)
-        if (quickEditForm.value.occupation) fd.append('occupation', quickEditForm.value.occupation)
-        if (quickEditForm.value.education) fd.append('education', quickEditForm.value.education)
-        if (quickEditForm.value.phone_no) fd.append('phone_no', quickEditForm.value.phone_no)
-        if (quickEditForm.value.email_id) fd.append('email_id', quickEditForm.value.email_id)
-        if (quickEditForm.value.church_parish) fd.append('church_parish', quickEditForm.value.church_parish)
-        if (quickEditForm.value.address) fd.append('address', quickEditForm.value.address)
-        if (quickEditForm.value.bio) fd.append('bio', quickEditForm.value.bio)
-        fd.append('is_deceased', quickEditForm.value.is_deceased ? 'true' : 'false')
-        if (quickEditForm.value.is_deceased && quickEditForm.value.date_of_death) {
-            fd.append('date_of_death', quickEditForm.value.date_of_death)
+        fd.append('nickname', quickEditForm.value.nickname || '')
+        fd.append('gender', quickEditForm.value.gender || 'O')
+        if (quickEditForm.value.date_of_birth) {
+            fd.append('date_of_birth', quickEditForm.value.date_of_birth)
         }
+        if (quickEditForm.value.age) {
+            fd.append('age', quickEditForm.value.age)
+        }
+        fd.append('blood_group', quickEditForm.value.blood_group || '')
+        fd.append('occupation', quickEditForm.value.occupation || '')
+        fd.append('education', quickEditForm.value.education || '')
+        fd.append('phone_no', quickEditForm.value.phone_no || '')
+        fd.append('email_id', quickEditForm.value.email_id || '')
+        fd.append('church_parish', quickEditForm.value.church_parish || '')
+        fd.append('address', quickEditForm.value.address || '')
+        fd.append('bio', quickEditForm.value.bio || '')
+        fd.append('is_deceased', quickEditForm.value.is_deceased ? 'true' : 'false')
+        fd.append('date_of_death', quickEditForm.value.is_deceased ? (quickEditForm.value.date_of_death || '') : '')
+        if (quickEditAvatar.value) fd.append('profile_pic', quickEditAvatar.value)
 
         let endpoint = `${apiBase}/api/families/managed/${quickEditMemberId.value}/`
         let method: 'PUT' | 'POST' = 'PUT'

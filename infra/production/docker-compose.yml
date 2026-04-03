@@ -32,7 +32,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ~/.docker/config.json:/config.json:ro
     environment:
-      - WATCHTOWER_POLL_INTERVAL=600
+      - WATCHTOWER_POLL_INTERVAL=15
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_LABEL_ENABLE=true
       - DOCKER_API_VERSION=1.41
@@ -87,6 +87,7 @@ services:
       - "traefik.http.routers.backend.middlewares=secure-headers@docker,compress@docker,backend-ratelimit@docker"
       - "traefik.docker.network=app_web"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
+      - "com.centurylinklabs.watchtower.enable=true"
     volumes:
       - ../../Backend/media:/app/media
       - static_volume:/app/staticfiles
@@ -120,6 +121,7 @@ services:
       - "traefik.http.routers.frontend.middlewares=secure-headers@docker,compress@docker"
       - "traefik.docker.network=app_web"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "com.centurylinklabs.watchtower.enable=true"
     networks:
       - web
     restart: always

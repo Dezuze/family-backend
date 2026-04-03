@@ -72,6 +72,31 @@ def _safe_create_base_relationship(from_member, to_member, relation_type):
         # If validation fails, the relationship already exists in reverse
         pass
 
+
+def _parse_iso_date(value):
+    if isinstance(value, date):
+        return value
+    text = str(value or '').strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def _calculate_age(dob_value, end_value=None):
+    dob = _parse_iso_date(dob_value)
+    if not dob:
+        return None
+
+    end_date = _parse_iso_date(end_value) or date.today()
+    if end_date < dob:
+        return None
+
+    years = end_date.year - dob.year - ((end_date.month, end_date.day) < (dob.month, dob.day))
+    return years if years >= 0 else None
+
 class UserProfileView(APIView):
     """
     GET  /api/families/profile/  → Return the authenticated user's FamilyMember.
@@ -110,13 +135,16 @@ class UserProfileView(APIView):
                  if not dob:
                      return Response({"error": "Date of birth is required for new profile."}, status=400)
                  
-                 # Calculate age
-                 try:
-                     dob_date = date.fromisoformat(dob)
-                     today = date.today()
-                     calculated_age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
-                 except ValueError:
+                 dob_date = _parse_iso_date(dob)
+                 if not dob_date:
                      return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+                 is_deceased_flag = data.get('is_deceased', 'false') in (True, 'true', 'True', '1', 1)
+                 death_input = data.get('date_of_death') if is_deceased_flag else None
+                 if death_input and not _parse_iso_date(death_input):
+                     return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+                 death_date = _parse_iso_date(death_input) if is_deceased_flag else None
+                 calculated_age = _calculate_age(dob_date, death_date)
 
                  requested_member_id = (data.get('member_id') or '').strip()
                  if requested_member_id and FamilyMember.objects.filter(member_id=requested_member_id).exists():
@@ -128,6 +156,8 @@ class UserProfileView(APIView):
                      member_id=requested_member_id or None,
                      age=calculated_age,
                      date_of_birth=dob_date,
+                     date_of_death=death_date,
+                     is_deceased=is_deceased_flag,
                      blood_group=data.get('blood_group', 'Unknown'),
                      relation='Member'
                  )
@@ -155,22 +185,33 @@ class UserProfileView(APIView):
                     return Response({"error": "Member ID already exists."}, status=400)
                 member.member_id = requested_member_id or None
             
-            if 'date_of_birth' in data and data['date_of_birth']: 
-                dob = data['date_of_birth']
-                member.date_of_birth = dob
-                # Recalculate age if DOB changed
-                try:
-                    dob_date = date.fromisoformat(dob)
-                    today = date.today()
-                    member.age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
-                except (ValueError, TypeError):
-                    pass
+            if 'date_of_birth' in data:
+                dob_input = data.get('date_of_birth') or None
+                if dob_input and not _parse_iso_date(dob_input):
+                    return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+                member.date_of_birth = dob_input
 
             if 'education' in data: member.education = data['education']
             if 'occupation' in data: member.occupation = data['occupation']
             if 'place_of_work' in data: member.place_of_work = data['place_of_work']
             if 'blood_group' in data: member.blood_group = data['blood_group']
             if 'is_deceased' in data: member.is_deceased = data['is_deceased'] == 'true' or data['is_deceased'] == True
+            if 'date_of_death' in data:
+                death_input = data.get('date_of_death') or None
+                if death_input and not _parse_iso_date(death_input):
+                    return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+                member.date_of_death = death_input
+            elif not member.is_deceased:
+                member.date_of_death = None
+
+            computed_age = _calculate_age(
+                member.date_of_birth,
+                member.date_of_death if member.is_deceased else None,
+            )
+            if computed_age is not None:
+                member.age = computed_age
+            elif 'age' in data:
+                member.age = data.get('age') or None
             if 'address' in data: member.address_if_different = data['address']
             elif 'address_if_different' in data: member.address_if_different = data['address_if_different']
             
@@ -517,18 +558,29 @@ class FamilyTreeAddRelativeView(APIView):
         if requested_member_id and FamilyMember.objects.filter(member_id=requested_member_id).exists():
             return Response({"error": "Member ID already exists."}, status=400)
 
+        is_deceased_flag = data.get('is_deceased', 'false') in (True, 'true', 'True', '1', 1)
+        dob_input = data.get('date_of_birth') or None
+        death_input = data.get('date_of_death') or None
+        if dob_input and not _parse_iso_date(dob_input):
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+        if death_input and not _parse_iso_date(death_input):
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+        computed_age = _calculate_age(dob_input, death_input if is_deceased_flag else None)
+        manual_age = data.get('age') if data.get('age') not in ('', None) else None
+
         new_member = FamilyMember.objects.create(
             family=member.family,
             name=full_name,
             member_id=requested_member_id or None,
             nickname=data.get('nickname', ''),
-            age=data.get('age') if data.get('age') not in ('', None) else None,
+            age=computed_age if computed_age is not None else manual_age,
             gender=requested_gender,
             relation='Other',
-            date_of_birth=data.get('date_of_birth') or None,
-            date_of_death=data.get('date_of_death') or None,
+            date_of_birth=dob_input,
+            date_of_death=death_input if is_deceased_flag else None,
             blood_group=data.get('blood_group') or None,
-            is_deceased=data.get('is_deceased', 'false') in (True, 'true', 'True', '1', 1),
+            is_deceased=is_deceased_flag,
             occupation=data.get('occupation') or None,
             education=data.get('education') or None,
             phone_no=data.get('phone_no') or None,
@@ -649,18 +701,31 @@ class ManagedMembersView(APIView):
             if requested_member_id and FamilyMember.objects.filter(member_id=requested_member_id).exists():
                 return Response({"error": "Member ID already exists."}, status=400)
 
+            is_deceased_flag = data.get('is_deceased', 'false') == 'true' or data.get('is_deceased') == True
+            dob_input = data.get('date_of_birth') or None
+            death_input = data.get('date_of_death') or None
+            if dob_input and not _parse_iso_date(dob_input):
+                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+            if death_input and not _parse_iso_date(death_input):
+                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+            computed_age = _calculate_age(dob_input, death_input if is_deceased_flag else None)
+            manual_age = data.get('age') if data.get('age') not in ('', None) else None
+
             member = FamilyMember.objects.create(
                 family=family,
                 name=full_name,
                 member_id=requested_member_id or None,
-                age=data.get('age', 0),
+                age=computed_age if computed_age is not None else manual_age,
                 gender=data.get('gender', 'M'),
                 relation='Other',
-                date_of_birth=data.get('date_of_birth', '2000-01-01'),
+                date_of_birth=dob_input,
+                date_of_death=death_input if is_deceased_flag else None,
                 blood_group=data.get('blood_group', 'Unknown'),
                 occupation=data.get('occupation', ''),
                 education=data.get('education', ''),
-                is_deceased=data.get('is_deceased', 'false') == 'true' or data.get('is_deceased') == True,
+                place_of_work=data.get('place_of_work', ''),
+                is_deceased=is_deceased_flag,
                 phone_no=data.get('phone_no', ''),
                 email_id=data.get('email_id', ''),
                 address_if_different=data.get('address', ''),
@@ -776,13 +841,34 @@ class ManagedMemberDetailView(APIView):
                 creator_member = getattr(request.user, 'member', None)
                 if creator_member:
                     _create_auto_relationship(member, creator_member, relation_override=input_relation)
-            if 'date_of_birth' in data: member.date_of_birth = data['date_of_birth']
+            if 'date_of_birth' in data:
+                dob_input = data.get('date_of_birth') or None
+                if dob_input and not _parse_iso_date(dob_input):
+                    return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+                member.date_of_birth = dob_input
             if 'blood_group' in data: member.blood_group = data['blood_group']
             if 'occupation' in data: member.occupation = data['occupation']
+            if 'place_of_work' in data: member.place_of_work = data['place_of_work']
             if 'education' in data: member.education = data['education']
             if 'phone_no' in data: member.phone_no = data['phone_no']
             if 'email_id' in data: member.email_id = data['email_id']
             if 'is_deceased' in data: member.is_deceased = data['is_deceased'] == 'true' or data['is_deceased'] == True
+            if 'date_of_death' in data:
+                death_input = data.get('date_of_death') or None
+                if death_input and not _parse_iso_date(death_input):
+                    return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+                member.date_of_death = death_input
+            elif not member.is_deceased:
+                member.date_of_death = None
+
+            computed_age = _calculate_age(
+                member.date_of_birth,
+                member.date_of_death if member.is_deceased else None,
+            )
+            if computed_age is not None:
+                member.age = computed_age
+            elif 'age' in data:
+                member.age = data.get('age') or None
             if 'address' in data: member.address_if_different = data['address']
             if 'bio' in data: member.bio = data['bio']
             if 'nickname' in data: member.nickname = data['nickname']
