@@ -37,16 +37,29 @@
             <!-- Header & Close -->
             <div class="flex justify-between items-start mb-6">
                 <div>
-                <h3 class="text-lg font-bold text-brand-gold uppercase tracking-widest">{{ member.committee_role || member.role || member.relation || t('memberDetailsModal.labels.member') }}</h3>
+                <h3 class="text-lg font-bold text-brand-gold uppercase tracking-widest">{{ t('memberDetailsModal.labels.member') }}</h3>
                 <p class="text-xs text-slate-500">{{ t('memberDetailsModal.labels.profileDetails') }}</p>
                 </div>
-                <button @click="$emit('close')" class="hidden md:block p-2 text-slate-400 hover:text-slate-800 transition-colors">
+                <div class="hidden md:flex items-center gap-2">
+                  <button
+                    v-if="canEdit"
+                    @click="$emit('edit')"
+                    class="rounded-lg border border-brand-gold/40 px-3 py-1.5 text-xs font-bold text-brand-gold transition-colors hover:bg-brand-gold/10"
+                  >
+                    Edit Member
+                  </button>
+                  <button @click="$emit('close')" class="p-2 text-slate-400 hover:text-slate-800 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+                  </button>
+                </div>
             </div>
 
             <!-- Details Grid -->
             <div class="grid grid-cols-2 gap-6 mb-8">
+                <div>
+                 <span class="text-xs text-slate-400 uppercase font-bold">Member ID</span>
+                 <p class="text-slate-800 font-medium">{{ member.member_id || member.id || t('memberDetailsModal.labels.notAvailable') }}</p>
+                </div>
                 <div>
                  <span class="text-xs text-slate-400 uppercase font-bold">{{ member.is_deceased ? t('memberDetailsModal.labels.dateOfDeath') : t('memberDetailsModal.labels.dateOfBirth') }}</span>
                    <p class="text-slate-800 font-medium">
@@ -138,9 +151,13 @@ const apiBase = config.public.apiBase || 'http://localhost:8000'
 const { t } = useI18n()
 
 defineProps({
-  member: Object
+  member: Object,
+  canEdit: {
+    type: Boolean,
+    default: false,
+  },
 })
-defineEmits(['close'])
+defineEmits(['close', 'edit'])
 
 const resolveImage = (path) => {
     if (!path) return null

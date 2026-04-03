@@ -13,12 +13,10 @@
       <div class="flex items-center justify-between gap-2">
         <h3 class="text-sm font-semibold truncate text-slate-800">{{ member.name }}</h3>
         <span v-if="member.is_committee" class="shrink-0 bg-brand-gold/10 text-brand-gold text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tight">{{ t('memberCard.committeeBadge') }}</span>
-        <span class="shrink-0 text-[10px] text-slate-400">#{{ member.id }}</span>
+        <span class="shrink-0 text-[10px] text-slate-400">{{ member.member_id || `#${member.id}` }}</span>
       </div>
       <p class="text-xs text-slate-500 truncate mt-0.5">
-        <span v-if="member.role" class="text-brand-gold font-bold mr-1">{{ member.role }}</span>
-        <span v-else-if="member.relation">{{ member.relation }}</span>
-        <span v-if="member.age" class="ml-1 opacity-70">• {{ member.age }}{{ t('memberCard.ageSuffix') }}</span>
+        <span v-if="member.age" class="opacity-70">{{ member.age }}{{ t('memberCard.ageSuffix') }}</span>
       </p>
     </div>
   </div>

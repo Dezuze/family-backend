@@ -1,5 +1,6 @@
 export interface FamilyMember {
   id: number
+  member_id?: string
   name: string // Full name property
   first_name?: string
   last_name?: string

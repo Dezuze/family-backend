@@ -30,7 +30,7 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
             'created_by': {'read_only': True},
             'date_of_birth': {'required': False, 'allow_null': True},
             'date_of_death': {'required': False, 'allow_null': True},
-            'member_id': {'read_only': True},
+            'member_id': {'required': False, 'allow_null': True, 'allow_blank': True},
         }
 
     def get_profile_pic(self, obj):

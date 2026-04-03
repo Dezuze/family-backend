@@ -427,6 +427,11 @@
                             <input v-model="managedForm.nickname" type="text" :placeholder="t('onboarding.placeholders.nickname')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                         </div>
 
+                        <div>
+                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Member ID</label>
+                            <input v-model="managedForm.member_id" type="text" placeholder="Optional member id" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.fields.relation') }}</label>
@@ -843,6 +848,7 @@ const managedForm = ref({
     first_name: '',
     last_name: '',
     nickname: '',
+    member_id: '',
     gender: '',
     relation: '',
     age: '',
@@ -881,6 +887,7 @@ const openManagedEditor = (m) => {
         first_name: f,
         last_name: l,
         nickname: m.nickname || '',
+        member_id: m.member_id || '',
         gender: m.gender || '',
         relation: m.relation || '',
         date_of_birth: m.date_of_birth || '',

@@ -39,8 +39,8 @@ class RelationshipEngine:
         self.sibling_pairs: Set[Tuple[int, int]] = set()
 
         self._ingest_relationships()
+        self._ingest_parent_links_from_members()
         self._infer_siblings_from_shared_parents()
-        self._infer_spouses_from_coparents()
 
     @staticmethod
     def canonicalize_input(label: str) -> str | None:
@@ -94,6 +94,17 @@ class RelationshipEngine:
                 self.spouse_pairs.add(canonical_pair)
             elif rtype == "SIBLING":
                 self.sibling_pairs.add(self._pair(a, b))
+
+    def _ingest_parent_links_from_members(self) -> None:
+        # Respect parent M2M as authoritative structural input without writing
+        # derived Relationship rows during read operations.
+        for member in self.members:
+            try:
+                parents = member.parents.all()
+            except Exception:
+                continue
+            for parent in parents:
+                self._add_parent(parent_id=parent.id, child_id=member.id)
 
     def _add_parent(self, parent_id: int, child_id: int) -> None:
         if parent_id == child_id:

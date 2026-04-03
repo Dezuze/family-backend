@@ -140,10 +140,62 @@
 
      <!-- Member Modal -->
      <MemberDetailsModal 
-        v-if="selectedMember && !editMode" 
+          v-if="selectedMember" 
         :member="selectedMember" 
+          :canEdit="editMode && allowedActions.can_manage"
+        @edit="openQuickEditForSelected"
         @close="selectedMember = null" 
      />
+
+     <div v-if="quickEditOpen && quickEditMemberId" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60" @click="quickEditOpen = false"></div>
+        <div class="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="text-lg font-black text-slate-900">Edit Member</h3>
+                    <p class="text-xs text-slate-500">Update selected member details</p>
+                </div>
+                <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 hover:bg-slate-100" @click="quickEditOpen = false">Close</button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <input v-model="quickEditForm.first_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="First name" />
+                <input v-model="quickEditForm.last_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Last name" />
+                <input v-model="quickEditForm.member_id" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Member ID" />
+                <input v-model="quickEditForm.nickname" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Nickname" />
+                <select v-model="quickEditForm.gender" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                    <option value="O">Other</option>
+                </select>
+                <input v-model="quickEditForm.date_of_birth" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <input v-model="quickEditForm.age" type="number" min="0" max="150" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Age" />
+                <input v-model="quickEditForm.blood_group" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Blood group" />
+                <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
+                <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
+                <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
+                <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
+                <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
+                <textarea v-model="quickEditForm.address" rows="2" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address"></textarea>
+                <textarea v-model="quickEditForm.bio" rows="2" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Bio"></textarea>
+                <label class="md:col-span-2 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <input v-model="quickEditForm.is_deceased" type="checkbox" class="accent-brand-gold" />
+                    Is deceased
+                </label>
+                <input v-if="quickEditForm.is_deceased" v-model="quickEditForm.date_of_death" type="date" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            </div>
+
+            <p v-if="quickEditError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{{ quickEditError }}</p>
+            <p v-if="quickEditSuccess" class="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">{{ quickEditSuccess }}</p>
+
+            <div class="mt-4 flex justify-end gap-2">
+                <button class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700" @click="quickEditOpen = false">Cancel</button>
+                <button class="rounded-xl bg-brand-gold px-3 py-2 text-xs font-black text-white disabled:opacity-50" :disabled="quickEditLoading" @click="saveQuickEditMember">
+                    {{ quickEditLoading ? 'Saving...' : 'Save Changes' }}
+                </button>
+            </div>
+        </div>
+     </div>
 
       <div
           v-if="editMode && isEditorSheetOpen"
@@ -221,6 +273,7 @@
                         <input v-model="addRelativeForm.last_name" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.lastName')" />
                     </div>
                     <input v-model="addRelativeForm.nickname" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.nickname')" />
+                    <input v-model="addRelativeForm.member_id" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" placeholder="Member ID (optional)" />
                     <select v-model="addRelativeForm.gender" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
                         <option value="M">{{ t('onboarding.gender.male') }}</option>
                         <option value="F">{{ t('onboarding.gender.female') }}</option>
@@ -443,6 +496,7 @@ const addRelativeForm = ref({
     first_name: '',
     last_name: '',
     nickname: '',
+    member_id: '',
     gender: 'M' as 'M' | 'F' | 'O',
     age: '',
     date_of_birth: '',
@@ -489,6 +543,31 @@ const accessPassword = ref('')
 const accessLoading = ref(false)
 const inviteLoading = ref(false)
 const inviteLink = ref('')
+
+const quickEditOpen = ref(false)
+const quickEditLoading = ref(false)
+const quickEditError = ref('')
+const quickEditSuccess = ref('')
+const quickEditMemberId = ref<number | null>(null)
+const quickEditForm = ref({
+    first_name: '',
+    last_name: '',
+    member_id: '',
+    nickname: '',
+    gender: 'M' as 'M' | 'F' | 'O',
+    age: '',
+    date_of_birth: '',
+    blood_group: '',
+    occupation: '',
+    education: '',
+    phone_no: '',
+    email_id: '',
+    church_parish: '',
+    address: '',
+    bio: '',
+    is_deceased: false,
+    date_of_death: '',
+})
 
 const canShowGiveAccess = computed(() => {
     if (!selectedMember.value) return false
@@ -588,6 +667,7 @@ const resetAddRelativeForm = () => {
         first_name: '',
         last_name: '',
         nickname: '',
+        member_id: '',
         gender: 'M',
         age: '',
         date_of_birth: '',
@@ -653,14 +733,36 @@ const sortedMembers = computed(() => {
 // the last-rendered tree state.
 let globalZoom: any = null        // D3 zoom behavior for programmatic pan/zoom
 let globalSVG: any = null         // D3 selection of the <svg> element
-let globalRoot: any = null        // Root of the first tree (for fallback searches)
-let globalForestData: { root: any, xOffset: number }[] = [] // All trees + X offsets
+let globalNodeCoords = new Map<number, { x: number; y: number }>()
 
 const resolveImage = (path: string | null) => {
     if (!path) return null
     if (path.startsWith('http') || path.startsWith('data:')) return path
     const cleanPath = path.startsWith('/') ? path : `/${path}`
     return `${apiBase}${cleanPath}`
+}
+
+const computeAgeFromDob = (dob?: string | null): number | null => {
+    if (!dob) return null
+    const birth = new Date(dob)
+    if (Number.isNaN(birth.getTime())) return null
+
+    const now = new Date()
+    let years = now.getFullYear() - birth.getFullYear()
+    const beforeBirthday =
+        now.getMonth() < birth.getMonth() ||
+        (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())
+
+    if (beforeBirthday) years -= 1
+    return years >= 0 ? years : null
+}
+
+const getDisplayAge = (member: any): string => {
+    if (member?.age !== null && member?.age !== undefined && member?.age !== '') {
+        return String(member.age)
+    }
+    const derived = computeAgeFromDob(member?.date_of_birth)
+    return derived !== null ? String(derived) : '?'
 }
 
 watch(searchQuery, (val) => {
@@ -682,23 +784,10 @@ const focusOnMember = (targetMember: any) => {
     
     if (!targetMember || !globalZoom || !globalSVG) return
 
-    let targetX = 0
-    let targetY = 0
-    let found = false
-
-    // Search across ALL forest trees, not just the first
-    for (const { root, xOffset } of globalForestData) {
-        if (found) break
-        
-        // Check direct node
-        const targetNode = root.descendants().find((d: any) => d.data.id === targetMember.id)
-        if (targetNode) {
-            targetX = xOffset + targetNode.x
-            targetY = 100 + targetNode.y
-            found = true
-            break
-        }
-    }
+    const coords = globalNodeCoords.get(targetMember.id)
+    const found = Boolean(coords)
+    const targetX = coords?.x || 0
+    const targetY = coords?.y || 0
 
     if (found) {
         const container = chartContainer.value
@@ -716,6 +805,107 @@ const focusOnMember = (targetMember: any) => {
 }
 
 const openMember = (m: FamilyMember) => { selectedMember.value = m }
+
+const openQuickEditForSelected = () => {
+    if (!selectedMember.value || !editMode.value || !allowedActions.value.can_manage) return
+    const member = selectedMember.value as any
+    const parts = String(member.name || '').trim().split(' ').filter(Boolean)
+    quickEditMemberId.value = member.id
+    quickEditForm.value = {
+        first_name: parts[0] || '',
+        last_name: parts.slice(1).join(' ') || '',
+        member_id: member.member_id || '',
+        nickname: member.nickname || '',
+        gender: (member.gender || 'M') as 'M' | 'F' | 'O',
+        age: member.age !== undefined && member.age !== null ? String(member.age) : '',
+        date_of_birth: member.date_of_birth || '',
+        blood_group: member.blood_group || '',
+        occupation: member.occupation || '',
+        education: member.education || '',
+        phone_no: member.phone_no || '',
+        email_id: member.email_id || '',
+        church_parish: member.church_parish || '',
+        address: member.location || member.address || '',
+        bio: member.bio || '',
+        is_deceased: Boolean(member.is_deceased),
+        date_of_death: member.date_of_death || '',
+    }
+    quickEditError.value = ''
+    quickEditSuccess.value = ''
+    quickEditOpen.value = true
+}
+
+const saveQuickEditMember = async () => {
+    if (!quickEditMemberId.value || !selectedMember.value) return
+    quickEditLoading.value = true
+    quickEditError.value = ''
+    quickEditSuccess.value = ''
+
+    try {
+        const csrfHeaders = await withCsrfHeaders()
+        const fd = new FormData()
+        const fullName = `${quickEditForm.value.first_name} ${quickEditForm.value.last_name}`.trim()
+
+        if (quickEditForm.value.first_name) fd.append('first_name', quickEditForm.value.first_name)
+        if (quickEditForm.value.last_name) fd.append('last_name', quickEditForm.value.last_name)
+        fd.append('member_id', quickEditForm.value.member_id || '')
+        if (!quickEditForm.value.first_name && !quickEditForm.value.last_name && fullName) fd.append('name', fullName)
+        if (quickEditForm.value.nickname) fd.append('nickname', quickEditForm.value.nickname)
+        if (quickEditForm.value.gender) fd.append('gender', quickEditForm.value.gender)
+        if (quickEditForm.value.date_of_birth) fd.append('date_of_birth', quickEditForm.value.date_of_birth)
+        if (quickEditForm.value.age) fd.append('age', quickEditForm.value.age)
+        if (quickEditForm.value.blood_group) fd.append('blood_group', quickEditForm.value.blood_group)
+        if (quickEditForm.value.occupation) fd.append('occupation', quickEditForm.value.occupation)
+        if (quickEditForm.value.education) fd.append('education', quickEditForm.value.education)
+        if (quickEditForm.value.phone_no) fd.append('phone_no', quickEditForm.value.phone_no)
+        if (quickEditForm.value.email_id) fd.append('email_id', quickEditForm.value.email_id)
+        if (quickEditForm.value.church_parish) fd.append('church_parish', quickEditForm.value.church_parish)
+        if (quickEditForm.value.address) fd.append('address', quickEditForm.value.address)
+        if (quickEditForm.value.bio) fd.append('bio', quickEditForm.value.bio)
+        fd.append('is_deceased', quickEditForm.value.is_deceased ? 'true' : 'false')
+        if (quickEditForm.value.is_deceased && quickEditForm.value.date_of_death) {
+            fd.append('date_of_death', quickEditForm.value.date_of_death)
+        }
+
+        let endpoint = `${apiBase}/api/families/managed/${quickEditMemberId.value}/`
+        let method: 'PUT' | 'POST' = 'PUT'
+
+        if (contextOwnership.value.is_self) {
+            endpoint = `${apiBase}/api/families/profile/`
+            method = 'POST'
+        }
+
+        const res = await fetch(endpoint, {
+            method,
+            headers: {
+                ...csrfHeaders,
+            },
+            credentials: 'include',
+            body: fd,
+        })
+
+        const payload = await res.json().catch(() => ({}))
+        if (!res.ok) {
+            quickEditError.value = payload.error || 'Failed to update member.'
+            return
+        }
+
+        quickEditSuccess.value = 'Member details updated.'
+        await familyStore.fetchFamily()
+        await auth.fetchProfile()
+        const refreshed = nodes.value.find((n: any) => n.id === quickEditMemberId.value)
+        if (refreshed) {
+            selectedMember.value = refreshed as FamilyMember
+            await loadMemberContext(refreshed.id)
+        }
+        setTimeout(initGraph, 120)
+    } catch (err) {
+        quickEditError.value = 'Failed to update member.'
+        console.error(err)
+    } finally {
+        quickEditLoading.value = false
+    }
+}
 
 const setRelationType = (value: 'PARENT' | 'SPOUSE' | 'SIBLING' | 'CHILD') => {
     if (value === 'SPOUSE' && selectedMemberHasSpouse.value) {
@@ -855,6 +1045,7 @@ const addRelativeFromPanel = async () => {
             formData.append('first_name', addRelativeForm.value.first_name)
             formData.append('last_name', addRelativeForm.value.last_name)
             formData.append('nickname', addRelativeForm.value.nickname)
+            if (addRelativeForm.value.member_id) formData.append('member_id', addRelativeForm.value.member_id)
             formData.append('gender', addRelativeForm.value.gender)
             if (addRelativeUseDob.value && addRelativeForm.value.date_of_birth) formData.append('date_of_birth', addRelativeForm.value.date_of_birth)
             if (!addRelativeUseDob.value && addRelativeForm.value.age) formData.append('age', addRelativeForm.value.age)
@@ -1097,114 +1288,468 @@ const focusFromQuery = () => {
       svg.selectAll("*").remove()
       const g = svg.append("g")
 
-      const hasParent = new Set(links.value.filter(l => l.type === 'parent').map(l => l.target))
-      const rootCandidates = nodes.value.filter(n => !hasParent.has(n.id))
-      const candidateRoots = rootCandidates.length ? rootCandidates : nodes.value
-      
-      const getChildrenIds = (parentId: number): number[] => {
-         return links.value
-            .filter((l: any) => l.type === 'parent' && l.source === parentId)
-            .map((l: any) => l.target)
+    const rawParentLinks = links.value.filter((l: any) => l.type === 'parent')
+    const rawSiblingLinks = links.value.filter((l: any) => l.type === 'sibling')
+      const spouseLinks = links.value.filter((l: any) => l.type === 'spouse')
+
+      // Deduplicate and sanitize parent edges before generation layering.
+      const parentLinks: Array<{ source: number; target: number }> = []
+      const seenParentEdge = new Set<string>()
+      const addParentEdge = (source: number, target: number) => {
+          if (source === target) return
+          const key = `${source}->${target}`
+          if (seenParentEdge.has(key)) return
+          seenParentEdge.add(key)
+          parentLinks.push({ source, target })
+      }
+      for (const l of rawParentLinks) addParentEdge(l.source, l.target)
+
+      const parentByChild = new Map<number, Set<number>>()
+      const childrenByParent = new Map<number, Set<number>>()
+    const siblingsByMember = new Map<number, Set<number>>()
+      const spouseByMember = new Map<number, number>()
+
+      for (const l of parentLinks) {
+          if (!parentByChild.has(l.target)) parentByChild.set(l.target, new Set<number>())
+          if (!childrenByParent.has(l.source)) childrenByParent.set(l.source, new Set<number>())
+          parentByChild.get(l.target)!.add(l.source)
+          childrenByParent.get(l.source)!.add(l.target)
       }
 
-      const buildHierarchy = (id: number, path: Set<number>, assigned: Set<number>): any => {
-         if (path.has(id) || assigned.has(id)) return null
-         const node = nodes.value.find((n: any) => n.id === id)
-         if (!node) return null
-         const nextPath = new Set(path)
-         nextPath.add(id)
-         assigned.add(id)
-         const childrenIds = getChildrenIds(id)
-         return {
-            ...node,
-            children: childrenIds.map(cid => buildHierarchy(cid, nextPath, assigned)).filter(Boolean)
-         }
+      for (const l of rawSiblingLinks) {
+          if (!siblingsByMember.has(l.source)) siblingsByMember.set(l.source, new Set<number>())
+          if (!siblingsByMember.has(l.target)) siblingsByMember.set(l.target, new Set<number>())
+          siblingsByMember.get(l.source)!.add(l.target)
+          siblingsByMember.get(l.target)!.add(l.source)
       }
 
-      const forest: any[] = []
-      const assigned = new Set<number>()
-      
-      candidateRoots.sort((a: any, b: any) => {
-          const childrenA = getChildrenIds(a.id).length
-          const childrenB = getChildrenIds(b.id).length
-          return childrenB - childrenA
-      })
-
-      candidateRoots.forEach((rootNode: any) => {
-          if (assigned.has(rootNode.id)) return
-          const treeData = buildHierarchy(rootNode.id, new Set<number>(), assigned)
-          if (treeData) forest.push(treeData)
-      })
-
-      nodes.value.forEach((node: any) => {
-          if (assigned.has(node.id)) return
-          const treeData = buildHierarchy(node.id, new Set<number>(), assigned)
-          if (treeData) forest.push(treeData)
-      })
-
-      const treeLayout = d3.tree<any>()
-        .nodeSize([200, 300])
-        .separation((a: any, b: any) => {
-            return a.parent === b.parent ? 1.5 : 2
-        })
-
-      const forestGroups = forest.map((treeData) => {
-          const strategyRoot = d3.hierarchy(treeData)
-          treeLayout(strategyRoot)
-          return strategyRoot
-      })
-
-      // Calculate actual tree widths for dynamic spacing
-      const getTreeBounds = (root: any) => {
-          let minX = Infinity, maxX = -Infinity
-          root.descendants().forEach((d: any) => {
-              const nodeLeft = d.x - 75
-              const nodeRight = d.x + 75
-              if (nodeLeft < minX) minX = nodeLeft
-              if (nodeRight > maxX) maxX = nodeRight
+      // Sibling links imply shared parents; reinforce parent edges so siblings
+      // remain connected to the branch even when one sibling lacks direct parent rows.
+      for (const l of rawSiblingLinks) {
+          const a = l.source as number
+          const b = l.target as number
+          const aParents = parentByChild.get(a) || new Set<number>()
+          const bParents = parentByChild.get(b) || new Set<number>()
+          const merged = new Set<number>([...aParents, ...bParents])
+          merged.forEach((parentId) => {
+              addParentEdge(parentId, a)
+              addParentEdge(parentId, b)
           })
-          return { minX, maxX, width: maxX - minX }
       }
 
-      let currentXOffset = width / 2
-      const forestOffsets: number[] = []
-      forestGroups.forEach((root, i) => {
-          const bounds = getTreeBounds(root)
-          // Offset so tree starts after previous tree with padding
-          if (i > 0) currentXOffset += -bounds.minX + 80
-          
-          forestOffsets.push(currentXOffset)
-          const treeG = g.append("g").attr("transform", `translate(${currentXOffset}, 100)`)
-          
-          if (i === 0) globalRoot = root 
+      // Rebuild parent maps after sibling reinforcement.
+      parentByChild.clear()
+      childrenByParent.clear()
+      for (const l of parentLinks) {
+          if (!parentByChild.has(l.target)) parentByChild.set(l.target, new Set<number>())
+          if (!childrenByParent.has(l.source)) childrenByParent.set(l.source, new Set<number>())
+          parentByChild.get(l.target)!.add(l.source)
+          childrenByParent.get(l.source)!.add(l.target)
+      }
 
-          treeG.selectAll(".link")
-            .data(root.links())
-            .join("path")
-            .attr("class", "link")
-            .attr("fill", "none")
-            .attr("stroke", "#a89060")
-            .attr("stroke-width", 2.5)
-            .attr("stroke-linecap", "round")
-            .attr("stroke-opacity", 0.7)
-            .attr("d", d3.linkVertical<any, d3.HierarchyPointNode<any>>()
-                .x(d => d.x)
-                .y(d => d.y) as any)
+      for (const l of spouseLinks) {
+          // Prefer first explicit spouse link if duplicates exist.
+          if (!spouseByMember.has(l.source)) spouseByMember.set(l.source, l.target)
+          if (!spouseByMember.has(l.target)) spouseByMember.set(l.target, l.source)
+      }
 
-          const nodeGroup = treeG.selectAll(".node")
-            .data(root.descendants())
-            .join("g")
-            .attr("class", "node")
-            .attr("transform", d => `translate(${d.x},${d.y})`)
+      const membersById = new Map<number, any>(nodes.value.map((n: any) => [n.id, n]))
 
-          nodeGroup.each(function(this: any, d: any) {
-              renderCard(d3.select(this), 0, d.data)
+      // Pick a person context, climb to root patriarch parent, then render only
+      // that downwards subtree (+ spouses). This intentionally excludes spouse
+      // parents and their side branches.
+      const loggedInMember = nodes.value.find((n: any) => n.username === auth.user?.username)
+    const contextPersonId = loggedInMember?.id || nodes.value[0]?.id
+
+      const choosePatriarchParent = (childId: number): number | null => {
+          const parentIds = Array.from(parentByChild.get(childId) || []).filter((pid) => membersById.has(pid))
+          if (!parentIds.length) return null
+          const maleParent = parentIds.find((pid) => membersById.get(pid)?.gender === 'M')
+          return maleParent ?? parentIds[0]
+      }
+
+      let rootPatriarchId = contextPersonId
+      const climbGuard = new Set<number>()
+      while (rootPatriarchId && !climbGuard.has(rootPatriarchId)) {
+          climbGuard.add(rootPatriarchId)
+          const nextParent = choosePatriarchParent(rootPatriarchId)
+          if (!nextParent) break
+          rootPatriarchId = nextParent
+      }
+
+      const descendants = new Set<number>()
+      const q: number[] = rootPatriarchId ? [rootPatriarchId] : []
+      while (q.length) {
+          const id = q.shift()!
+          if (descendants.has(id)) continue
+          descendants.add(id)
+
+          const spouseId = spouseByMember.get(id)
+          const parentSources = spouseId ? [id, spouseId] : [id]
+          for (const src of parentSources) {
+              const kids = Array.from(childrenByParent.get(src) || [])
+              for (const childId of kids) {
+                  if (!descendants.has(childId)) q.push(childId)
+              }
+          }
+      }
+
+      // If scoped traversal ends up tiny, fall back to full graph visibility
+      // rather than collapsing the rendered tree.
+      if (descendants.size <= 2 && nodes.value.length > 2) {
+          nodes.value.forEach((n: any) => descendants.add(n.id))
+      }
+
+      const visibleIds = new Set<number>(descendants)
+      descendants.forEach((id) => {
+          const spouseId = spouseByMember.get(id)
+          if (spouseId && membersById.has(spouseId)) visibleIds.add(spouseId)
+      })
+
+      // Include siblings of descendants in the same patriarchal branch.
+      descendants.forEach((id) => {
+          const sibs = Array.from(siblingsByMember.get(id) || []).filter((sid) => membersById.has(sid))
+          sibs.forEach((sid) => visibleIds.add(sid))
+      })
+
+      // Include co-parents of descendants so wives/mothers render even when
+      // no explicit spouse relationship row exists.
+      descendants.forEach((childId) => {
+          const parents = Array.from(parentByChild.get(childId) || []).filter((pid) => membersById.has(pid))
+          if (parents.some((pid) => descendants.has(pid))) {
+              parents.forEach((pid) => visibleIds.add(pid))
+          }
+      })
+
+      // Also keep spouses of included siblings visible.
+      Array.from(visibleIds).forEach((id) => {
+          const spouseId = spouseByMember.get(id)
+          if (spouseId && membersById.has(spouseId)) visibleIds.add(spouseId)
+      })
+
+      const pairKey = (a: number, b: number) => (a < b ? `${a}-${b}` : `${b}-${a}`)
+      const spousePairSet = new Set<string>()
+      const explicitSpouseByMember = new Map<number, Set<number>>()
+
+      // Explicit spouse links within visible subtree.
+      spouseLinks.forEach((l) => {
+          if (visibleIds.has(l.source) && visibleIds.has(l.target)) {
+              spousePairSet.add(pairKey(l.source, l.target))
+              if (!explicitSpouseByMember.has(l.source)) explicitSpouseByMember.set(l.source, new Set<number>())
+              if (!explicitSpouseByMember.has(l.target)) explicitSpouseByMember.set(l.target, new Set<number>())
+              explicitSpouseByMember.get(l.source)!.add(l.target)
+              explicitSpouseByMember.get(l.target)!.add(l.source)
+          }
+      })
+
+      // Infer spouse only for clean co-parent cases to avoid wrong pairings.
+      descendants.forEach((childId) => {
+          const parents = Array.from(parentByChild.get(childId) || []).filter((pid) => visibleIds.has(pid))
+          if (parents.length !== 2) return
+
+          const [p1, p2] = parents
+          const p1Member = membersById.get(p1)
+          const p2Member = membersById.get(p2)
+          if (!p1Member || !p2Member) return
+
+          // Prefer opposite-gender co-parent inference only.
+          const p1Gender = p1Member.gender || 'O'
+          const p2Gender = p2Member.gender || 'O'
+          if (!((p1Gender === 'M' && p2Gender === 'F') || (p1Gender === 'F' && p2Gender === 'M'))) {
+              return
+          }
+
+          // If explicit spouse exists and points elsewhere, do not infer.
+          const p1Explicit = explicitSpouseByMember.get(p1)
+          if (p1Explicit && !p1Explicit.has(p2)) return
+          const p2Explicit = explicitSpouseByMember.get(p2)
+          if (p2Explicit && !p2Explicit.has(p1)) return
+
+          spousePairSet.add(pairKey(p1, p2))
+      })
+
+      const spousePairs = Array.from(spousePairSet).map((k) => {
+          const [a, b] = k.split('-').map((x) => parseInt(x, 10))
+          return { a, b }
+      })
+
+      const spouseByMemberVisible = new Map<number, number>()
+      spousePairs.forEach(({ a, b }) => {
+          if (!spouseByMemberVisible.has(a)) spouseByMemberVisible.set(a, b)
+          if (!spouseByMemberVisible.has(b)) spouseByMemberVisible.set(b, a)
+      })
+
+      const visibleNodes = nodes.value.filter((n: any) => visibleIds.has(n.id))
+
+    const nodeIds = visibleNodes.map((n: any) => n.id)
+      const nodeIdSet = new Set<number>(nodeIds)
+      const generation = new Map<number, number>()
+      nodeIds.forEach((id) => generation.set(id, 0))
+
+      // Kahn layering avoids runaway levels when data contains cycles.
+      const indegree = new Map<number, number>()
+      const children = new Map<number, number[]>()
+      nodeIds.forEach((id) => {
+          indegree.set(id, 0)
+          children.set(id, [])
+      })
+
+      for (const l of parentLinks) {
+          if (!nodeIdSet.has(l.source) || !nodeIdSet.has(l.target)) continue
+          children.get(l.source)!.push(l.target)
+          indegree.set(l.target, (indegree.get(l.target) || 0) + 1)
+      }
+
+      const queue: number[] = nodeIds.filter((id) => (indegree.get(id) || 0) === 0)
+      queue.sort((a, b) => a - b)
+      const processed = new Set<number>()
+
+      while (queue.length) {
+          const id = queue.shift()!
+          processed.add(id)
+          const nextChildren = children.get(id) || []
+          for (const childId of nextChildren) {
+              const nextLevel = (generation.get(id) || 0) + 1
+              if ((generation.get(childId) || 0) < nextLevel) {
+                  generation.set(childId, nextLevel)
+              }
+              const nextIn = (indegree.get(childId) || 0) - 1
+              indegree.set(childId, nextIn)
+              if (nextIn === 0) queue.push(childId)
+          }
+      }
+
+      // Remaining cyclic nodes are anchored near any processed parent if possible.
+      const cyclicIds = nodeIds.filter((id) => !processed.has(id))
+      for (const id of cyclicIds) {
+          const parentIds = Array.from(parentByChild.get(id) || [])
+          const processedParentLevels = parentIds
+              .filter((pid) => processed.has(pid))
+              .map((pid) => generation.get(pid) || 0)
+          if (processedParentLevels.length) {
+              generation.set(id, Math.max(...processedParentLevels) + 1)
+          }
+      }
+
+      // Harmonize spouse + sibling rows iteratively to avoid spouse floating above
+      // a sibling after a later sibling-alignment update.
+      for (let pass = 0; pass < 4; pass += 1) {
+          let changed = false
+
+          spousePairs.forEach(({ a, b }) => {
+              if (!nodeIdSet.has(a) || !nodeIdSet.has(b)) return
+              const aligned = Math.max(generation.get(a) || 0, generation.get(b) || 0)
+              if ((generation.get(a) || 0) !== aligned) {
+                  generation.set(a, aligned)
+                  changed = true
+              }
+              if ((generation.get(b) || 0) !== aligned) {
+                  generation.set(b, aligned)
+                  changed = true
+              }
           })
 
-          // Advance offset past this tree's right edge
-          const treeBounds = getTreeBounds(root)
-          currentXOffset += treeBounds.maxX + 80
+          rawSiblingLinks.forEach((l: any) => {
+              if (!nodeIdSet.has(l.source) || !nodeIdSet.has(l.target)) return
+              const aligned = Math.max(generation.get(l.source) || 0, generation.get(l.target) || 0)
+              if ((generation.get(l.source) || 0) !== aligned) {
+                  generation.set(l.source, aligned)
+                  changed = true
+              }
+              if ((generation.get(l.target) || 0) !== aligned) {
+                  generation.set(l.target, aligned)
+                  changed = true
+              }
+          })
+
+          if (!changed) break
+      }
+
+      // Only keep parent edges that move downward exactly one+ generation.
+      const renderParentLinks = parentLinks.filter((l) => {
+          const sourceGen = generation.get(l.source) || 0
+          const targetGen = generation.get(l.target) || 0
+          return nodeIdSet.has(l.source) && nodeIdSet.has(l.target) && targetGen > sourceGen
       })
+    const maxLevel = Math.max(...Array.from(generation.values()))
+      const levels = Array.from({ length: maxLevel + 1 }, () => [] as number[])
+      nodeIds.forEach((id) => levels[generation.get(id) ?? 0].push(id))
+
+      const levelGap = 300
+    const siblingGap = 236
+    const spouseGap = 186
+      const topOffset = 100
+      const nodeCanvasCoords = new Map<number, { x: number; y: number }>()
+      const previousLevelX = new Map<number, number>()
+
+      levels.forEach((levelIds, level) => {
+          const units: number[][] = []
+          const placed = new Set<number>()
+          const sortedIds = [...levelIds].sort((a, b) => {
+              const aName = String(membersById.get(a)?.name || '')
+              const bName = String(membersById.get(b)?.name || '')
+              return aName.localeCompare(bName)
+          })
+
+          for (const id of sortedIds) {
+              if (placed.has(id)) continue
+              const spouse = spouseByMemberVisible.get(id)
+              if (spouse && generation.get(spouse) === level && !placed.has(spouse)) {
+                  const me = membersById.get(id)
+                  const partner = membersById.get(spouse)
+                  let pair: number[]
+                  if (me?.gender === 'M' && partner?.gender === 'F') {
+                      pair = [id, spouse]
+                  } else if (me?.gender === 'F' && partner?.gender === 'M') {
+                      pair = [spouse, id]
+                  } else {
+                      pair = id < spouse ? [id, spouse] : [spouse, id]
+                  }
+                  units.push(pair)
+                  placed.add(id)
+                  placed.add(spouse)
+              } else {
+                  units.push([id])
+                  placed.add(id)
+              }
+          }
+
+          const parentCenterScore = (memberId: number) => {
+              const parents = Array.from(parentByChild.get(memberId) || [])
+              if (!parents.length) return Number.MAX_SAFE_INTEGER
+              const xs = parents.map((pid) => previousLevelX.get(pid)).filter((x) => x !== undefined) as number[]
+              if (!xs.length) return Number.MAX_SAFE_INTEGER
+              return xs.reduce((a, b) => a + b, 0) / xs.length
+          }
+
+          units.sort((a, b) => {
+              const aScore = a.reduce((sum, id) => sum + parentCenterScore(id), 0) / a.length
+              const bScore = b.reduce((sum, id) => sum + parentCenterScore(id), 0) / b.length
+              if (aScore !== bScore) return aScore - bScore
+              return a[0] - b[0]
+          })
+
+          const localUnitPositions: Array<{ unit: number[]; x: number[] }> = []
+          let cursor = 0
+          for (const unit of units) {
+              if (unit.length === 2) {
+                  localUnitPositions.push({ unit, x: [cursor, cursor + spouseGap] })
+                  cursor += spouseGap + siblingGap
+              } else {
+                  localUnitPositions.push({ unit, x: [cursor] })
+                  cursor += siblingGap
+              }
+          }
+
+          const span = Math.max(0, cursor - siblingGap)
+          const startX = width / 2 - span / 2
+          const y = topOffset + level * levelGap
+
+          for (const block of localUnitPositions) {
+              block.unit.forEach((id, idx) => {
+                  const x = startX + block.x[idx]
+                  nodeCanvasCoords.set(id, { x, y })
+                  previousLevelX.set(id, x)
+              })
+          }
+      })
+
+      globalNodeCoords = nodeCanvasCoords
+
+      const parentOverlayData = Array.from(new Set(renderParentLinks.map((l) => l.target)))
+          .map((childId) => {
+              const child = nodeCanvasCoords.get(childId)
+              if (!child) return null
+
+              const parentIds = renderParentLinks
+                  .filter((l) => l.target === childId)
+                  .map((l) => l.source)
+              const parentCoords = parentIds
+                  .map((pid) => nodeCanvasCoords.get(pid))
+                  .filter(Boolean) as Array<{ x: number; y: number }>
+              if (!parentCoords.length) return null
+
+              const avgX = parentCoords.reduce((sum, p) => sum + p.x, 0) / parentCoords.length
+              const sourceY = Math.max(...parentCoords.map((p) => p.y))
+              return {
+                  source: { x: avgX, y: sourceY },
+                  target: child,
+              }
+          })
+          .filter(Boolean) as Array<{ source: { x: number; y: number }; target: { x: number; y: number } }>
+
+      g.append("g")
+          .attr("class", "parent-links")
+          .selectAll("path")
+          .data(parentOverlayData)
+          .join("path")
+          .attr("fill", "none")
+          .attr("stroke", "#a89060")
+          .attr("stroke-width", 2.5)
+          .attr("stroke-linecap", "round")
+          .attr("stroke-opacity", 0.7)
+          .attr("d", (d) => {
+              const sourceY = d.source.y + 96
+              const targetY = d.target.y - 106
+              const midY = (sourceY + targetY) / 2
+              return `M ${d.source.x} ${sourceY} C ${d.source.x} ${midY}, ${d.target.x} ${midY}, ${d.target.x} ${targetY}`
+          })
+
+      const nodeGroup = g.append("g")
+          .attr("class", "nodes")
+          .selectAll(".node")
+          .data(visibleNodes)
+          .join("g")
+          .attr("class", "node")
+          .attr("transform", (d: any) => {
+              const c = nodeCanvasCoords.get(d.id)
+              return `translate(${c?.x || width / 2},${c?.y || topOffset})`
+          })
+
+      nodeGroup.each(function(this: any, d: any) {
+          renderCard(d3.select(this), 0, d)
+      })
+
+      const spouseOverlayData = spousePairs
+          .filter(({ a, b }) => {
+              if (!nodeIdSet.has(a) || !nodeIdSet.has(b)) return false
+              const gA = generation.get(a)
+              const gB = generation.get(b)
+              return gA !== undefined && gA === gB
+          })
+          .map(({ a: aId, b: bId }) => {
+              const a = nodeCanvasCoords.get(aId)
+              const b = nodeCanvasCoords.get(bId)
+              if (!a || !b) return null
+              return { a, b }
+          })
+          .filter(Boolean) as Array<{ a: { x: number; y: number }; b: { x: number; y: number } }>
+
+      g.append("g")
+          .attr("class", "spouse-links")
+          .selectAll("path")
+          .data(spouseOverlayData)
+          .join("path")
+          .attr("d", (d) => {
+              const cardHalfWidth = 82
+              const yOffset = -10
+              const leftFirst = d.a.x <= d.b.x
+              const startX = leftFirst ? d.a.x + cardHalfWidth : d.a.x - cardHalfWidth
+              const endX = leftFirst ? d.b.x - cardHalfWidth : d.b.x + cardHalfWidth
+              const startY = d.a.y + yOffset
+              const endY = d.b.y + yOffset
+              const dir = endX >= startX ? 1 : -1
+              const control = Math.max(24, Math.abs(endX - startX) * 0.28)
+              return `M ${startX} ${startY} C ${startX + dir * control} ${startY}, ${endX - dir * control} ${endY}, ${endX} ${endY}`
+          })
+          .attr("fill", "none")
+          .attr("stroke", "#c9a96e")
+          .attr("stroke-width", 2)
+          .attr("stroke-dasharray", "6,4")
+          .attr("stroke-linecap", "round")
+          .attr("stroke-linejoin", "round")
+          .attr("stroke-opacity", 0.8)
+          .lower()
 
       function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any) {
           if (!d) return
@@ -1259,6 +1804,33 @@ const focusFromQuery = () => {
             .attr("fill", `url(#${gradId})`)
             .attr("clip-path", `inset(0 round 16px 16px 0 0)`)
 
+                    if (d.is_deceased) {
+                        const badgeWidth = 34
+                        const badgeHeight = 16
+                        const badgeX = cardWidth / 2 - badgeWidth - 8
+                        const badgeY = -cardHeight / 2 + 10
+
+                        group.append("rect")
+                            .attr("x", badgeX)
+                            .attr("y", badgeY)
+                            .attr("width", badgeWidth)
+                            .attr("height", badgeHeight)
+                            .attr("rx", 8)
+                            .attr("fill", "#475569")
+                            .attr("fill-opacity", 0.92)
+
+                        group.append("text")
+                            .text("RIP")
+                            .attr("x", badgeX + badgeWidth / 2)
+                            .attr("y", badgeY + 11)
+                            .attr("text-anchor", "middle")
+                            .attr("fill", "#F8FAFC")
+                            .attr("font-size", "8.5px")
+                            .attr("font-weight", "800")
+                            .style("letter-spacing", "0.4px")
+                            .style("pointer-events", "none")
+                    }
+
           // Avatar ring
           group.append("circle")
             .attr("cx", 0).attr("cy", -cardHeight/4 + 2)
@@ -1303,7 +1875,7 @@ const focusFromQuery = () => {
                         .attr("fill", isMale ? 'rgba(74,107,138,0.11)' : isFemale ? 'rgba(156,79,99,0.11)' : 'rgba(89,101,119,0.11)')
 
           group.append("text")
-                        .text(t('familyTree.labels.agePill', { symbol: genderSymbol, age: d.age || '?' }))
+                        .text(t('familyTree.labels.agePill', { symbol: genderSymbol, age: getDisplayAge(d) }))
                         .attr("x", 0).attr("y", pillY + 4)
             .attr("text-anchor", "middle")
             .attr("fill", accentColor)
@@ -1311,28 +1883,9 @@ const focusFromQuery = () => {
             .attr("font-weight", "700")
       }
 
-      // Store forest data globally for search-to-focus
-      globalForestData = forestGroups.map((root, i) => ({
-          root,
-          xOffset: forestOffsets[i] || (width/2 + i * 1200)
-      }))
+    const userCoords = loggedInMember ? nodeCanvasCoords.get(loggedInMember.id) : null
       
-      // FOCUS ON LOGGED-IN USER (search all trees)
-      let userCoords = {x: 0, y: 0, found: false}
-      
-      for (const { root, xOffset } of globalForestData) {
-          if (userCoords.found) break
-          
-          root.descendants().forEach((d: any) => {
-              if (userCoords.found) return
-              const nodeUsername = d.data.username
-              if (nodeUsername === auth.user?.username) {
-                  userCoords = { x: xOffset + (d.x || 0), y: 100 + (d.y || 0), found: true }
-              }
-          })
-      }
-      
-      if (userCoords.found) {
+      if (userCoords) {
          const scale = 1.2
          svg.transition().duration(1500).call(
              zoom.transform as any, 
@@ -1353,7 +1906,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-    globalForestData = []
+    globalNodeCoords = new Map<number, { x: number; y: number }>()
     if (linkSearchDebounce) {
         clearTimeout(linkSearchDebounce)
     }
@@ -1378,7 +1931,7 @@ watch(
     (memberId) => {
         linkSearchQuery.value = ''
         resetLinkTarget()
-        if (!editMode.value || !memberId) return
+        if (!memberId) return
         loadMemberContext(memberId)
     }
 )

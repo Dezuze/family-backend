@@ -118,9 +118,14 @@ class UserProfileView(APIView):
                  except ValueError:
                      return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
 
+                 requested_member_id = (data.get('member_id') or '').strip()
+                 if requested_member_id and FamilyMember.objects.filter(member_id=requested_member_id).exists():
+                     return Response({"error": "Member ID already exists."}, status=400)
+
                  member = FamilyMember.objects.create(
                      family=family,
                      name=f"{data.get('first_name', '')} {data.get('last_name', '')}".strip() or user.username,
+                     member_id=requested_member_id or None,
                      age=calculated_age,
                      date_of_birth=dob_date,
                      blood_group=data.get('blood_group', 'Unknown'),
@@ -144,6 +149,11 @@ class UserProfileView(APIView):
             if 'phone_no' in data: member.phone_no = data['phone_no']
             if 'email_id' in data: member.email_id = data['email_id']
             if 'church_parish' in data: member.church_parish = data['church_parish']
+            if 'member_id' in data:
+                requested_member_id = (data.get('member_id') or '').strip()
+                if requested_member_id and FamilyMember.objects.filter(member_id=requested_member_id).exclude(pk=member.pk).exists():
+                    return Response({"error": "Member ID already exists."}, status=400)
+                member.member_id = requested_member_id or None
             
             if 'date_of_birth' in data and data['date_of_birth']: 
                 dob = data['date_of_birth']
@@ -255,16 +265,19 @@ class FamilyTreeView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request):
-        members = FamilyMember.objects.all().prefetch_related('parents')
-        relationships = Relationship.objects.all()
         viewer_member = getattr(request.user, 'member', None) if getattr(request.user, 'is_authenticated', False) else None
 
-        # Backfill base parent edges from M2M parent links so existing data still renders.
-        for child in members:
-            for parent in child.parents.all():
-                _safe_create_base_relationship(child, parent, 'PARENT')
+        members_qs = FamilyMember.objects.all().prefetch_related('parents')
+        if viewer_member and viewer_member.family_id:
+            members_qs = members_qs.filter(family_id=viewer_member.family_id)
 
-        relationships = Relationship.objects.all()
+        member_ids = list(members_qs.values_list('id', flat=True))
+        relationships = Relationship.objects.filter(
+            from_member_id__in=member_ids,
+            to_member_id__in=member_ids,
+        )
+
+        members = members_qs
         engine = RelationshipEngine(members=members, relationships=relationships)
         payload = engine.build_payload(root_id=getattr(viewer_member, 'id', None))
 
@@ -500,9 +513,14 @@ class FamilyTreeAddRelativeView(APIView):
         if not full_name:
             return Response({"error": "Member name is required."}, status=400)
 
+        requested_member_id = (data.get('member_id') or '').strip()
+        if requested_member_id and FamilyMember.objects.filter(member_id=requested_member_id).exists():
+            return Response({"error": "Member ID already exists."}, status=400)
+
         new_member = FamilyMember.objects.create(
             family=member.family,
             name=full_name,
+            member_id=requested_member_id or None,
             nickname=data.get('nickname', ''),
             age=data.get('age') if data.get('age') not in ('', None) else None,
             gender=requested_gender,
@@ -626,10 +644,15 @@ class ManagedMembersView(APIView):
             l_name = data.get('last_name', '')
             full_name = data.get('name', f"{f_name} {l_name}".strip())
             relation_label = _normalize_user_relation_or_error(data.get('relation', 'child'))
+            requested_member_id = (data.get('member_id') or '').strip()
+
+            if requested_member_id and FamilyMember.objects.filter(member_id=requested_member_id).exists():
+                return Response({"error": "Member ID already exists."}, status=400)
 
             member = FamilyMember.objects.create(
                 family=family,
                 name=full_name,
+                member_id=requested_member_id or None,
                 age=data.get('age', 0),
                 gender=data.get('gender', 'M'),
                 relation='Other',
@@ -764,6 +787,11 @@ class ManagedMemberDetailView(APIView):
             if 'bio' in data: member.bio = data['bio']
             if 'nickname' in data: member.nickname = data['nickname']
             if 'church_parish' in data: member.church_parish = data['church_parish']
+            if 'member_id' in data:
+                requested_member_id = (data.get('member_id') or '').strip()
+                if requested_member_id and FamilyMember.objects.filter(member_id=requested_member_id).exclude(pk=member.pk).exists():
+                    return Response({"error": "Member ID already exists."}, status=400)
+                member.member_id = requested_member_id or None
 
             # Relationships
             if 'relationships' in data:
