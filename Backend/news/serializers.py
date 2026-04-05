@@ -10,8 +10,10 @@ class PostSerializer(serializers.ModelSerializer):
     # Include media if needed
     media = MediaSerializer(many=True, read_only=True)
     creator_name = serializers.SerializerMethodField()
+    author_name = serializers.SerializerMethodField()
     author_id = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+    type = serializers.CharField(source='post_type', read_only=True)
     
     def get_creator_name(self, obj):
         if obj.creator:
@@ -22,6 +24,9 @@ class PostSerializer(serializers.ModelSerializer):
         if obj.creator and hasattr(obj.creator, 'user_account'):
             return obj.creator.user_account.id
         return None
+
+    def get_author_name(self, obj):
+        return self.get_creator_name(obj)
     
     def get_image(self, obj):
         # Return first image from media if exists
@@ -41,8 +46,14 @@ class PostSerializer(serializers.ModelSerializer):
             'location',
             'created_at',
             'creator_name',
+            'author_name',
             'author_id',
             'media',
             'image',
-            'is_kudumbayogam'
+            'is_kudumbayogam',
+            'visibility',
+            'is_auto_generated',
+            'generated_kind',
+            'type',
         )
+        read_only_fields = ('is_auto_generated', 'generated_kind', 'creator_name', 'author_name', 'author_id', 'type')

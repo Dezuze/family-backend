@@ -1,0 +1,10 @@
+[Unit]
+Description=Run KFA anniversary generator daily
+
+[Timer]
+OnCalendar=*-*-* 05:00:00
+Persistent=true
+Unit=kfa-anniversary-generator.service
+
+[Install]
+WantedBy=timers.target

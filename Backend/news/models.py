@@ -7,6 +7,17 @@ class Post(models.Model):
         ('event', 'Event'),
     )
 
+    VISIBILITY_CHOICES = (
+        ('public', 'Public'),
+        ('members', 'Members Only'),
+    )
+
+    GENERATED_KINDS = (
+        ('birthday', 'Birthday'),
+        ('death_anniversary', 'Death Anniversary'),
+        ('marriage_anniversary', 'Marriage Anniversary'),
+    )
+
     creator = models.ForeignKey('families.FamilyMember', on_delete=models.CASCADE, related_name='posts')
     post_type = models.CharField(max_length=20, choices=POST_TYPES)
     
@@ -16,6 +27,17 @@ class Post(models.Model):
     event_date = models.DateTimeField(null=True, blank=True) # Null if post_type is 'news'
     location = models.CharField(max_length=255, blank=True, null=True)
     is_kudumbayogam = models.BooleanField(default=False)
+    visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default='public')
+    is_auto_generated = models.BooleanField(default=False)
+    generated_kind = models.CharField(max_length=40, choices=GENERATED_KINDS, blank=True, null=True)
+    generated_for_member = models.ForeignKey(
+        'families.FamilyMember',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='generated_news_posts',
+    )
+    generated_key = models.CharField(max_length=120, blank=True, null=True, unique=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
 

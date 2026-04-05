@@ -87,6 +87,14 @@
                  <p class="text-slate-800 font-medium">{{ member.spouse || t('memberDetailsModal.labels.notAvailable') }}</p>
                 </div>
                 <div>
+                 <span class="text-xs text-slate-400 uppercase font-bold">Committee Role</span>
+                 <p class="text-slate-800 font-medium">{{ member.committee_role || t('memberDetailsModal.labels.notAvailable') }}</p>
+                </div>
+                <div>
+                 <span class="text-xs text-slate-400 uppercase font-bold">Wedding Anniversary</span>
+                 <p class="text-slate-800 font-medium">{{ member.wedding_anniversary || t('memberDetailsModal.labels.notAvailable') }}</p>
+                </div>
+                <div>
                  <span class="text-xs text-slate-400 uppercase font-bold">{{ t('memberDetailsModal.labels.location') }}</span>
                  <p class="text-slate-800 font-medium">{{ member.location || member.address || t('memberDetailsModal.labels.notAvailable') }}</p>
                 </div>

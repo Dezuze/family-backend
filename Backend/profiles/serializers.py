@@ -10,8 +10,7 @@ class GallerySerializer(serializers.ModelSerializer):
 
 class CommitteeSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
-    age = serializers.SerializerMethodField()
-    phone_no = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
     pic = serializers.SerializerMethodField()
     
     def get_name(self, obj):
@@ -20,15 +19,11 @@ class CommitteeSerializer(serializers.ModelSerializer):
             return obj.user.member.name
         return obj.user.get_full_name() or obj.user.username
 
-    def get_age(self, obj):
+    def get_role(self, obj):
         if hasattr(obj.user, 'member') and obj.user.member:
-             return obj.user.member.age
-        return None
-
-    def get_phone_no(self, obj):
-        if hasattr(obj.user, 'member') and obj.user.member:
-            return obj.user.member.phone_no
-        return None
+            if obj.user.member.committee_role:
+                return obj.user.member.committee_role
+        return obj.role or 'Committee Member'
 
     def get_pic(self, obj):
         if obj.pic:
@@ -39,4 +34,4 @@ class CommitteeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Committee
-        fields = ('id', 'user', 'name', 'pic', 'role', 'age', 'phone_no', 'created_at')
+        fields = ('id', 'name', 'pic', 'role', 'created_at')

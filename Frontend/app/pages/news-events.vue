@@ -262,7 +262,7 @@ const refreshData = async (loadMore = false) => {
     }
 
     try {
-        const response = await fetch(`${apiBase}/api/news/list/?page=${page.value}`)
+      const response = await fetch(`${apiBase}/api/news/list/?page=${page.value}`, { credentials: 'include' })
         if (response.ok) {
             const data = await response.json()
             

@@ -21,6 +21,7 @@ class FamilyHead(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
 
     name = models.CharField(max_length=100)
+    name_ml = models.CharField(max_length=150, blank=True, null=True)
     nickname = models.CharField(max_length=50, blank=True, null=True)
 
     age = models.PositiveIntegerField()
@@ -69,6 +70,7 @@ class FamilyMember(models.Model):
     temp_member_id = models.CharField(max_length=50, blank=True, null=True)
 
     name = models.CharField(max_length=100)
+    name_ml = models.CharField(max_length=150, blank=True, null=True)
     nickname = models.CharField(max_length=50, blank=True, null=True)
     age = models.PositiveIntegerField(blank=True, null=True)
     gender = models.CharField(max_length=1, choices=[("M", "Male"), ("F", "Female"), ("O", "Other")], default="M")
@@ -95,6 +97,8 @@ class FamilyMember(models.Model):
     email_id = models.EmailField(blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     church_parish = models.CharField(max_length=100, blank=True, null=True)
+    committee_role = models.CharField(max_length=120, blank=True, null=True)
+    wedding_anniversary = models.DateField(blank=True, null=True)
 
     photo = models.ImageField(upload_to="members/photos/", blank=True, null=True)
     
@@ -121,6 +125,8 @@ class FamilyMember(models.Model):
 
     @property
     def role(self):
+        if self.committee_role:
+            return self.committee_role
         # Fallback gracefully if committee module is unavailable.
         try:
             if hasattr(self, 'user_account') and self.user_account:
@@ -133,6 +139,8 @@ class FamilyMember(models.Model):
 
     @property
     def is_committee(self):
+        if self.committee_role:
+            return True
         try:
             if hasattr(self, 'user_account') and self.user_account:
                 return self.user_account.committee_entries.exists()
@@ -223,6 +231,7 @@ class Relationship(models.Model):
     to_member = models.ForeignKey(FamilyMember, on_delete=models.CASCADE, related_name='relationships_to')
     # Free text to support custom links in onboarding while preserving known presets.
     relation_type = models.CharField(max_length=50, default='Other')
+    anniversary_date = models.DateField(blank=True, null=True)
     is_inferred = models.BooleanField(default=False)
 
     class Meta:

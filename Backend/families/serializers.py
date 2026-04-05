@@ -11,6 +11,7 @@ class RelationshipSerializer(serializers.ModelSerializer):
 class FamilyMemberSerializer(serializers.ModelSerializer):
     relation = serializers.SerializerMethodField()
     role = serializers.ReadOnlyField()
+    committee_role = serializers.ReadOnlyField()
     is_committee = serializers.ReadOnlyField()
     profile_pic = serializers.SerializerMethodField()
     has_account = serializers.SerializerMethodField()
@@ -19,10 +20,11 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = FamilyMember
         fields = [
-            'id', 'member_id', 'name', 'nickname', 'age', 'gender', 'relation', 'role', 'is_committee',
+            'id', 'member_id', 'name', 'name_ml', 'nickname', 'age', 'gender', 'relation', 'role', 'committee_role', 'is_committee',
             'date_of_birth', 'date_of_death', 'blood_group', 'is_deceased', 'is_independent', 'has_account',
             'phone_no', 'email_id', 'photo',
-            'profile_pic', 'bio', 'occupation', 'education', 'address_if_different', 
+            'profile_pic', 'bio', 'occupation', 'education', 'address_if_different',
+            'wedding_anniversary',
             'place_of_work', 'church_parish', 'parents', 'created_by', 'relationships'
         ]
         extra_kwargs = {
@@ -56,11 +58,12 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
 
 class FamilyTreeSerializer(serializers.ModelSerializer):
     role = serializers.ReadOnlyField()
+    committee_role = serializers.ReadOnlyField()
     is_committee = serializers.ReadOnlyField()
 
     class Meta:
         model = FamilyMember
-        fields = ['id', 'member_id', 'name', 'role', 'is_committee', 'photo', 'parents', 'children']
+        fields = ['id', 'member_id', 'name', 'role', 'committee_role', 'is_committee', 'wedding_anniversary', 'photo', 'parents', 'children']
         depth = 1 
 
 from .models import FamilyMedia

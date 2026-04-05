@@ -96,14 +96,7 @@
 
                 <!-- Action Footer -->
                 <div class="flex items-center justify-between mt-auto pt-6 border-t border-slate-100/50">
-                   <div class="flex items-center gap-3">
-                      <div class="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center text-brand-gold shadow-xs">
-                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                      </div>
-                      <span class="text-xs font-bold text-slate-500">
-                        {{ m.phone_no ? t('committee.labels.verifiedContact') : t('committee.labels.directoryOnly') }}
-                      </span>
-                   </div>
+                   <span class="text-xs font-bold text-slate-500">{{ t('committee.labels.committeeMember') }}</span>
                    <button 
                      @click="openDetails(m)"
                      class="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 text-brand-gold border border-slate-100 hover:bg-brand-gold hover:text-white hover:border-brand-gold transition-all duration-300"
@@ -169,16 +162,6 @@
           <!-- Professional Body -->
           <div class="p-10 space-y-8">
              <div class="space-y-6">
-                <div class="flex items-center gap-5 group">
-                   <div class="w-12 h-12 rounded-2xl bg-brand-gold/5 flex items-center justify-center text-brand-gold border border-brand-gold/10 group-hover:bg-brand-gold group-hover:text-white transition-all duration-500">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                   </div>
-                   <div>
-                     <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">{{ t('committee.modal.contactNumber') }}</span>
-                     <span class="text-lg font-bold text-slate-900">{{ selectedMember.phone_no || t('committee.modal.notPubliclyListed') }}</span>
-                   </div>
-                </div>
-
                 <div class="flex items-center gap-5 group">
                    <div class="w-12 h-12 rounded-2xl bg-brand-gold/5 flex items-center justify-center text-brand-gold border border-brand-gold/10 group-hover:bg-brand-gold group-hover:text-white transition-all duration-500">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-10V4m0 10V4m-4 6h4m-4 4h4m1 1h1m-7 1h1"></path></svg>
@@ -283,7 +266,6 @@ onMounted(async () => {
                 name: item.name,
                 photo: resolveImage(item.pic),
                 role: item.role,
-                phone_no: item.phone_no,
                 // Fallback age/relation if not present in API
                 relation: 'Committee', 
             }))

@@ -41,6 +41,7 @@ class RelationshipEngine:
         self._ingest_relationships()
         self._ingest_parent_links_from_members()
         self._infer_siblings_from_shared_parents()
+        self._infer_spouses_from_coparents()
 
     @staticmethod
     def canonicalize_input(label: str) -> str | None:
@@ -221,12 +222,18 @@ class RelationshipEngine:
                 continue
 
             if self._pair(root_id, member_id) in self.spouse_pairs:
-                relation_map[member_id] = "Spouse"
+                spouse_label = "Spouse"
+                if (member.gender or '').upper() == 'F':
+                    spouse_label = 'Wife'
+                elif (member.gender or '').upper() == 'M':
+                    spouse_label = 'Husband'
+
+                relation_map[member_id] = spouse_label
                 computed.append(
                     {
                         "from": root_id,
                         "to": member_id,
-                        "label": "Spouse",
+                        "label": spouse_label,
                         "kind": "spouse",
                         "depth": 0,
                     }
@@ -272,9 +279,11 @@ class RelationshipEngine:
                     "id": member.id,
                     "member_id": member.member_id,
                     "name": member.name,
+                    "name_ml": getattr(member, "name_ml", None),
                     "photo": member.photo.url if member.photo else None,
                     "role": viewer_label or member.role,
                     "relation": viewer_label or member.relation,
+                    "committee_role": member.committee_role,
                     "is_committee": member.is_committee,
                     "username": username,
                     "gender": member.gender,
@@ -289,6 +298,7 @@ class RelationshipEngine:
                     "phone_no": member.phone_no,
                     "email_id": member.email_id,
                     "church_parish": member.church_parish,
+                    "wedding_anniversary": member.wedding_anniversary,
                     "bio": member.bio,
                     "address": member.address_if_different,
                     "location": member.address_if_different,

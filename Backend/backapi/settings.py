@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     'families',
     'news',
     'profiles',
+    'payments',
 ]
 
 REST_FRAMEWORK = {

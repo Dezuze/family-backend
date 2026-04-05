@@ -98,6 +98,80 @@ These validations are applied consistently in both create-new and link-existing 
 - **Environment Variables**:
     - `DJANGO_SECRET_KEY`: Set in production.
     - `DEBUG`: Set to `False` in production.
+        - `RAZORPAY_KEY_ID`: Razorpay public key for order creation.
+        - `RAZORPAY_KEY_SECRET`: Razorpay secret key used for signature verification.
+    - `RAZORPAY_WEBHOOK_SECRET`: Secret for validating Razorpay webhook signatures.
+    - `DONATION_MAX_AMOUNT`: Maximum allowed donation amount (default `100000.00`).
+    - `PAYMENTS_ORDER_RATE_LIMIT_COUNT`: Create-order requests per window (default `20`).
+    - `PAYMENTS_ORDER_RATE_LIMIT_WINDOW_SECONDS`: Create-order window (default `3600`).
+    - `PAYMENTS_VERIFY_RATE_LIMIT_COUNT`: Verify requests per window (default `60`).
+    - `PAYMENTS_VERIFY_RATE_LIMIT_WINDOW_SECONDS`: Verify window (default `3600`).
+    - `PAYMENTS_WEBHOOK_RATE_LIMIT_COUNT`: Webhook requests per window (default `240`).
+    - `PAYMENTS_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS`: Webhook window (default `3600`).
+
+## Donations API (Razorpay)
+
+- `POST /api/payments/create-order/`
+    - Creates a pending donation and Razorpay order.
+    - Payload: `donor_name`, `amount`, optional `donor_email`, `donor_phone`, `purpose`.
+- `POST /api/payments/verify/`
+    - Verifies signature and marks donation as paid.
+    - Generates a receipt number and PDF bill automatically.
+- `POST /api/payments/webhook/`
+    - Razorpay server-to-server webhook endpoint.
+    - Verifies `X-Razorpay-Signature` using `RAZORPAY_WEBHOOK_SECRET`.
+    - Handles payment capture/failure events idempotently.
+- `GET /api/payments/receipt/<public_id>/?token=<receipt_token>`
+    - Downloads the receipt PDF securely.
+- `GET /api/payments/my-donations/`
+    - Authenticated user donation history.
+
+## Anniversary Auto-Poster Generation
+
+The backend now creates members-only posts for:
+- Birthday (from `FamilyMember.date_of_birth`)
+- Death anniversary (from `FamilyMember.date_of_death`)
+- Marriage anniversary (from spouse `Relationship.anniversary_date`)
+
+Generation runs automatically when news/events are requested and can be triggered manually:
+
+```bash
+python manage.py generate_anniversary_posts
+```
+
+For spouse links via tree edit APIs, include optional `anniversary_date` in `YYYY-MM-DD` format.
+
+## Daily Scheduler (No Traffic Needed)
+
+You can run anniversary generation daily using either systemd timer or cron.
+
+### Option A: systemd timer (recommended)
+
+Artifacts are included in:
+- `deploy/systemd/kfa-anniversary-generator.service`
+- `deploy/systemd/kfa-anniversary-generator.timer`
+
+Install:
+
+```bash
+sudo cp deploy/systemd/kfa-anniversary-generator.service /etc/systemd/system/
+sudo cp deploy/systemd/kfa-anniversary-generator.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now kfa-anniversary-generator.timer
+sudo systemctl status kfa-anniversary-generator.timer
+```
+
+### Option B: cron
+
+Sample cron entry is included in:
+- `deploy/cron/anniversary-generator.cron`
+
+Install:
+
+```bash
+crontab deploy/cron/anniversary-generator.cron
+crontab -l
+```
 
 ## 💾 Backups
 Run the management command to create a JSON dump of the database:

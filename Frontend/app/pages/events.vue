@@ -286,7 +286,7 @@ function getCookie(name: string) {
 const refreshEvents = async () => {
     loading.value = true
     try {
-    const response = await fetch(`${apiBase}/api/news/events/`)
+  const response = await fetch(`${apiBase}/api/news/events/`, { credentials: 'include' })
     if (response.ok) {
         events.value = await response.json()
     }

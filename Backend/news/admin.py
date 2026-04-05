@@ -4,17 +4,17 @@ from .models import Post, Media
 
 @admin.register(Post)
 class PostAdmin(ModelAdmin):
-    list_display = ('title', 'post_type', 'location', 'created_at')
-    list_filter = ('post_type', 'created_at')
+    list_display = ('title', 'post_type', 'visibility', 'is_auto_generated', 'location', 'created_at')
+    list_filter = ('post_type', 'visibility', 'is_auto_generated', 'created_at')
     search_fields = ('title',)
     ordering = ('-created_at',)
     
     fieldsets = (
         ('Article Content', {
-            'fields': ('creator', 'title', 'description', 'post_type')
+            'fields': ('creator', 'title', 'description', 'post_type', 'visibility')
         }),
         ('Metadata', {
-            'fields': (('location', 'event_date'),)
+            'fields': (('location', 'event_date'), 'is_kudumbayogam', 'is_auto_generated', 'generated_kind', 'generated_for_member', 'generated_key')
         }),
     )
 

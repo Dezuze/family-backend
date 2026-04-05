@@ -1,0 +1,2 @@
+# Run daily at 05:00 server time
+0 5 * * * cd /opt/kfa/Backend && /opt/kfa/Backend/.venv/bin/python manage.py generate_anniversary_posts >> /var/log/kfa-anniversary.log 2>&1

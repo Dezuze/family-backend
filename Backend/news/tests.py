@@ -5,6 +5,7 @@ from news.models import Post
 from news.serializers import PostSerializer
 from rest_framework.test import APIClient
 import datetime
+from unittest.mock import patch
 
 User = get_user_model()
 
@@ -58,3 +59,42 @@ class NewsTests(TestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertIn("linked to a Family Member", response.data['error'])
+
+    @patch('news.views.ensure_daily_anniversary_posts')
+    def test_news_list_hides_members_only_for_anonymous(self, _mock_generate):
+        Post.objects.create(
+            creator=self.member,
+            post_type='news',
+            title='Public News',
+            description='Visible to all',
+            visibility='public',
+        )
+        Post.objects.create(
+            creator=self.member,
+            post_type='news',
+            title='Members News',
+            description='Visible only to members',
+            visibility='members',
+        )
+
+        response = self.client.get('/api/news/list/')
+        self.assertEqual(response.status_code, 200)
+        titles = [item['title'] for item in response.data]
+        self.assertIn('Public News', titles)
+        self.assertNotIn('Members News', titles)
+
+    @patch('news.views.ensure_daily_anniversary_posts')
+    def test_news_list_includes_members_only_for_authenticated(self, _mock_generate):
+        Post.objects.create(
+            creator=self.member,
+            post_type='news',
+            title='Members News',
+            description='Visible only to members',
+            visibility='members',
+        )
+
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get('/api/news/list/')
+        self.assertEqual(response.status_code, 200)
+        titles = [item['title'] for item in response.data]
+        self.assertIn('Members News', titles)
