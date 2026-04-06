@@ -13,7 +13,7 @@ from django.core.files.base import ContentFile
 from django.http import FileResponse, Http404
 from django.utils import timezone
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A5, landscape
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from rest_framework import permissions, status
@@ -116,40 +116,47 @@ def _next_receipt_number():
 
 def _build_receipt_pdf(donation):
     buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+    pdf = canvas.Canvas(buffer, pagesize=landscape(A5))
+    width, height = landscape(A5)
 
-    margin_x = 18 * mm
+    margin_x = 12 * mm
+    margin_y = 8 * mm
     content_width = width - (2 * margin_x)
+    content_height = height - (2 * margin_y)
 
-    # Header band
+    # Subtle outer border for a cleaner receipt frame.
+    pdf.setStrokeColor(colors.HexColor('#CBD5E1'))
+    pdf.setLineWidth(0.9)
+    pdf.roundRect(margin_x, margin_y, content_width, content_height, 3 * mm, fill=0, stroke=1)
+
+    # Header band for horizontal A5 layout
     pdf.setFillColor(colors.HexColor('#1B3D3A'))
-    pdf.roundRect(margin_x, height - 50 * mm, content_width, 34 * mm, 4 * mm, fill=1, stroke=0)
+    header_height = 26 * mm
+    header_y = height - margin_y - header_height
+    pdf.roundRect(margin_x, header_y, content_width, header_height, 3 * mm, fill=1, stroke=0)
 
-    # Brand title
-    y = height - 26 * mm
+    # Brand identity
     pdf.setTitle(f"Donation Receipt {donation.receipt_number}")
 
+    # Header brand text uses a clean professional font.
     pdf.setFillColor(colors.white)
-    pdf.setFont('Helvetica-Bold', 17)
-    pdf.drawString(margin_x + 6 * mm, y, 'Kollamparambil Family Association')
+    pdf.setFont('Helvetica-Bold', 14)
+    pdf.drawString(margin_x + 6 * mm, header_y + 14 * mm, 'Kollamparambil Family Association')
+    pdf.setFont('Helvetica', 9)
+    pdf.drawString(margin_x + 6 * mm, header_y + 7.5 * mm, 'Digital Donation Receipt')
 
-    y -= 8 * mm
-    pdf.setFont('Helvetica', 10.5)
-    pdf.drawString(margin_x + 6 * mm, y, 'Digital Donation Receipt')
-
-    pdf.setFont('Helvetica-Bold', 10)
-    pdf.drawRightString(width - margin_x - 6 * mm, height - 26 * mm, f"Receipt: {donation.receipt_number}")
-    pdf.setFont('Helvetica', 9.5)
+    pdf.setFont('Helvetica-Bold', 9.5)
+    pdf.drawRightString(width - margin_x - 6 * mm, header_y + 15 * mm, f"Receipt: {donation.receipt_number}")
+    pdf.setFont('Helvetica', 8.6)
     pdf.drawRightString(
         width - margin_x - 6 * mm,
-        height - 34 * mm,
+        header_y + 8 * mm,
         timezone.localtime(donation.paid_at or donation.created_at).strftime('%Y-%m-%d %H:%M:%S'),
     )
 
     # Details panel
-    panel_top = height - 58 * mm
-    panel_height = 95 * mm
+    panel_top = header_y - 4 * mm
+    panel_height = 63 * mm
     pdf.setFillColor(colors.HexColor('#F7FAFC'))
     pdf.roundRect(margin_x, panel_top - panel_height, content_width, panel_height, 3 * mm, fill=1, stroke=0)
 
@@ -162,35 +169,35 @@ def _build_receipt_pdf(donation):
         ('Order ID', donation.razorpay_order_id),
     ]
 
-    row_y = panel_top - 10 * mm
+    row_y = panel_top - 7 * mm
     for label, value in rows:
         pdf.setFillColor(colors.HexColor('#64748B'))
-        pdf.setFont('Helvetica-Bold', 9)
+        pdf.setFont('Helvetica-Bold', 8)
         pdf.drawString(margin_x + 6 * mm, row_y, label)
 
         pdf.setFillColor(colors.HexColor('#0F172A'))
-        pdf.setFont('Helvetica', 10.2)
-        pdf.drawString(margin_x + 45 * mm, row_y, str(value))
-        row_y -= 12 * mm
+        pdf.setFont('Helvetica', 8.8)
+        pdf.drawString(margin_x + 40 * mm, row_y, str(value))
+        row_y -= 8.8 * mm
 
     # Amount highlight
-    amount_box_y = panel_top - panel_height - 18 * mm
+    amount_box_y = panel_top - panel_height - 12 * mm
     pdf.setFillColor(colors.HexColor('#FFF7ED'))
-    pdf.roundRect(margin_x, amount_box_y, content_width, 14 * mm, 3 * mm, fill=1, stroke=0)
+    pdf.roundRect(margin_x, amount_box_y, content_width, 11 * mm, 2.5 * mm, fill=1, stroke=0)
     pdf.setFillColor(colors.HexColor('#9A3412'))
-    pdf.setFont('Helvetica-Bold', 11)
-    pdf.drawString(margin_x + 6 * mm, amount_box_y + 5 * mm, 'Total Donation Amount')
-    pdf.setFont('Helvetica-Bold', 12)
-    pdf.drawRightString(width - margin_x - 6 * mm, amount_box_y + 5 * mm, f"INR {donation.amount}")
+    pdf.setFont('Helvetica-Bold', 9)
+    pdf.drawString(margin_x + 6 * mm, amount_box_y + 3.8 * mm, 'Total Donation Amount')
+    pdf.setFont('Helvetica-Bold', 10)
+    pdf.drawRightString(width - margin_x - 6 * mm, amount_box_y + 3.8 * mm, f"INR {donation.amount}")
 
     # Footer note
-    footer_y = amount_box_y - 20 * mm
+    footer_y = amount_box_y - 9.5 * mm
     pdf.setStrokeColor(colors.HexColor('#E2E8F0'))
-    pdf.line(margin_x, footer_y + 10 * mm, width - margin_x, footer_y + 10 * mm)
+    pdf.line(margin_x, footer_y + 6 * mm, width - margin_x, footer_y + 6 * mm)
     pdf.setFillColor(colors.HexColor('#475569'))
-    pdf.setFont('Helvetica-Oblique', 9.5)
-    pdf.drawString(margin_x, footer_y + 3 * mm, 'This is a computer-generated receipt for the donation received by KFA.')
-    pdf.drawString(margin_x, footer_y - 2 * mm, 'Thank you for your contribution and continued support.')
+    pdf.setFont('Helvetica-Oblique', 7.8)
+    pdf.drawString(margin_x, footer_y + 1.8 * mm, 'This is a computer-generated receipt for the donation received by KFA.')
+    pdf.drawString(margin_x, footer_y - 2.3 * mm, 'Thank you for your contribution and continued support.')
 
     pdf.showPage()
     pdf.save()
