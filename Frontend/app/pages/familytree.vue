@@ -149,8 +149,8 @@
 
      <div v-if="quickEditOpen && quickEditMemberId" class="fixed inset-0 z-50 flex items-end justify-center p-0 md:items-center md:p-4">
         <div class="absolute inset-0 bg-black/60" @click="quickEditOpen = false"></div>
-        <div class="relative w-full max-h-[88vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-4 pb-5 shadow-2xl md:max-w-2xl md:rounded-2xl md:p-5">
-            <div class="sticky top-0 z-10 mb-3 flex items-center justify-between border-b border-slate-100 bg-white pb-3 pt-1">
+        <div class="quick-edit-sheet relative w-full max-h-[90vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-4 pb-5 shadow-2xl md:max-w-2xl md:rounded-2xl md:p-5">
+            <div class="sticky top-0 z-10 mb-4 flex items-center justify-between border-b border-slate-100 bg-white pb-3 pt-1">
                 <div>
                     <h3 class="text-lg font-black text-slate-900">Edit Member</h3>
                     <p class="text-xs text-slate-500">Update selected member details</p>
@@ -158,7 +158,7 @@
                 <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 hover:bg-slate-100" @click="quickEditOpen = false">Close</button>
             </div>
 
-            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2">
                 <input v-model="quickEditForm.first_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="First name" />
                 <input v-model="quickEditForm.last_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Last name" />
                 <input v-model="quickEditForm.member_id" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Member ID" />
@@ -228,7 +228,7 @@
       <Transition name="slide-up-editor">
       <div
           v-if="editMode && isEditorSheetOpen"
-          class="fixed inset-x-0 bottom-0 z-40 max-h-[86vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white/96 p-4 pb-6 shadow-2xl backdrop-blur transition-all duration-300 md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[410px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl md:p-5"
+          class="editor-sheet fixed inset-x-0 bottom-0 z-40 max-h-[88vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white/96 p-4 pb-6 shadow-2xl backdrop-blur transition-all duration-300 md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[410px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl md:p-5"
       >
           <div class="sticky top-0 z-10 mb-3 flex items-center justify-between border-b border-slate-100 bg-white/95 pb-3 pt-1 backdrop-blur">
                 <div>
@@ -241,7 +241,7 @@
                 </div>
           </div>
 
-        <div v-if="selectedMember" class="space-y-3">
+        <div v-if="selectedMember" class="space-y-4">
             <div class="rounded-2xl border border-slate-200 bg-linear-to-br from-white to-slate-50 p-3 shadow-sm">
                 <div class="text-base font-black text-slate-900">{{ selectedMember.name }}</div>
                 <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ selectedMember.relation || selectedMember.role || t('familyTree.labels.member') }}</div>
@@ -256,16 +256,16 @@
                 Edit Profile
             </button>
 
-            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_parent" :class="addRelationType === 'PARENT' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('PARENT')">{{ t('familyTree.editor.actions.parent') }}</button>
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!canAddSpouseNow" :class="addRelationType === 'SPOUSE' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SPOUSE')">{{ t('familyTree.editor.actions.spouse') }}</button>
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_sibling" :class="addRelationType === 'SIBLING' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SIBLING')">{{ t('familyTree.editor.actions.sibling') }}</button>
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_child" :class="addRelationType === 'CHILD' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('CHILD')">{{ t('familyTree.editor.actions.child') }}</button>
             </div>
 
-            <div class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+            <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-3.5">
                 <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ t('familyTree.editor.addRelativeTitle') }}</div>
-                <div class="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-white p-1">
+                <div class="grid grid-cols-2 gap-2.5 rounded-xl border border-slate-200 bg-white p-1.5">
                     <button
                         type="button"
                         class="rounded-lg px-2 py-1.5 text-xs font-bold transition-all duration-300"
@@ -2168,5 +2168,34 @@ watch(
 .slide-up-editor-leave-to {
     opacity: 0;
     transform: translateY(14px) scale(0.99);
+}
+
+@media (max-width: 767px) {
+    .quick-edit-sheet input,
+    .quick-edit-sheet select,
+    .quick-edit-sheet textarea,
+    .editor-sheet input,
+    .editor-sheet select,
+    .editor-sheet textarea {
+        min-height: 44px;
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+        font-size: 0.95rem;
+    }
+
+    .quick-edit-sheet button,
+    .editor-sheet button {
+        min-height: 42px;
+    }
+
+    .quick-edit-sheet {
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
+    }
+
+    .editor-sheet {
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
+    }
 }
 </style>
