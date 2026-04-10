@@ -95,6 +95,7 @@ class FamilyMember(models.Model):
     email_id = models.EmailField(blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     church_parish = models.CharField(max_length=100, blank=True, null=True)
+    committee_role = models.CharField(max_length=120, blank=True, null=True)
 
     photo = models.ImageField(upload_to="members/photos/", blank=True, null=True)
     
@@ -121,6 +122,8 @@ class FamilyMember(models.Model):
 
     @property
     def role(self):
+        if self.committee_role:
+            return self.committee_role
         # Fallback gracefully if committee module is unavailable.
         try:
             if hasattr(self, 'user_account') and self.user_account:
@@ -133,6 +136,8 @@ class FamilyMember(models.Model):
 
     @property
     def is_committee(self):
+        if self.committee_role:
+            return True
         try:
             if hasattr(self, 'user_account') and self.user_account:
                 return self.user_account.committee_entries.exists()

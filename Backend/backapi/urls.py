@@ -12,6 +12,8 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
     # news endpoints
     path('api/news/', include('news.urls')),
+    # profiles endpoints (committee, gallery, community roles)
+    path('api/profiles/', include('profiles.urls')),
     # CSRF init endpoint expected by frontend
     path('api/csrf/', CsrfInitView.as_view()),
 ]
