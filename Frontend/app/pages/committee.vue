@@ -130,10 +130,10 @@
 
     <!-- Professional Details Modal -->
     <Transition name="fade">
-      <div v-if="selectedMember" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden" @click.self="closeDetails">
+      <div v-if="selectedMember" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-4" @click.self="closeDetails">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md"></div>
         
-        <div class="relative bg-white rounded-4xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 flex flex-col">
+        <div class="relative my-3 flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-2xl sm:my-0">
           <!-- Header Image -->
           <div class="h-64 sm:h-80 bg-slate-100 relative">
             <img 
@@ -160,7 +160,7 @@
           </div>
 
           <!-- Professional Body -->
-          <div class="p-10 space-y-8">
+          <div class="space-y-8 overflow-y-auto p-6 sm:p-10">
              <div class="space-y-6">
                 <div class="flex items-center gap-5 group">
                    <div class="w-12 h-12 rounded-2xl bg-brand-gold/5 flex items-center justify-center text-brand-gold border border-brand-gold/10 group-hover:bg-brand-gold group-hover:text-white transition-all duration-500">
@@ -170,6 +170,33 @@
                      <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">{{ t('committee.modal.representation') }}</span>
                      <span class="text-lg font-bold text-slate-900">{{ t('committee.modal.executiveBody') }}</span>
                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Role</div>
+                    <div class="mt-1 text-sm font-bold text-slate-800">{{ selectedMember.role || t('committee.labels.committeeMember') }}</div>
+                  </div>
+                  <div v-if="selectedMember.member_id" class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Member ID</div>
+                    <div class="mt-1 text-sm font-bold text-slate-800">{{ selectedMember.member_id }}</div>
+                  </div>
+                  <div v-if="selectedMember.occupation" class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Occupation</div>
+                    <div class="mt-1 text-sm font-bold text-slate-800">{{ selectedMember.occupation }}</div>
+                  </div>
+                  <div v-if="selectedMember.education" class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Education</div>
+                    <div class="mt-1 text-sm font-bold text-slate-800">{{ selectedMember.education }}</div>
+                  </div>
+                  <div v-if="selectedMember.church_parish" class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
+                    <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Parish</div>
+                    <div class="mt-1 text-sm font-bold text-slate-800">{{ selectedMember.church_parish }}</div>
+                  </div>
+                  <div v-if="selectedMember.bio" class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
+                    <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">About</div>
+                    <div class="mt-1 text-sm font-medium leading-relaxed text-slate-700">{{ selectedMember.bio }}</div>
+                  </div>
                 </div>
              </div>
 
@@ -266,6 +293,11 @@ onMounted(async () => {
                 name: item.name,
                 photo: resolveImage(item.pic),
                 role: item.role,
+              member_id: item.member_id,
+              occupation: item.occupation,
+              education: item.education,
+              church_parish: item.church_parish,
+              bio: item.bio,
                 // Fallback age/relation if not present in API
                 relation: 'Committee', 
             }))

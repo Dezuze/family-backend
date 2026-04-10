@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 import datetime
 from families.models import Family, FamilyMember, Relationship
+from profiles.models import CommunityRole
 
 User = get_user_model()
 
@@ -160,6 +161,7 @@ class ManagedMembersViewTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.family = Family.objects.create(sl_no="1", branch="Main", member_no="F-MNG-001")
+        CommunityRole.objects.get_or_create(name='Youth Coordinator', defaults={'priority': 15, 'is_active': True})
         self.guardian_member = FamilyMember.objects.create(
             family=self.family, name="Guardian", age=40, relation="Head"
         )
@@ -196,6 +198,18 @@ class ManagedMembersViewTests(TestCase):
             "date_of_death": "2020-01-15"
         }, format='multipart')
         self.assertEqual(res.status_code, 201)
+
+    def test_create_managed_member_rejects_unknown_community_role(self):
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post('/api/families/managed/', {
+            "first_name": "Child",
+            "last_name": "Role",
+            "relation": "Son",
+            "gender": "M",
+            "committee_role": "Non Existing Role"
+        }, format='multipart')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('Invalid community role', str(res.data))
 
     def test_list_managed_excludes_independent(self):
         """Independent members should not appear in managed list."""

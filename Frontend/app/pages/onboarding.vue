@@ -129,6 +129,14 @@
                             </div>
                          </div>
 
+                         <div class="group">
+                             <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Community role</label>
+                             <select v-model="form.committee_role" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all appearance-none cursor-pointer">
+                                 <option value="">Community role (none)</option>
+                                 <option v-for="role in communityRoles" :key="`profile-role-${role.id}`" :value="role.name">{{ role.name }}</option>
+                             </select>
+                         </div>
+
                          <!-- Flexible Relationship Selection -->
                          <div v-if="false" class="group pt-4">
                              <label class="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 ml-1">{{ t('onboarding.relationships.connectRelatives') }}</label>
@@ -490,6 +498,14 @@
                                 <input v-model="managedForm.church_parish" type="text" :placeholder="t('onboarding.managedModal.churchParish')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
                         </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Community role</label>
+                            <select v-model="managedForm.committee_role" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                                <option value="">Community role (none)</option>
+                                <option v-for="role in communityRoles" :key="`managed-role-${role.id}`" :value="role.name">{{ role.name }}</option>
+                            </select>
+                        </div>
  
                         <div>
                             <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.shortNote') }}</label>
@@ -820,6 +836,7 @@ const normalizeManagedRelationInput = async () => {
 
 const step = ref(1)
 const loading = ref(false)
+const communityRoles = ref([])
 const form = ref({
     first_name: '',
     last_name: '',
@@ -830,6 +847,7 @@ const form = ref({
     blood_group: '',
     occupation: '',
     education: '',
+    committee_role: '',
     email_id: '',
     phone_no: '',
     address: '',
@@ -855,6 +873,7 @@ const managedForm = ref({
     date_of_birth: '',
     blood_group: '',
     occupation: '',
+    committee_role: '',
     church_parish: '',
     bio: '',
     is_deceased: false,
@@ -893,6 +912,7 @@ const openManagedEditor = (m) => {
         date_of_birth: m.date_of_birth || '',
         blood_group: m.blood_group || '',
         occupation: m.occupation || '',
+        committee_role: m.committee_role || '',
         church_parish: m.church_parish || '',
         bio: m.bio || '',
         is_deceased: m.is_deceased || false,
@@ -934,6 +954,24 @@ const fetchManagedMembers = async () => {
         }
     } catch (e) {
         console.error("Failed to fetch managed members", e)
+    }
+}
+
+const fetchCommunityRoles = async () => {
+    try {
+        const res = await fetch(`${apiBase}/api/profiles/community-roles/`, { credentials: 'include' })
+        if (!res.ok) return
+        const data = await res.json().catch(() => [])
+        communityRoles.value = Array.isArray(data)
+            ? data.filter((row) => row && row.name).map((row) => ({
+                id: Number(row.id),
+                name: String(row.name),
+                priority: Number(row.priority || 100),
+            }))
+            : []
+    } catch (e) {
+        console.error('Failed to fetch community roles', e)
+        communityRoles.value = []
     }
 }
 
@@ -1151,6 +1189,8 @@ const tempImage = ref(null)
 const cropperRef = ref(null)
 
 onMounted(async () => {
+    await fetchCommunityRoles()
+
     // 1. Try to fetch fresh profile data from backend
     let profileData = null
     try {
@@ -1196,6 +1236,7 @@ onMounted(async () => {
         form.value.blood_group = u.blood_group || ''
         form.value.occupation = u.occupation || ''
         form.value.education = u.education || ''
+        form.value.committee_role = u.committee_role || ''
         form.value.email_id = u.email_id || u.email || ''
         form.value.phone_no = u.phone_no || ''
         form.value.address = u.address || ''

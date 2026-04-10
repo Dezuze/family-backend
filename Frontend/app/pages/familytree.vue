@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen text-slate-800 font-sans pt-32 relative overflow-hidden" style="background: linear-gradient(135deg, #faf8f5 0%, #f0ede6 30%, #e8e4db 60%, #f5f2ec 100%);">
+    <div class="min-h-screen text-slate-800 font-sans pt-32 relative overflow-x-hidden" style="background: linear-gradient(135deg, #faf8f5 0%, #f0ede6 30%, #e8e4db 60%, #f5f2ec 100%);">
     
     <!-- Subtle decorative background pattern -->
     <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23A08050&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
@@ -89,13 +89,29 @@
     </div>
 
     <!-- Visual View -->
-    <div v-show="viewMode === 'visual'" :class="['w-full h-[calc(100vh-100px)] cursor-move relative transition-all duration-300', editMode ? 'md:pr-[430px]' : '']" ref="chartContainer">
+    <div v-show="viewMode === 'visual'" :class="['w-full h-[calc(100vh-100px)] cursor-move touch-none relative transition-all duration-300', editMode ? 'md:pr-[430px]' : '']" ref="chartContainer">
        <!-- Tree area backdrop -->
        <div class="absolute inset-0 rounded-none" style="background: radial-gradient(ellipse at center, rgba(160,128,80,0.04) 0%, transparent 70%);"></div>
+       <div v-if="isMobileView" class="pointer-events-none absolute bottom-16 right-3 z-20 flex flex-col gap-2 md:hidden">
+          <button
+              type="button"
+              class="pointer-events-auto h-10 w-10 rounded-xl border border-slate-200 bg-white/95 text-xl font-black text-slate-700 shadow-lg backdrop-blur active:scale-95"
+              @click="adjustMobileZoom('in')"
+          >
+              +
+          </button>
+          <button
+              type="button"
+              class="pointer-events-auto h-10 w-10 rounded-xl border border-slate-200 bg-white/95 text-xl font-black text-slate-700 shadow-lg backdrop-blur active:scale-95"
+              @click="adjustMobileZoom('out')"
+          >
+              -
+          </button>
+       </div>
        <div v-if="loading" class="absolute inset-0 flex items-center justify-center z-10">
           <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-gold"></div>
        </div>
-       <svg ref="svgRef" class="w-full h-full relative z-1"></svg>
+         <svg ref="svgRef" class="w-full h-full relative z-1 touch-none"></svg>
     </div>
 
      <!-- Grid View -->
@@ -147,10 +163,10 @@
         @close="selectedMember = null" 
      />
 
-     <div v-if="quickEditOpen && quickEditMemberId" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+     <div v-if="quickEditOpen && quickEditMemberId" class="fixed inset-0 z-50 flex items-end justify-center p-0 md:items-center md:p-4">
         <div class="absolute inset-0 bg-black/60" @click="quickEditOpen = false"></div>
-        <div class="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
-            <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="quick-edit-sheet relative w-full max-h-[90vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-4 pb-5 shadow-2xl md:max-w-2xl md:rounded-2xl md:p-5">
+            <div class="sticky top-0 z-10 mb-4 flex items-center justify-between border-b border-slate-100 bg-white pb-3 pt-1">
                 <div>
                     <h3 class="text-lg font-black text-slate-900">Edit Member</h3>
                     <p class="text-xs text-slate-500">Update selected member details</p>
@@ -158,7 +174,7 @@
                 <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 hover:bg-slate-100" @click="quickEditOpen = false">Close</button>
             </div>
 
-            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2">
                 <input v-model="quickEditForm.first_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="First name" />
                 <input v-model="quickEditForm.last_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Last name" />
                 <input v-model="quickEditForm.member_id" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Member ID" />
@@ -185,6 +201,10 @@
                 <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
                 <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
                 <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
+                <select v-model="quickEditForm.committee_role" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold">
+                    <option value="">Community role (none)</option>
+                    <option v-for="role in communityRoles" :key="`quick-role-${role.id}`" :value="role.name">{{ role.name }}</option>
+                </select>
                 <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
                 <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
                 <input v-model="quickEditForm.wedding_anniversary" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Wedding anniversary" />
@@ -201,7 +221,7 @@
             <p v-if="quickEditError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{{ quickEditError }}</p>
             <p v-if="quickEditSuccess" class="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">{{ quickEditSuccess }}</p>
 
-            <div class="mt-4 flex justify-end gap-2">
+            <div class="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-100 bg-white pt-3">
                 <button class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700" @click="quickEditOpen = false">Cancel</button>
                 <button class="rounded-xl bg-brand-gold px-3 py-2 text-xs font-black text-white disabled:opacity-50" :disabled="quickEditLoading" @click="saveQuickEditMember">
                     {{ quickEditLoading ? 'Saving...' : 'Save Changes' }}
@@ -212,14 +232,13 @@
 
       <div
           v-if="editMode && isEditorSheetOpen"
-          class="fixed inset-0 z-30 bg-slate-900/25 backdrop-blur-[1px] md:hidden"
-          @click="isEditorSheetOpen = false"
+          class="fixed inset-0 z-30 pointer-events-none bg-slate-900/10 backdrop-blur-[0.5px] md:hidden"
       ></div>
 
       <button
           v-if="editMode && !isEditorSheetOpen"
           class="fixed bottom-4 right-4 z-40 rounded-2xl border border-brand-gold/40 bg-white px-4 py-2 text-xs font-black text-brand-gold shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl active:scale-95 md:hidden"
-          @click="isEditorSheetOpen = true"
+          @click="openEditorSheet"
       >
           {{ t('familyTree.editor.openTreeEditor') }}
       </button>
@@ -227,20 +246,32 @@
       <Transition name="slide-up-editor">
       <div
           v-if="editMode && isEditorSheetOpen"
-          class="fixed inset-x-2 bottom-2 z-40 max-h-[78vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white/96 p-5 shadow-2xl backdrop-blur transition-all duration-300 md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[410px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl"
+          class="editor-sheet fixed inset-x-0 bottom-0 z-40 max-h-[72vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white/96 px-4 pt-0 pb-6 shadow-2xl backdrop-blur transition-all duration-300 md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[410px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl md:p-5"
+          :style="mobileEditorSheetStyle"
+          :class="isResizingEditorSheet ? 'duration-0' : ''"
       >
-          <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="mb-2 flex justify-center md:hidden">
+                <button
+                    type="button"
+                    class="h-8 w-24 touch-none rounded-full border border-slate-200 bg-white/90"
+                    aria-label="Resize editor panel"
+                    @pointerdown.prevent="startEditorResize"
+                >
+                    <span class="mx-auto block h-1.5 w-10 rounded-full bg-slate-300"></span>
+                </button>
+          </div>
+          <div class="sticky top-0 z-20 mb-3 flex items-center justify-between border-b border-slate-100 bg-white/95 pb-3 pt-3 backdrop-blur">
                 <div>
                      <h3 class="text-lg font-black text-slate-900">{{ t('familyTree.editor.title') }}</h3>
                      <p class="text-xs font-medium text-slate-500">{{ t('familyTree.editor.subtitle') }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                     <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100 md:hidden" @click="isEditorSheetOpen = false">{{ t('familyTree.editor.hide') }}</button>
+                     <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100 md:hidden" @click="closeEditorSheet">{{ t('familyTree.editor.hide') }}</button>
                      <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100" @click="toggleEditMode">{{ t('familyTree.editor.close') }}</button>
                 </div>
           </div>
 
-        <div v-if="selectedMember" class="space-y-3">
+        <div v-if="selectedMember" class="space-y-4">
             <div class="rounded-2xl border border-slate-200 bg-linear-to-br from-white to-slate-50 p-3 shadow-sm">
                 <div class="text-base font-black text-slate-900">{{ selectedMember.name }}</div>
                 <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ selectedMember.relation || selectedMember.role || t('familyTree.labels.member') }}</div>
@@ -255,16 +286,16 @@
                 Edit Profile
             </button>
 
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_parent" :class="addRelationType === 'PARENT' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('PARENT')">{{ t('familyTree.editor.actions.parent') }}</button>
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!canAddSpouseNow" :class="addRelationType === 'SPOUSE' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SPOUSE')">{{ t('familyTree.editor.actions.spouse') }}</button>
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_sibling" :class="addRelationType === 'SIBLING' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SIBLING')">{{ t('familyTree.editor.actions.sibling') }}</button>
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_child" :class="addRelationType === 'CHILD' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('CHILD')">{{ t('familyTree.editor.actions.child') }}</button>
             </div>
 
-            <div class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+            <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-3.5">
                 <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ t('familyTree.editor.addRelativeTitle') }}</div>
-                <div class="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-white p-1">
+                <div class="grid grid-cols-2 gap-2.5 rounded-xl border border-slate-200 bg-white p-1.5">
                     <button
                         type="button"
                         class="rounded-lg px-2 py-1.5 text-xs font-bold transition-all duration-300"
@@ -290,7 +321,7 @@
                 </select>
                 <p v-if="duplicateRelationWarning" class="text-[11px] font-semibold text-amber-700">{{ duplicateRelationWarning }}</p>
                 <template v-if="addRelativeMode === 'create'">
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <input v-model="addRelativeForm.first_name" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.firstName')" />
                         <input v-model="addRelativeForm.last_name" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.lastName')" />
                     </div>
@@ -325,6 +356,10 @@
                     </select>
                     <input v-model="addRelativeForm.occupation" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.occupation')" />
                     <input v-model="addRelativeForm.education" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.education')" />
+                    <select v-model="addRelativeForm.committee_role" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
+                        <option value="">Community role (none)</option>
+                        <option v-for="role in communityRoles" :key="`add-role-${role.id}`" :value="role.name">{{ role.name }}</option>
+                    </select>
                     <input v-model="addRelativeForm.phone_no" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.phoneNumber')" />
                     <input v-model="addRelativeForm.email_id" type="email" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.email')" />
                     <input v-model="addRelativeForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
@@ -336,7 +371,27 @@
                         {{ t('onboarding.managedModal.isDeceased') }}
                     </label>
                     <input v-if="addRelativeForm.is_deceased" v-model="addRelativeForm.date_of_death" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
-                    <input type="file" accept="image/*" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs" @change="onAddRelativeAvatarChange" />
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Profile photo</label>
+                        <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                            <div class="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-50">
+                                <img v-if="addRelativeAvatarPreview" :src="addRelativeAvatarPreview" alt="Member preview" class="h-full w-full object-cover" />
+                                <div v-else class="flex h-full w-full items-center justify-center text-[10px] font-bold text-slate-400">No photo</div>
+                            </div>
+                            <label class="inline-flex cursor-pointer rounded-lg border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold transition-colors hover:bg-brand-gold/10">
+                                Upload & Crop
+                                <input type="file" accept="image/*" class="hidden" @change="onAddRelativeAvatarChange" />
+                            </label>
+                            <button
+                                v-if="addRelativeAvatarPreview"
+                                type="button"
+                                class="rounded-lg border border-slate-200 px-2 py-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-100"
+                                @click="clearAddRelativeAvatar"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    </div>
                 </template>
                 <template v-else>
                     <input
@@ -457,6 +512,34 @@
      </div>
       </Transition>
 
+            <ClientOnly>
+                <Teleport to="body">
+                    <div v-if="showAddRelativeCropper" class="fixed inset-0 z-60 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+                        <div class="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+                            <div class="flex items-center justify-between border-b border-gray-100 bg-slate-50 p-4">
+                                <h3 class="font-bold text-slate-800">Crop profile photo</h3>
+                                <button class="text-slate-400 hover:text-slate-600" @click="cancelAddRelativeCrop">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </div>
+                            <div class="flex justify-center bg-slate-900 p-4">
+                                <Cropper
+                                    ref="addRelativeCropperRef"
+                                    class="h-96 w-full"
+                                    :src="addRelativeTempImage || ''"
+                                    :stencil-component="CircleStencil"
+                                    :stencil-props="{ aspectRatio: 1 / 1 }"
+                                />
+                            </div>
+                            <div class="flex justify-end gap-3 border-t border-gray-100 bg-white p-4">
+                                <button class="rounded-xl px-6 py-2.5 font-bold text-slate-600 transition-colors hover:bg-slate-100" @click="cancelAddRelativeCrop">Cancel</button>
+                                <button class="rounded-xl bg-brand-gold px-6 py-2.5 font-bold text-white shadow-lg shadow-brand-gold/30 transition-all hover:brightness-110" @click="cropAddRelativeImage">Set photo</button>
+                            </div>
+                        </div>
+                    </div>
+                </Teleport>
+            </ClientOnly>
+
   </div>
 </template>
 
@@ -466,6 +549,8 @@ import { useHead, useRuntimeConfig, useRoute, useRouter } from '#imports'
 import { useI18n } from 'vue-i18n'
 import MemberDetailsModal from '~/components/MemberDetailsModal.vue'
 import MemberCard from '~/components/MemberCard.vue'
+import { Cropper, CircleStencil } from 'vue-advanced-cropper'
+import 'vue-advanced-cropper/dist/style.css'
 
 // ============================================================
 // familytree.vue — Interactive Family Tree & Member Directory
@@ -515,20 +600,63 @@ const resolveInitialEditMode = (): boolean => {
     return requested === '1' || requested === 'true'
 }
 
+const isMobileViewport = () => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(max-width: 767px)').matches
+}
+
 // View mode can be visual graph or directory grid
 const viewMode = ref<'visual' | 'grid'>(resolveInitialViewMode())
 const editMode = ref(resolveInitialEditMode())
 const isEditorSheetOpen = ref(true)
+const isMobileView = ref(false)
+const MOBILE_EDITOR_MIN_VH = 34
+const MOBILE_EDITOR_MAX_VH = 88
+const MOBILE_EDITOR_DEFAULT_VH = 58
+const mobileEditorSheetVh = ref(MOBILE_EDITOR_DEFAULT_VH)
+const isResizingEditorSheet = ref(false)
 const loading = computed(() => familyStore.loading)
 const svgRef = ref<SVGSVGElement | null>(null)
 const chartContainer = ref<HTMLDivElement | null>(null)
 const selectedMember = ref<FamilyMember | null>(null)
+
+const clampMobileEditorHeight = (value: number) => {
+    return Math.max(MOBILE_EDITOR_MIN_VH, Math.min(MOBILE_EDITOR_MAX_VH, value))
+}
+
+const mobileEditorSheetStyle = computed(() => {
+    if (!isMobileViewport()) return {}
+    const h = clampMobileEditorHeight(mobileEditorSheetVh.value)
+    return {
+        height: `${h}vh`,
+        maxHeight: `${h}vh`,
+        minHeight: `${MOBILE_EDITOR_MIN_VH}vh`,
+    }
+})
+
+const adjustMobileZoom = (direction: 'in' | 'out') => {
+    if (!svgRef.value || !chartContainer.value || !globalZoom || !globalSVG) return
+    const current = d3.zoomTransform(svgRef.value)
+    const factor = direction === 'in' ? 1.24 : 1 / 1.24
+    const minScale = 0.35
+    const maxScale = 4
+    const nextScale = Math.max(minScale, Math.min(maxScale, current.k * factor))
+    if (Math.abs(nextScale - current.k) < 0.0001) return
+
+    const cx = chartContainer.value.clientWidth / 2
+    const cy = chartContainer.value.clientHeight / 2
+    const nextX = cx - ((cx - current.x) * nextScale) / current.k
+    const nextY = cy - ((cy - current.y) * nextScale) / current.k
+    const nextTransform = d3.zoomIdentity.translate(nextX, nextY).scale(nextScale)
+    globalSVG.transition().duration(180).call(globalZoom.transform as any, nextTransform)
+}
 
 // Directory UI state
 const layout = ref<'grid'|'list'|'compact'>('grid')
 const minWidth = ref(250)
 const searchQuery = ref('')
 const searchResults = ref<FamilyMember[]>([])
+const communityRoles = ref<Array<{ id: number; name: string; priority: number }>>([])
 
 const addRelationType = ref<'PARENT' | 'SPOUSE' | 'SIBLING' | 'CHILD'>('CHILD')
 const addRelativeMode = ref<'create' | 'link'>('create')
@@ -544,6 +672,7 @@ const addRelativeForm = ref({
     blood_group: '',
     occupation: '',
     education: '',
+    committee_role: '',
     phone_no: '',
     email_id: '',
     wedding_anniversary: '',
@@ -555,6 +684,10 @@ const addRelativeForm = ref({
 })
 const addRelativeUseDob = ref(true)
 const addRelativeAvatar = ref<File | null>(null)
+const addRelativeAvatarPreview = ref<string | null>(null)
+const showAddRelativeCropper = ref(false)
+const addRelativeTempImage = ref<string | null>(null)
+const addRelativeCropperRef = ref<any>(null)
 const linkSearchQuery = ref('')
 const linkSearchResults = ref<any[]>([])
 const linkSearchLoading = ref(false)
@@ -606,6 +739,7 @@ const quickEditForm = ref({
     blood_group: '',
     occupation: '',
     education: '',
+    committee_role: '',
     phone_no: '',
     email_id: '',
     wedding_anniversary: '',
@@ -722,6 +856,7 @@ const resetAddRelativeForm = () => {
         blood_group: '',
         occupation: '',
         education: '',
+        committee_role: '',
         phone_no: '',
         email_id: '',
         wedding_anniversary: '',
@@ -733,11 +868,50 @@ const resetAddRelativeForm = () => {
     }
     addRelativeUseDob.value = true
     addRelativeAvatar.value = null
+    addRelativeAvatarPreview.value = null
 }
 
 const onAddRelativeAvatarChange = (event: Event) => {
     const target = event.target as HTMLInputElement
-    addRelativeAvatar.value = target.files?.[0] || null
+    const file = target.files?.[0] || null
+    if (!file) return
+
+    if (addRelativeTempImage.value) {
+        URL.revokeObjectURL(addRelativeTempImage.value)
+    }
+    addRelativeTempImage.value = URL.createObjectURL(file)
+    showAddRelativeCropper.value = true
+    target.value = ''
+}
+
+const clearAddRelativeAvatar = () => {
+    addRelativeAvatar.value = null
+    addRelativeAvatarPreview.value = null
+}
+
+const cropAddRelativeImage = () => {
+    const result = addRelativeCropperRef.value?.getResult?.()
+    if (!result?.canvas) return
+
+    result.canvas.toBlob((blob: Blob | null) => {
+        if (!blob) return
+        const file = new File([blob], 'member_profile.jpg', { type: 'image/jpeg' })
+        addRelativeAvatar.value = file
+        addRelativeAvatarPreview.value = URL.createObjectURL(file)
+        showAddRelativeCropper.value = false
+        if (addRelativeTempImage.value) {
+            URL.revokeObjectURL(addRelativeTempImage.value)
+            addRelativeTempImage.value = null
+        }
+    }, 'image/jpeg')
+}
+
+const cancelAddRelativeCrop = () => {
+    showAddRelativeCropper.value = false
+    if (addRelativeTempImage.value) {
+        URL.revokeObjectURL(addRelativeTempImage.value)
+        addRelativeTempImage.value = null
+    }
 }
 
 const fetchMalayalamEquivalent = async (name: string): Promise<string | null> => {
@@ -959,6 +1133,7 @@ const openQuickEditForSelected = () => {
         blood_group: member.blood_group || '',
         occupation: member.occupation || '',
         education: member.education || '',
+        committee_role: member.committee_role || '',
         phone_no: member.phone_no || '',
         email_id: member.email_id || '',
         wedding_anniversary: member.wedding_anniversary || '',
@@ -1006,6 +1181,7 @@ const saveQuickEditMember = async () => {
         fd.append('blood_group', quickEditForm.value.blood_group || '')
         fd.append('occupation', quickEditForm.value.occupation || '')
         fd.append('education', quickEditForm.value.education || '')
+        fd.append('committee_role', quickEditForm.value.committee_role || '')
         fd.append('phone_no', quickEditForm.value.phone_no || '')
         fd.append('email_id', quickEditForm.value.email_id || '')
         fd.append('wedding_anniversary', quickEditForm.value.wedding_anniversary || '')
@@ -1075,6 +1251,26 @@ const withCsrfHeaders = async () => {
     const csrfData = await csrfRes.json().catch(() => ({}))
     const csrftoken = getCookie('csrftoken') || csrfData.csrfToken
     return csrftoken ? { 'X-CSRFToken': csrftoken } : {}
+}
+
+const fetchCommunityRoles = async () => {
+    try {
+        const res = await fetch(`${apiBase}/api/profiles/community-roles/`, { credentials: 'include' })
+        if (!res.ok) return
+        const data = await res.json().catch(() => []) as any[]
+        communityRoles.value = Array.isArray(data)
+            ? data
+                .filter((item) => item && item.name)
+                .map((item) => ({
+                    id: Number(item.id),
+                    name: String(item.name),
+                    priority: Number(item.priority || 100),
+                }))
+            : []
+    } catch (err) {
+        console.error('Failed to load community roles', err)
+        communityRoles.value = []
+    }
 }
 
 const loadMemberContext = async (memberId: number) => {
@@ -1203,6 +1399,7 @@ const addRelativeFromPanel = async () => {
             if (addRelativeForm.value.blood_group) formData.append('blood_group', addRelativeForm.value.blood_group)
             if (addRelativeForm.value.occupation) formData.append('occupation', addRelativeForm.value.occupation)
             if (addRelativeForm.value.education) formData.append('education', addRelativeForm.value.education)
+            if (addRelativeForm.value.committee_role) formData.append('committee_role', addRelativeForm.value.committee_role)
             if (addRelativeForm.value.phone_no) formData.append('phone_no', addRelativeForm.value.phone_no)
             if (addRelativeForm.value.email_id) formData.append('email_id', addRelativeForm.value.email_id)
             if (addRelativeForm.value.wedding_anniversary) {
@@ -1382,11 +1579,54 @@ const goIndependentFromPanel = async () => {
     }
 }
 
+const openEditorSheet = () => {
+    if (isMobileViewport()) {
+        mobileEditorSheetVh.value = clampMobileEditorHeight(mobileEditorSheetVh.value || MOBILE_EDITOR_DEFAULT_VH)
+    }
+    isEditorSheetOpen.value = true
+}
+
+const closeEditorSheet = () => {
+    isEditorSheetOpen.value = false
+}
+
+let editorResizeStartY = 0
+let editorResizeStartHeight = MOBILE_EDITOR_DEFAULT_VH
+
+const onEditorResizeMove = (event: PointerEvent) => {
+    if (!isResizingEditorSheet.value || !isMobileViewport()) return
+    event.preventDefault()
+    const deltaVh = ((editorResizeStartY - event.clientY) / Math.max(1, window.innerHeight)) * 100
+    mobileEditorSheetVh.value = clampMobileEditorHeight(editorResizeStartHeight + deltaVh)
+}
+
+const stopEditorResize = () => {
+    isResizingEditorSheet.value = false
+    window.removeEventListener('pointermove', onEditorResizeMove)
+    window.removeEventListener('pointerup', stopEditorResize)
+    window.removeEventListener('pointercancel', stopEditorResize)
+}
+
+const startEditorResize = (event: PointerEvent) => {
+    if (!isMobileViewport()) return
+    isResizingEditorSheet.value = true
+    editorResizeStartY = event.clientY
+    editorResizeStartHeight = mobileEditorSheetVh.value
+    window.addEventListener('pointermove', onEditorResizeMove, { passive: false })
+    window.addEventListener('pointerup', stopEditorResize)
+    window.addEventListener('pointercancel', stopEditorResize)
+}
+
+const onViewportResize = () => {
+    isMobileView.value = isMobileViewport()
+    mobileEditorSheetVh.value = clampMobileEditorHeight(mobileEditorSheetVh.value)
+}
+
 const toggleEditMode = () => {
     const next = !editMode.value
     editMode.value = next
     if (next) {
-        isEditorSheetOpen.value = true
+        openEditorSheet()
     }
 
     const query: Record<string, string> = {}
@@ -1426,9 +1666,10 @@ const focusFromQuery = () => {
 
       const svg = d3.select(svgRef.value) as d3.Selection<SVGSVGElement, unknown, null, undefined>
       svg.attr("viewBox", `0 0 ${width} ${height}`)
+            const mobileTwoFingerOnly = isMobileViewport()
       
-      const zoom = d3.zoom<SVGSVGElement, unknown>()
-        .scaleExtent([0.35, 2.4])
+            const zoom = d3.zoom<SVGSVGElement, unknown>()
+                .scaleExtent([0.35, 4])
         .wheelDelta((event: any) => {
             if (!(event.ctrlKey || event.metaKey)) return 0
             const factor = event.deltaMode === 1 ? 0.04 : 0.002
@@ -1439,6 +1680,16 @@ const focusFromQuery = () => {
             if (event.type === 'wheel') {
                 return Boolean(event.ctrlKey || event.metaKey)
             }
+
+            const isTouchEvent = String(event.type || '').startsWith('touch')
+            if (mobileTwoFingerOnly && isTouchEvent) {
+                if (event.type === 'touchend' || event.type === 'touchcancel') {
+                    return true
+                }
+                const touches = Number(event.touches?.length || 0)
+                return touches >= 2
+            }
+
             return true
         })
         .on("zoom", (event) => {
@@ -2062,12 +2313,22 @@ const focusFromQuery = () => {
    }
 
 onMounted(async () => {
-    await familyStore.fetchFamily()
+    window.addEventListener('resize', onViewportResize)
+    onViewportResize()
+    if (isMobileViewport() && editMode.value) {
+        isEditorSheetOpen.value = false
+    }
+    await Promise.all([
+        familyStore.fetchFamily(),
+        fetchCommunityRoles(),
+    ])
     initGraph()
     focusFromQuery()
 })
 
 onUnmounted(() => {
+    stopEditorResize()
+    window.removeEventListener('resize', onViewportResize)
     globalNodeCoords = new Map<number, { x: number; y: number }>()
     if (linkSearchDebounce) {
         clearTimeout(linkSearchDebounce)
@@ -2120,7 +2381,10 @@ watch(
     () => {
         editMode.value = resolveInitialEditMode()
         if (editMode.value) {
-            isEditorSheetOpen.value = true
+            isEditorSheetOpen.value = !isMobileViewport()
+            if (isMobileViewport()) {
+                mobileEditorSheetVh.value = MOBILE_EDITOR_DEFAULT_VH
+            }
         }
         focusFromQuery()
     },
@@ -2160,5 +2424,34 @@ watch(
 .slide-up-editor-leave-to {
     opacity: 0;
     transform: translateY(14px) scale(0.99);
+}
+
+@media (max-width: 767px) {
+    .quick-edit-sheet input,
+    .quick-edit-sheet select,
+    .quick-edit-sheet textarea,
+    .editor-sheet input,
+    .editor-sheet select,
+    .editor-sheet textarea {
+        min-height: 44px;
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+        font-size: 0.95rem;
+    }
+
+    .quick-edit-sheet button,
+    .editor-sheet button {
+        min-height: 42px;
+    }
+
+    .quick-edit-sheet {
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
+    }
+
+    .editor-sheet {
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
+    }
 }
 </style>

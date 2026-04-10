@@ -15,6 +15,7 @@ export interface FamilyMember {
   parents?: number[] | any[]
   role?: string
   committee_role?: string
+  church_parish?: string
   
   // Details
   email_id?: string

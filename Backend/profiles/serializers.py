@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Gallery, Committee
+from .models import Gallery, Committee, CommunityRole
 
 
 class GallerySerializer(serializers.ModelSerializer):
@@ -12,6 +12,11 @@ class CommitteeSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
     pic = serializers.SerializerMethodField()
+    member_id = serializers.SerializerMethodField()
+    occupation = serializers.SerializerMethodField()
+    education = serializers.SerializerMethodField()
+    church_parish = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
     
     def get_name(self, obj):
         # Try to find family member linked to this user
@@ -32,6 +37,48 @@ class CommitteeSerializer(serializers.ModelSerializer):
             return obj.user.member.photo.url
         return None
 
+    def get_member_id(self, obj):
+        member = getattr(obj.user, 'member', None)
+        return getattr(member, 'member_id', None)
+
+    def get_occupation(self, obj):
+        member = getattr(obj.user, 'member', None)
+        return getattr(member, 'occupation', None)
+
+    def get_education(self, obj):
+        member = getattr(obj.user, 'member', None)
+        return getattr(member, 'education', None)
+
+    def get_church_parish(self, obj):
+        member = getattr(obj.user, 'member', None)
+        return getattr(member, 'church_parish', None)
+
+    def get_bio(self, obj):
+        member = getattr(obj.user, 'member', None)
+        return getattr(member, 'bio', None)
+
     class Meta:
         model = Committee
-        fields = ('id', 'name', 'pic', 'role', 'created_at')
+        fields = (
+            'id', 'name', 'pic', 'role', 'member_id',
+            'occupation', 'education', 'church_parish', 'bio', 'created_at'
+        )
+
+
+class CommunityRoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunityRole
+        fields = ('id', 'name', 'priority', 'is_active', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+    def validate_name(self, value):
+        normalized = ' '.join(str(value or '').strip().split())
+        if not normalized:
+            raise serializers.ValidationError('Role name is required.')
+
+        qs = CommunityRole.objects.filter(name__iexact=normalized)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError('Role already exists.')
+        return normalized
