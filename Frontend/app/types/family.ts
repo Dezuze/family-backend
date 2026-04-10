@@ -2,6 +2,7 @@ export interface FamilyMember {
   id: number
   member_id?: string
   name: string // Full name property
+  name_ml?: string
   first_name?: string
   last_name?: string
   photo?: string // from FamilyTreeView
@@ -13,6 +14,8 @@ export interface FamilyMember {
   children?: FamilyMember[]
   parents?: number[] | any[]
   role?: string
+  committee_role?: string
+  church_parish?: string
   
   // Details
   email_id?: string
@@ -24,6 +27,7 @@ export interface FamilyMember {
   blood_group?: string
   place_of_work?: string
   spouse?: any // ID or name depending on view
+  wedding_anniversary?: string
   
   // New fields
   is_deceased?: boolean

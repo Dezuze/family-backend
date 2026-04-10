@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen text-slate-800 font-sans pt-32 relative overflow-hidden" style="background: linear-gradient(135deg, #faf8f5 0%, #f0ede6 30%, #e8e4db 60%, #f5f2ec 100%);">
+    <div class="min-h-screen text-slate-800 font-sans pt-32 relative overflow-x-hidden" style="background: linear-gradient(135deg, #faf8f5 0%, #f0ede6 30%, #e8e4db 60%, #f5f2ec 100%);">
     
     <!-- Subtle decorative background pattern -->
     <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23A08050&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
@@ -89,13 +89,29 @@
     </div>
 
     <!-- Visual View -->
-    <div v-show="viewMode === 'visual'" :class="['w-full h-[calc(100vh-100px)] cursor-move relative transition-all duration-300', editMode ? 'md:pr-[430px]' : '']" ref="chartContainer">
+    <div v-show="viewMode === 'visual'" :class="['w-full h-[calc(100vh-100px)] cursor-move touch-none relative transition-all duration-300', editMode ? 'md:pr-[430px]' : '']" ref="chartContainer">
        <!-- Tree area backdrop -->
        <div class="absolute inset-0 rounded-none" style="background: radial-gradient(ellipse at center, rgba(160,128,80,0.04) 0%, transparent 70%);"></div>
+       <div v-if="isMobileView" class="pointer-events-none absolute bottom-16 right-3 z-20 flex flex-col gap-2 md:hidden">
+          <button
+              type="button"
+              class="pointer-events-auto h-10 w-10 rounded-xl border border-slate-200 bg-white/95 text-xl font-black text-slate-700 shadow-lg backdrop-blur active:scale-95"
+              @click="adjustMobileZoom('in')"
+          >
+              +
+          </button>
+          <button
+              type="button"
+              class="pointer-events-auto h-10 w-10 rounded-xl border border-slate-200 bg-white/95 text-xl font-black text-slate-700 shadow-lg backdrop-blur active:scale-95"
+              @click="adjustMobileZoom('out')"
+          >
+              -
+          </button>
+       </div>
        <div v-if="loading" class="absolute inset-0 flex items-center justify-center z-10">
           <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-gold"></div>
        </div>
-       <svg ref="svgRef" class="w-full h-full relative z-1"></svg>
+         <svg ref="svgRef" class="w-full h-full relative z-1 touch-none"></svg>
     </div>
 
      <!-- Grid View -->
@@ -162,6 +178,17 @@
                 <input v-model="quickEditForm.first_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="First name" />
                 <input v-model="quickEditForm.last_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Last name" />
                 <input v-model="quickEditForm.member_id" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Member ID" />
+                <div class="md:col-span-2 flex gap-2">
+                    <input v-model="quickEditForm.name_ml" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Malayalam name" />
+                    <button
+                        type="button"
+                        class="shrink-0 rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold hover:bg-brand-gold/10 disabled:opacity-50"
+                        :disabled="nameLookupLoadingQuick"
+                        @click="lookupMalayalamNameForQuickEdit"
+                    >
+                        {{ nameLookupLoadingQuick ? 'Searching...' : 'Malayalam' }}
+                    </button>
+                </div>
                 <input v-model="quickEditForm.nickname" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Nickname" />
                 <select v-model="quickEditForm.gender" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
                     <option value="M">Male</option>
@@ -174,9 +201,13 @@
                 <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
                 <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
                 <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
-                <input v-model="quickEditForm.committee_role" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Community role" />
+                <select v-model="quickEditForm.committee_role" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold">
+                    <option value="">Community role (none)</option>
+                    <option v-for="role in communityRoles" :key="`quick-role-${role.id}`" :value="role.name">{{ role.name }}</option>
+                </select>
                 <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
                 <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
+                <input v-model="quickEditForm.wedding_anniversary" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Wedding anniversary" />
                 <textarea v-model="quickEditForm.address" rows="2" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address"></textarea>
                 <textarea v-model="quickEditForm.bio" rows="2" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Bio"></textarea>
                 <label class="md:col-span-2 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
@@ -201,14 +232,13 @@
 
       <div
           v-if="editMode && isEditorSheetOpen"
-          class="fixed inset-0 z-30 bg-slate-900/25 backdrop-blur-[1px] md:hidden"
-          @click="isEditorSheetOpen = false"
+          class="fixed inset-0 z-30 pointer-events-none bg-slate-900/10 backdrop-blur-[0.5px] md:hidden"
       ></div>
 
       <button
           v-if="editMode && !isEditorSheetOpen"
           class="fixed bottom-4 right-4 z-40 rounded-2xl border border-brand-gold/40 bg-white px-4 py-2 text-xs font-black text-brand-gold shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl active:scale-95 md:hidden"
-          @click="isEditorSheetOpen = true"
+          @click="openEditorSheet"
       >
           {{ t('familyTree.editor.openTreeEditor') }}
       </button>
@@ -216,15 +246,27 @@
       <Transition name="slide-up-editor">
       <div
           v-if="editMode && isEditorSheetOpen"
-          class="editor-sheet fixed inset-x-0 bottom-0 z-40 max-h-[88vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white/96 p-4 pb-6 shadow-2xl backdrop-blur transition-all duration-300 md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[410px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl md:p-5"
+          class="editor-sheet fixed inset-x-0 bottom-0 z-40 max-h-[72vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white/96 px-4 pt-0 pb-6 shadow-2xl backdrop-blur transition-all duration-300 md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[410px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl md:p-5"
+          :style="mobileEditorSheetStyle"
+          :class="isResizingEditorSheet ? 'duration-0' : ''"
       >
-          <div class="sticky top-0 z-10 mb-3 flex items-center justify-between border-b border-slate-100 bg-white/95 pb-3 pt-1 backdrop-blur">
+          <div class="mb-2 flex justify-center md:hidden">
+                <button
+                    type="button"
+                    class="h-8 w-24 touch-none rounded-full border border-slate-200 bg-white/90"
+                    aria-label="Resize editor panel"
+                    @pointerdown.prevent="startEditorResize"
+                >
+                    <span class="mx-auto block h-1.5 w-10 rounded-full bg-slate-300"></span>
+                </button>
+          </div>
+          <div class="sticky top-0 z-20 mb-3 flex items-center justify-between border-b border-slate-100 bg-white/95 pb-3 pt-3 backdrop-blur">
                 <div>
                      <h3 class="text-lg font-black text-slate-900">{{ t('familyTree.editor.title') }}</h3>
                      <p class="text-xs font-medium text-slate-500">{{ t('familyTree.editor.subtitle') }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                     <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100 md:hidden" @click="isEditorSheetOpen = false">{{ t('familyTree.editor.hide') }}</button>
+                     <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100 md:hidden" @click="closeEditorSheet">{{ t('familyTree.editor.hide') }}</button>
                      <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100" @click="toggleEditMode">{{ t('familyTree.editor.close') }}</button>
                 </div>
           </div>
@@ -283,6 +325,17 @@
                         <input v-model="addRelativeForm.first_name" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.firstName')" />
                         <input v-model="addRelativeForm.last_name" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.lastName')" />
                     </div>
+                    <div class="w-full flex gap-2">
+                        <input v-model="addRelativeForm.name_ml" class="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" placeholder="Malayalam name (optional)" />
+                        <button
+                            type="button"
+                            class="shrink-0 rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold hover:bg-brand-gold/10 disabled:opacity-50"
+                            :disabled="nameLookupLoadingAdd"
+                            @click="lookupMalayalamNameForAddRelative"
+                        >
+                            {{ nameLookupLoadingAdd ? 'Searching...' : 'Malayalam' }}
+                        </button>
+                    </div>
                     <input v-model="addRelativeForm.nickname" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.nickname')" />
                     <input v-model="addRelativeForm.member_id" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" placeholder="Member ID (optional)" />
                     <select v-model="addRelativeForm.gender" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
@@ -303,9 +356,13 @@
                     </select>
                     <input v-model="addRelativeForm.occupation" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.occupation')" />
                     <input v-model="addRelativeForm.education" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.education')" />
-                    <input v-model="addRelativeForm.committee_role" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" placeholder="Community role" />
+                    <select v-model="addRelativeForm.committee_role" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
+                        <option value="">Community role (none)</option>
+                        <option v-for="role in communityRoles" :key="`add-role-${role.id}`" :value="role.name">{{ role.name }}</option>
+                    </select>
                     <input v-model="addRelativeForm.phone_no" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.phoneNumber')" />
                     <input v-model="addRelativeForm.email_id" type="email" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.email')" />
+                    <input v-model="addRelativeForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
                     <input v-model="addRelativeForm.church_parish" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.parishChurch')" />
                     <textarea v-model="addRelativeForm.address" rows="2" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.address')"></textarea>
                     <textarea v-model="addRelativeForm.bio" rows="2" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.bio')"></textarea>
@@ -314,9 +371,35 @@
                         {{ t('onboarding.managedModal.isDeceased') }}
                     </label>
                     <input v-if="addRelativeForm.is_deceased" v-model="addRelativeForm.date_of_death" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
-                    <input type="file" accept="image/*" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs" @change="onAddRelativeAvatarChange" />
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Profile photo</label>
+                        <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                            <div class="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-50">
+                                <img v-if="addRelativeAvatarPreview" :src="addRelativeAvatarPreview" alt="Member preview" class="h-full w-full object-cover" />
+                                <div v-else class="flex h-full w-full items-center justify-center text-[10px] font-bold text-slate-400">No photo</div>
+                            </div>
+                            <label class="inline-flex cursor-pointer rounded-lg border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold transition-colors hover:bg-brand-gold/10">
+                                Upload & Crop
+                                <input type="file" accept="image/*" class="hidden" @change="onAddRelativeAvatarChange" />
+                            </label>
+                            <button
+                                v-if="addRelativeAvatarPreview"
+                                type="button"
+                                class="rounded-lg border border-slate-200 px-2 py-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-100"
+                                @click="clearAddRelativeAvatar"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    </div>
                 </template>
                 <template v-else>
+                    <input
+                        v-if="addRelationType === 'SPOUSE'"
+                        v-model="addRelativeForm.wedding_anniversary"
+                        type="date"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                    />
                     <div class="relative">
                         <input
                             v-model="linkSearchQuery"
@@ -429,6 +512,34 @@
      </div>
       </Transition>
 
+            <ClientOnly>
+                <Teleport to="body">
+                    <div v-if="showAddRelativeCropper" class="fixed inset-0 z-60 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+                        <div class="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+                            <div class="flex items-center justify-between border-b border-gray-100 bg-slate-50 p-4">
+                                <h3 class="font-bold text-slate-800">Crop profile photo</h3>
+                                <button class="text-slate-400 hover:text-slate-600" @click="cancelAddRelativeCrop">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </div>
+                            <div class="flex justify-center bg-slate-900 p-4">
+                                <Cropper
+                                    ref="addRelativeCropperRef"
+                                    class="h-96 w-full"
+                                    :src="addRelativeTempImage || ''"
+                                    :stencil-component="CircleStencil"
+                                    :stencil-props="{ aspectRatio: 1 / 1 }"
+                                />
+                            </div>
+                            <div class="flex justify-end gap-3 border-t border-gray-100 bg-white p-4">
+                                <button class="rounded-xl px-6 py-2.5 font-bold text-slate-600 transition-colors hover:bg-slate-100" @click="cancelAddRelativeCrop">Cancel</button>
+                                <button class="rounded-xl bg-brand-gold px-6 py-2.5 font-bold text-white shadow-lg shadow-brand-gold/30 transition-all hover:brightness-110" @click="cropAddRelativeImage">Set photo</button>
+                            </div>
+                        </div>
+                    </div>
+                </Teleport>
+            </ClientOnly>
+
   </div>
 </template>
 
@@ -438,6 +549,8 @@ import { useHead, useRuntimeConfig, useRoute, useRouter } from '#imports'
 import { useI18n } from 'vue-i18n'
 import MemberDetailsModal from '~/components/MemberDetailsModal.vue'
 import MemberCard from '~/components/MemberCard.vue'
+import { Cropper, CircleStencil } from 'vue-advanced-cropper'
+import 'vue-advanced-cropper/dist/style.css'
 
 // ============================================================
 // familytree.vue — Interactive Family Tree & Member Directory
@@ -457,7 +570,7 @@ import { useAuthStore } from '~/stores/auth'
 
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase as string
-const { t } = useI18n()
+const { t, locale, te } = useI18n()
 
 const familyStore = useFamilyStore()
 const auth = useAuthStore()
@@ -487,26 +600,70 @@ const resolveInitialEditMode = (): boolean => {
     return requested === '1' || requested === 'true'
 }
 
+const isMobileViewport = () => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(max-width: 767px)').matches
+}
+
 // View mode can be visual graph or directory grid
 const viewMode = ref<'visual' | 'grid'>(resolveInitialViewMode())
 const editMode = ref(resolveInitialEditMode())
 const isEditorSheetOpen = ref(true)
+const isMobileView = ref(false)
+const MOBILE_EDITOR_MIN_VH = 34
+const MOBILE_EDITOR_MAX_VH = 88
+const MOBILE_EDITOR_DEFAULT_VH = 58
+const mobileEditorSheetVh = ref(MOBILE_EDITOR_DEFAULT_VH)
+const isResizingEditorSheet = ref(false)
 const loading = computed(() => familyStore.loading)
 const svgRef = ref<SVGSVGElement | null>(null)
 const chartContainer = ref<HTMLDivElement | null>(null)
 const selectedMember = ref<FamilyMember | null>(null)
+
+const clampMobileEditorHeight = (value: number) => {
+    return Math.max(MOBILE_EDITOR_MIN_VH, Math.min(MOBILE_EDITOR_MAX_VH, value))
+}
+
+const mobileEditorSheetStyle = computed(() => {
+    if (!isMobileViewport()) return {}
+    const h = clampMobileEditorHeight(mobileEditorSheetVh.value)
+    return {
+        height: `${h}vh`,
+        maxHeight: `${h}vh`,
+        minHeight: `${MOBILE_EDITOR_MIN_VH}vh`,
+    }
+})
+
+const adjustMobileZoom = (direction: 'in' | 'out') => {
+    if (!svgRef.value || !chartContainer.value || !globalZoom || !globalSVG) return
+    const current = d3.zoomTransform(svgRef.value)
+    const factor = direction === 'in' ? 1.24 : 1 / 1.24
+    const minScale = 0.35
+    const maxScale = 4
+    const nextScale = Math.max(minScale, Math.min(maxScale, current.k * factor))
+    if (Math.abs(nextScale - current.k) < 0.0001) return
+
+    const cx = chartContainer.value.clientWidth / 2
+    const cy = chartContainer.value.clientHeight / 2
+    const nextX = cx - ((cx - current.x) * nextScale) / current.k
+    const nextY = cy - ((cy - current.y) * nextScale) / current.k
+    const nextTransform = d3.zoomIdentity.translate(nextX, nextY).scale(nextScale)
+    globalSVG.transition().duration(180).call(globalZoom.transform as any, nextTransform)
+}
 
 // Directory UI state
 const layout = ref<'grid'|'list'|'compact'>('grid')
 const minWidth = ref(250)
 const searchQuery = ref('')
 const searchResults = ref<FamilyMember[]>([])
+const communityRoles = ref<Array<{ id: number; name: string; priority: number }>>([])
 
 const addRelationType = ref<'PARENT' | 'SPOUSE' | 'SIBLING' | 'CHILD'>('CHILD')
 const addRelativeMode = ref<'create' | 'link'>('create')
 const addRelativeForm = ref({
     first_name: '',
     last_name: '',
+    name_ml: '',
     nickname: '',
     member_id: '',
     gender: 'M' as 'M' | 'F' | 'O',
@@ -518,6 +675,7 @@ const addRelativeForm = ref({
     committee_role: '',
     phone_no: '',
     email_id: '',
+    wedding_anniversary: '',
     address: '',
     bio: '',
     church_parish: '',
@@ -526,10 +684,16 @@ const addRelativeForm = ref({
 })
 const addRelativeUseDob = ref(true)
 const addRelativeAvatar = ref<File | null>(null)
+const addRelativeAvatarPreview = ref<string | null>(null)
+const showAddRelativeCropper = ref(false)
+const addRelativeTempImage = ref<string | null>(null)
+const addRelativeCropperRef = ref<any>(null)
 const linkSearchQuery = ref('')
 const linkSearchResults = ref<any[]>([])
 const linkSearchLoading = ref(false)
 const selectedLinkTarget = ref<any | null>(null)
+const nameLookupLoadingAdd = ref(false)
+const nameLookupLoadingQuick = ref(false)
 let linkSearchDebounce: ReturnType<typeof setTimeout> | null = null
 const editorLoading = ref(false)
 const editorError = ref('')
@@ -567,6 +731,7 @@ const quickEditForm = ref({
     first_name: '',
     last_name: '',
     member_id: '',
+    name_ml: '',
     nickname: '',
     gender: 'M' as 'M' | 'F' | 'O',
     age: '',
@@ -577,6 +742,7 @@ const quickEditForm = ref({
     committee_role: '',
     phone_no: '',
     email_id: '',
+    wedding_anniversary: '',
     church_parish: '',
     address: '',
     bio: '',
@@ -681,6 +847,7 @@ const resetAddRelativeForm = () => {
     addRelativeForm.value = {
         first_name: '',
         last_name: '',
+        name_ml: '',
         nickname: '',
         member_id: '',
         gender: 'M',
@@ -692,6 +859,7 @@ const resetAddRelativeForm = () => {
         committee_role: '',
         phone_no: '',
         email_id: '',
+        wedding_anniversary: '',
         address: '',
         bio: '',
         church_parish: '',
@@ -700,11 +868,112 @@ const resetAddRelativeForm = () => {
     }
     addRelativeUseDob.value = true
     addRelativeAvatar.value = null
+    addRelativeAvatarPreview.value = null
 }
 
 const onAddRelativeAvatarChange = (event: Event) => {
     const target = event.target as HTMLInputElement
-    addRelativeAvatar.value = target.files?.[0] || null
+    const file = target.files?.[0] || null
+    if (!file) return
+
+    if (addRelativeTempImage.value) {
+        URL.revokeObjectURL(addRelativeTempImage.value)
+    }
+    addRelativeTempImage.value = URL.createObjectURL(file)
+    showAddRelativeCropper.value = true
+    target.value = ''
+}
+
+const clearAddRelativeAvatar = () => {
+    addRelativeAvatar.value = null
+    addRelativeAvatarPreview.value = null
+}
+
+const cropAddRelativeImage = () => {
+    const result = addRelativeCropperRef.value?.getResult?.()
+    if (!result?.canvas) return
+
+    result.canvas.toBlob((blob: Blob | null) => {
+        if (!blob) return
+        const file = new File([blob], 'member_profile.jpg', { type: 'image/jpeg' })
+        addRelativeAvatar.value = file
+        addRelativeAvatarPreview.value = URL.createObjectURL(file)
+        showAddRelativeCropper.value = false
+        if (addRelativeTempImage.value) {
+            URL.revokeObjectURL(addRelativeTempImage.value)
+            addRelativeTempImage.value = null
+        }
+    }, 'image/jpeg')
+}
+
+const cancelAddRelativeCrop = () => {
+    showAddRelativeCropper.value = false
+    if (addRelativeTempImage.value) {
+        URL.revokeObjectURL(addRelativeTempImage.value)
+        addRelativeTempImage.value = null
+    }
+}
+
+const fetchMalayalamEquivalent = async (name: string): Promise<string | null> => {
+    const query = String(name || '').trim()
+    if (!query) return null
+
+    try {
+        const url = `https://inputtools.google.com/request?text=${encodeURIComponent(query)}&itc=ml-t-i0-und&num=1`
+        const res = await fetch(url)
+        if (!res.ok) return null
+        const data = await res.json().catch(() => null) as any
+        if (!Array.isArray(data) || data[0] !== 'SUCCESS') return null
+
+        const suggestions = data?.[1]?.[0]?.[1]
+        if (Array.isArray(suggestions) && suggestions.length > 0) {
+            const translated = String(suggestions[0] || '').trim()
+            return translated || null
+        }
+        return null
+    } catch {
+        return null
+    }
+}
+
+const lookupMalayalamNameForAddRelative = async () => {
+    const fullName = `${addRelativeForm.value.first_name} ${addRelativeForm.value.last_name}`.trim()
+    if (!fullName) {
+        editorError.value = 'Enter first and last name before Malayalam lookup.'
+        return
+    }
+
+    nameLookupLoadingAdd.value = true
+    const translated = await fetchMalayalamEquivalent(fullName)
+    nameLookupLoadingAdd.value = false
+
+    if (!translated) {
+        editorError.value = 'Malayalam lookup failed. Try again.'
+        return
+    }
+
+    addRelativeForm.value.name_ml = translated
+    editorError.value = ''
+}
+
+const lookupMalayalamNameForQuickEdit = async () => {
+    const fullName = `${quickEditForm.value.first_name} ${quickEditForm.value.last_name}`.trim()
+    if (!fullName) {
+        quickEditError.value = 'Enter first and last name before Malayalam lookup.'
+        return
+    }
+
+    nameLookupLoadingQuick.value = true
+    const translated = await fetchMalayalamEquivalent(fullName)
+    nameLookupLoadingQuick.value = false
+
+    if (!translated) {
+        quickEditError.value = 'Malayalam lookup failed. Try again.'
+        return
+    }
+
+    quickEditForm.value.name_ml = translated
+    quickEditError.value = ''
 }
 
 // --- Computed Data ---
@@ -781,6 +1050,31 @@ const getDisplayAge = (member: any): string => {
     return derived !== null ? String(derived) : '?'
 }
 
+const getDisplayName = (member: any): string => {
+    const baseName = String(member?.name || '').trim()
+    const localizedNameKey = `memberNames.${member?.id}`
+
+    if (locale.value === 'ml' && member?.name_ml) {
+        const malayalamName = String(member.name_ml).trim()
+        if (malayalamName) return malayalamName
+    }
+
+    if (locale.value !== 'en' && member?.nickname) {
+        const nickname = String(member.nickname).trim()
+        if (nickname) return nickname
+    }
+
+    if (member?.name_en && locale.value === 'en') {
+        return String(member.name_en).trim()
+    }
+
+    if (member?.id && te(localizedNameKey)) {
+        return String(t(localizedNameKey)).trim()
+    }
+
+    return baseName || t('familyTree.labels.member')
+}
+
 watch(searchQuery, (val) => {
     if (!val || viewMode.value !== 'visual') {
         searchResults.value = []
@@ -831,6 +1125,7 @@ const openQuickEditForSelected = () => {
         first_name: parts[0] || '',
         last_name: parts.slice(1).join(' ') || '',
         member_id: member.member_id || '',
+        name_ml: member.name_ml || '',
         nickname: member.nickname || '',
         gender: (member.gender || 'M') as 'M' | 'F' | 'O',
         age: member.age !== undefined && member.age !== null ? String(member.age) : '',
@@ -841,6 +1136,7 @@ const openQuickEditForSelected = () => {
         committee_role: member.committee_role || '',
         phone_no: member.phone_no || '',
         email_id: member.email_id || '',
+        wedding_anniversary: member.wedding_anniversary || '',
         church_parish: member.church_parish || '',
         address: member.location || member.address || '',
         bio: member.bio || '',
@@ -872,6 +1168,7 @@ const saveQuickEditMember = async () => {
         fd.append('first_name', quickEditForm.value.first_name || '')
         fd.append('last_name', quickEditForm.value.last_name || '')
         fd.append('member_id', quickEditForm.value.member_id || '')
+        fd.append('name_ml', quickEditForm.value.name_ml || '')
         if (!quickEditForm.value.first_name && !quickEditForm.value.last_name && fullName) fd.append('name', fullName)
         fd.append('nickname', quickEditForm.value.nickname || '')
         fd.append('gender', quickEditForm.value.gender || 'O')
@@ -887,6 +1184,7 @@ const saveQuickEditMember = async () => {
         fd.append('committee_role', quickEditForm.value.committee_role || '')
         fd.append('phone_no', quickEditForm.value.phone_no || '')
         fd.append('email_id', quickEditForm.value.email_id || '')
+        fd.append('wedding_anniversary', quickEditForm.value.wedding_anniversary || '')
         fd.append('church_parish', quickEditForm.value.church_parish || '')
         fd.append('address', quickEditForm.value.address || '')
         fd.append('bio', quickEditForm.value.bio || '')
@@ -953,6 +1251,26 @@ const withCsrfHeaders = async () => {
     const csrfData = await csrfRes.json().catch(() => ({}))
     const csrftoken = getCookie('csrftoken') || csrfData.csrfToken
     return csrftoken ? { 'X-CSRFToken': csrftoken } : {}
+}
+
+const fetchCommunityRoles = async () => {
+    try {
+        const res = await fetch(`${apiBase}/api/profiles/community-roles/`, { credentials: 'include' })
+        if (!res.ok) return
+        const data = await res.json().catch(() => []) as any[]
+        communityRoles.value = Array.isArray(data)
+            ? data
+                .filter((item) => item && item.name)
+                .map((item) => ({
+                    id: Number(item.id),
+                    name: String(item.name),
+                    priority: Number(item.priority || 100),
+                }))
+            : []
+    } catch (err) {
+        console.error('Failed to load community roles', err)
+        communityRoles.value = []
+    }
 }
 
 const loadMemberContext = async (memberId: number) => {
@@ -1055,6 +1373,7 @@ const addRelativeFromPanel = async () => {
             const body = {
                 target_member_id: selectedLinkTarget.value.id,
                 relation_type: addRelationType.value,
+                anniversary_date: addRelationType.value === 'SPOUSE' ? (addRelativeForm.value.wedding_anniversary || null) : null,
             }
             res = await fetch(endpoint, {
                 method: 'POST',
@@ -1071,6 +1390,7 @@ const addRelativeFromPanel = async () => {
             formData.append('name', fullName)
             formData.append('first_name', addRelativeForm.value.first_name)
             formData.append('last_name', addRelativeForm.value.last_name)
+            if (addRelativeForm.value.name_ml) formData.append('name_ml', addRelativeForm.value.name_ml)
             formData.append('nickname', addRelativeForm.value.nickname)
             if (addRelativeForm.value.member_id) formData.append('member_id', addRelativeForm.value.member_id)
             formData.append('gender', addRelativeForm.value.gender)
@@ -1082,6 +1402,12 @@ const addRelativeFromPanel = async () => {
             if (addRelativeForm.value.committee_role) formData.append('committee_role', addRelativeForm.value.committee_role)
             if (addRelativeForm.value.phone_no) formData.append('phone_no', addRelativeForm.value.phone_no)
             if (addRelativeForm.value.email_id) formData.append('email_id', addRelativeForm.value.email_id)
+            if (addRelativeForm.value.wedding_anniversary) {
+                formData.append('wedding_anniversary', addRelativeForm.value.wedding_anniversary)
+                if (addRelationType.value === 'SPOUSE') {
+                    formData.append('anniversary_date', addRelativeForm.value.wedding_anniversary)
+                }
+            }
             if (addRelativeForm.value.address) formData.append('address', addRelativeForm.value.address)
             if (addRelativeForm.value.bio) formData.append('bio', addRelativeForm.value.bio)
             if (addRelativeForm.value.church_parish) formData.append('church_parish', addRelativeForm.value.church_parish)
@@ -1253,11 +1579,54 @@ const goIndependentFromPanel = async () => {
     }
 }
 
+const openEditorSheet = () => {
+    if (isMobileViewport()) {
+        mobileEditorSheetVh.value = clampMobileEditorHeight(mobileEditorSheetVh.value || MOBILE_EDITOR_DEFAULT_VH)
+    }
+    isEditorSheetOpen.value = true
+}
+
+const closeEditorSheet = () => {
+    isEditorSheetOpen.value = false
+}
+
+let editorResizeStartY = 0
+let editorResizeStartHeight = MOBILE_EDITOR_DEFAULT_VH
+
+const onEditorResizeMove = (event: PointerEvent) => {
+    if (!isResizingEditorSheet.value || !isMobileViewport()) return
+    event.preventDefault()
+    const deltaVh = ((editorResizeStartY - event.clientY) / Math.max(1, window.innerHeight)) * 100
+    mobileEditorSheetVh.value = clampMobileEditorHeight(editorResizeStartHeight + deltaVh)
+}
+
+const stopEditorResize = () => {
+    isResizingEditorSheet.value = false
+    window.removeEventListener('pointermove', onEditorResizeMove)
+    window.removeEventListener('pointerup', stopEditorResize)
+    window.removeEventListener('pointercancel', stopEditorResize)
+}
+
+const startEditorResize = (event: PointerEvent) => {
+    if (!isMobileViewport()) return
+    isResizingEditorSheet.value = true
+    editorResizeStartY = event.clientY
+    editorResizeStartHeight = mobileEditorSheetVh.value
+    window.addEventListener('pointermove', onEditorResizeMove, { passive: false })
+    window.addEventListener('pointerup', stopEditorResize)
+    window.addEventListener('pointercancel', stopEditorResize)
+}
+
+const onViewportResize = () => {
+    isMobileView.value = isMobileViewport()
+    mobileEditorSheetVh.value = clampMobileEditorHeight(mobileEditorSheetVh.value)
+}
+
 const toggleEditMode = () => {
     const next = !editMode.value
     editMode.value = next
     if (next) {
-        isEditorSheetOpen.value = true
+        openEditorSheet()
     }
 
     const query: Record<string, string> = {}
@@ -1297,12 +1666,30 @@ const focusFromQuery = () => {
 
       const svg = d3.select(svgRef.value) as d3.Selection<SVGSVGElement, unknown, null, undefined>
       svg.attr("viewBox", `0 0 ${width} ${height}`)
+            const mobileTwoFingerOnly = isMobileViewport()
       
-      const zoom = d3.zoom<SVGSVGElement, unknown>()
+            const zoom = d3.zoom<SVGSVGElement, unknown>()
+                .scaleExtent([0.35, 4])
+        .wheelDelta((event: any) => {
+            if (!(event.ctrlKey || event.metaKey)) return 0
+            const factor = event.deltaMode === 1 ? 0.04 : 0.002
+            const delta = -event.deltaY * factor
+            return Math.max(-0.22, Math.min(0.22, delta))
+        })
         .filter((event: any) => {
             if (event.type === 'wheel') {
                 return Boolean(event.ctrlKey || event.metaKey)
             }
+
+            const isTouchEvent = String(event.type || '').startsWith('touch')
+            if (mobileTwoFingerOnly && isTouchEvent) {
+                if (event.type === 'touchend' || event.type === 'touchcancel') {
+                    return true
+                }
+                const touches = Number(event.touches?.length || 0)
+                return touches >= 2
+            }
+
             return true
         })
         .on("zoom", (event) => {
@@ -1788,7 +2175,7 @@ const focusFromQuery = () => {
           const isMale = d.gender === 'M'
           const isFemale = d.gender === 'F'
           const genderSymbol = isMale ? 'M' : (isFemale ? 'F' : 'O')
-          const fullName = String(d.name || '').trim() || t('familyTree.labels.member')
+          const fullName = getDisplayName(d)
           
           // Color scheme based on gender
           const cardFill = isUser ? '#F9EFC8' : (isMale ? '#EEF4FB' : isFemale ? '#FCEFF3' : '#EEF2F7')
@@ -1833,30 +2220,28 @@ const focusFromQuery = () => {
             .attr("clip-path", `inset(0 round 16px 16px 0 0)`)
 
                     if (d.is_deceased) {
-                        const badgeWidth = 34
-                        const badgeHeight = 16
-                        const badgeX = cardWidth / 2 - badgeWidth - 8
-                        const badgeY = -cardHeight / 2 + 10
+                        const badgeR = 8
+                        const badgeCx = cardWidth / 2 - 14
+                        const badgeCy = -cardHeight / 2 + 18
 
-                        group.append("rect")
-                            .attr("x", badgeX)
-                            .attr("y", badgeY)
-                            .attr("width", badgeWidth)
-                            .attr("height", badgeHeight)
-                            .attr("rx", 8)
+                        group.append("circle")
+                            .attr("cx", badgeCx)
+                            .attr("cy", badgeCy)
+                            .attr("r", badgeR)
                             .attr("fill", "#475569")
                             .attr("fill-opacity", 0.92)
 
                         group.append("text")
-                            .text("RIP")
-                            .attr("x", badgeX + badgeWidth / 2)
-                            .attr("y", badgeY + 11)
+                            .text("†")
+                            .attr("x", badgeCx)
+                            .attr("y", badgeCy + 3)
                             .attr("text-anchor", "middle")
                             .attr("fill", "#F8FAFC")
-                            .attr("font-size", "8.5px")
+                            .attr("font-size", "11px")
                             .attr("font-weight", "800")
-                            .style("letter-spacing", "0.4px")
                             .style("pointer-events", "none")
+
+                        group.append("title").text(String(t('memberDetailsModal.labels.deceased')))
                     }
 
           // Avatar ring
@@ -1876,7 +2261,7 @@ const focusFromQuery = () => {
             .attr("r", 36)
 
           group.append("image")
-            .attr("href", resolveImage(d.photo || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.name)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
+                        .attr("href", resolveImage(d.photo || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
                         .attr("x", -36).attr("y", -cardHeight/4 + 2 - 36).attr("width", 72).attr("height", 72)
             .attr("preserveAspectRatio", "xMidYMid slice")
             .attr("clip-path", `url(#${clipId})`)
@@ -1928,12 +2313,22 @@ const focusFromQuery = () => {
    }
 
 onMounted(async () => {
-    await familyStore.fetchFamily()
+    window.addEventListener('resize', onViewportResize)
+    onViewportResize()
+    if (isMobileViewport() && editMode.value) {
+        isEditorSheetOpen.value = false
+    }
+    await Promise.all([
+        familyStore.fetchFamily(),
+        fetchCommunityRoles(),
+    ])
     initGraph()
     focusFromQuery()
 })
 
 onUnmounted(() => {
+    stopEditorResize()
+    window.removeEventListener('resize', onViewportResize)
     globalNodeCoords = new Map<number, { x: number; y: number }>()
     if (linkSearchDebounce) {
         clearTimeout(linkSearchDebounce)
@@ -1951,6 +2346,12 @@ watch([nodes, links], () => {
 watch(viewMode, (val) => {
     if (val === 'visual') {
         setTimeout(initGraph, 100) 
+    }
+})
+
+watch(locale, () => {
+    if (viewMode.value === 'visual') {
+        setTimeout(initGraph, 100)
     }
 })
 
@@ -1980,7 +2381,10 @@ watch(
     () => {
         editMode.value = resolveInitialEditMode()
         if (editMode.value) {
-            isEditorSheetOpen.value = true
+            isEditorSheetOpen.value = !isMobileViewport()
+            if (isMobileViewport()) {
+                mobileEditorSheetVh.value = MOBILE_EDITOR_DEFAULT_VH
+            }
         }
         focusFromQuery()
     },
