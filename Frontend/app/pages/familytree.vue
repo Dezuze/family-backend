@@ -147,10 +147,10 @@
         @close="selectedMember = null" 
      />
 
-     <div v-if="quickEditOpen && quickEditMemberId" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+     <div v-if="quickEditOpen && quickEditMemberId" class="fixed inset-0 z-50 flex items-end justify-center p-0 md:items-center md:p-4">
         <div class="absolute inset-0 bg-black/60" @click="quickEditOpen = false"></div>
-        <div class="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
-            <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="relative w-full max-h-[88vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-4 pb-5 shadow-2xl md:max-w-2xl md:rounded-2xl md:p-5">
+            <div class="sticky top-0 z-10 mb-3 flex items-center justify-between border-b border-slate-100 bg-white pb-3 pt-1">
                 <div>
                     <h3 class="text-lg font-black text-slate-900">Edit Member</h3>
                     <p class="text-xs text-slate-500">Update selected member details</p>
@@ -185,6 +185,7 @@
                 <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
                 <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
                 <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
+                <input v-model="quickEditForm.committee_role" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Community role" />
                 <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
                 <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
                 <input v-model="quickEditForm.wedding_anniversary" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Wedding anniversary" />
@@ -201,7 +202,7 @@
             <p v-if="quickEditError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{{ quickEditError }}</p>
             <p v-if="quickEditSuccess" class="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">{{ quickEditSuccess }}</p>
 
-            <div class="mt-4 flex justify-end gap-2">
+            <div class="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-100 bg-white pt-3">
                 <button class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700" @click="quickEditOpen = false">Cancel</button>
                 <button class="rounded-xl bg-brand-gold px-3 py-2 text-xs font-black text-white disabled:opacity-50" :disabled="quickEditLoading" @click="saveQuickEditMember">
                     {{ quickEditLoading ? 'Saving...' : 'Save Changes' }}
@@ -227,9 +228,9 @@
       <Transition name="slide-up-editor">
       <div
           v-if="editMode && isEditorSheetOpen"
-          class="fixed inset-x-2 bottom-2 z-40 max-h-[78vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white/96 p-5 shadow-2xl backdrop-blur transition-all duration-300 md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[410px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl"
+          class="fixed inset-x-0 bottom-0 z-40 max-h-[86vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white/96 p-4 pb-6 shadow-2xl backdrop-blur transition-all duration-300 md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[410px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl md:p-5"
       >
-          <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="sticky top-0 z-10 mb-3 flex items-center justify-between border-b border-slate-100 bg-white/95 pb-3 pt-1 backdrop-blur">
                 <div>
                      <h3 class="text-lg font-black text-slate-900">{{ t('familyTree.editor.title') }}</h3>
                      <p class="text-xs font-medium text-slate-500">{{ t('familyTree.editor.subtitle') }}</p>
@@ -255,7 +256,7 @@
                 Edit Profile
             </button>
 
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_parent" :class="addRelationType === 'PARENT' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('PARENT')">{{ t('familyTree.editor.actions.parent') }}</button>
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!canAddSpouseNow" :class="addRelationType === 'SPOUSE' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SPOUSE')">{{ t('familyTree.editor.actions.spouse') }}</button>
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_sibling" :class="addRelationType === 'SIBLING' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SIBLING')">{{ t('familyTree.editor.actions.sibling') }}</button>
@@ -290,7 +291,7 @@
                 </select>
                 <p v-if="duplicateRelationWarning" class="text-[11px] font-semibold text-amber-700">{{ duplicateRelationWarning }}</p>
                 <template v-if="addRelativeMode === 'create'">
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <input v-model="addRelativeForm.first_name" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.firstName')" />
                         <input v-model="addRelativeForm.last_name" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.lastName')" />
                     </div>
@@ -325,6 +326,7 @@
                     </select>
                     <input v-model="addRelativeForm.occupation" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.occupation')" />
                     <input v-model="addRelativeForm.education" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.education')" />
+                    <input v-model="addRelativeForm.committee_role" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" placeholder="Community role" />
                     <input v-model="addRelativeForm.phone_no" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.phoneNumber')" />
                     <input v-model="addRelativeForm.email_id" type="email" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.email')" />
                     <input v-model="addRelativeForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
@@ -544,6 +546,7 @@ const addRelativeForm = ref({
     blood_group: '',
     occupation: '',
     education: '',
+    committee_role: '',
     phone_no: '',
     email_id: '',
     wedding_anniversary: '',
@@ -606,6 +609,7 @@ const quickEditForm = ref({
     blood_group: '',
     occupation: '',
     education: '',
+    committee_role: '',
     phone_no: '',
     email_id: '',
     wedding_anniversary: '',
@@ -722,6 +726,7 @@ const resetAddRelativeForm = () => {
         blood_group: '',
         occupation: '',
         education: '',
+        committee_role: '',
         phone_no: '',
         email_id: '',
         wedding_anniversary: '',
@@ -959,6 +964,7 @@ const openQuickEditForSelected = () => {
         blood_group: member.blood_group || '',
         occupation: member.occupation || '',
         education: member.education || '',
+        committee_role: member.committee_role || '',
         phone_no: member.phone_no || '',
         email_id: member.email_id || '',
         wedding_anniversary: member.wedding_anniversary || '',
@@ -1006,6 +1012,7 @@ const saveQuickEditMember = async () => {
         fd.append('blood_group', quickEditForm.value.blood_group || '')
         fd.append('occupation', quickEditForm.value.occupation || '')
         fd.append('education', quickEditForm.value.education || '')
+        fd.append('committee_role', quickEditForm.value.committee_role || '')
         fd.append('phone_no', quickEditForm.value.phone_no || '')
         fd.append('email_id', quickEditForm.value.email_id || '')
         fd.append('wedding_anniversary', quickEditForm.value.wedding_anniversary || '')
@@ -1203,6 +1210,7 @@ const addRelativeFromPanel = async () => {
             if (addRelativeForm.value.blood_group) formData.append('blood_group', addRelativeForm.value.blood_group)
             if (addRelativeForm.value.occupation) formData.append('occupation', addRelativeForm.value.occupation)
             if (addRelativeForm.value.education) formData.append('education', addRelativeForm.value.education)
+            if (addRelativeForm.value.committee_role) formData.append('committee_role', addRelativeForm.value.committee_role)
             if (addRelativeForm.value.phone_no) formData.append('phone_no', addRelativeForm.value.phone_no)
             if (addRelativeForm.value.email_id) formData.append('email_id', addRelativeForm.value.email_id)
             if (addRelativeForm.value.wedding_anniversary) {
