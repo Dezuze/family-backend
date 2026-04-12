@@ -1723,18 +1723,24 @@ const focusFromQuery = () => {
           siblingsByMember.get(l.target)!.add(l.source)
       }
 
-      // Sibling links imply shared parents; reinforce parent edges so siblings
-      // remain connected to the branch even when one sibling lacks direct parent rows.
+      // Sibling links can fill missing parent edges, but avoid merging two
+      // already-populated parent sets (that can create cross-branch links).
       for (const l of rawSiblingLinks) {
           const a = l.source as number
           const b = l.target as number
           const aParents = parentByChild.get(a) || new Set<number>()
           const bParents = parentByChild.get(b) || new Set<number>()
-          const merged = new Set<number>([...aParents, ...bParents])
-          merged.forEach((parentId) => {
-              addParentEdge(parentId, a)
-              addParentEdge(parentId, b)
-          })
+
+          // Only propagate when one side is missing parent info.
+          if (aParents.size > 0 && bParents.size === 0) {
+              aParents.forEach((parentId) => {
+                  addParentEdge(parentId, b)
+              })
+          } else if (bParents.size > 0 && aParents.size === 0) {
+              bParents.forEach((parentId) => {
+                  addParentEdge(parentId, a)
+              })
+          }
       }
 
       // Rebuild parent maps after sibling reinforcement.
