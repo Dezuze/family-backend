@@ -487,8 +487,6 @@ def _can_manage_member(user, member):
 
     managed_branch_ids = _managed_branch_ids(user)
     if member.id in managed_branch_ids:
-        if _member_has_account(member) and member.user_account != user:
-            return False
         if member.is_independent and member.user_account != user:
             return False
         return True

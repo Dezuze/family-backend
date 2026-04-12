@@ -1055,6 +1055,52 @@ class TreeEditEndpointsTests(TestCase):
         remove_res = self.client.delete(f'/api/families/tree-edit/{grandchild.id}/remove/')
         self.assertEqual(remove_res.status_code, 204)
 
+    def test_claimed_relative_can_manage_spouse_with_account(self):
+        child = FamilyMember.objects.create(
+            family=self.family,
+            name="Claimed Child",
+            relation="Son",
+            gender="M",
+            created_by=self.guardian,
+            is_independent=False,
+        )
+        spouse = FamilyMember.objects.create(
+            family=self.family,
+            name="Spouse With Account",
+            relation="Spouse",
+            gender="F",
+            created_by=self.guardian,
+            is_independent=False,
+        )
+
+        Relationship.objects.create(from_member=child, to_member=spouse, relation_type='SPOUSE')
+        Relationship.objects.create(from_member=spouse, to_member=child, relation_type='SPOUSE')
+
+        claimed_user = User.objects.create_user(
+            username="claimed_child_branch_mgr",
+            email="claimed_child_branch_mgr@example.com",
+            password="Pass123!",
+            member=child,
+        )
+        User.objects.create_user(
+            username="spouse_owned_account",
+            email="spouse_owned_account@example.com",
+            password="Pass123!",
+            member=spouse,
+        )
+
+        self.client.force_authenticate(user=claimed_user)
+        add_res = self.client.post(
+            f'/api/families/tree-edit/{spouse.id}/add-relative/',
+            {
+                "name": "Child Through Accounted Spouse",
+                "relation_type": "CHILD",
+                "gender": "M",
+            },
+            format='json',
+        )
+        self.assertEqual(add_res.status_code, 201)
+
     def test_claimed_relative_cannot_manage_parent_branch(self):
         child = FamilyMember.objects.create(
             family=self.family,
