@@ -9,11 +9,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='familyhead',
-            name='name_ml',
-            field=models.CharField(blank=True, max_length=255, null=True),
-        ),
-        migrations.AddField(
             model_name='familymember',
             name='name_ml',
             field=models.CharField(blank=True, max_length=255, null=True),

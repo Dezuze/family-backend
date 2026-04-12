@@ -21,7 +21,6 @@ class FamilyHead(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
 
     name = models.CharField(max_length=100)
-    name_ml = models.CharField(max_length=255, blank=True, null=True)
     nickname = models.CharField(max_length=50, blank=True, null=True)
 
     age = models.PositiveIntegerField()
