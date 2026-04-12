@@ -2014,40 +2014,72 @@ const focusFromQuery = () => {
               }
           }
 
-          const parentCenterScore = (memberId: number) => {
-              const parents = Array.from(parentByChild.get(memberId) || [])
-              if (!parents.length) return Number.MAX_SAFE_INTEGER
-              const xs = parents.map((pid) => previousLevelX.get(pid)).filter((x) => x !== undefined) as number[]
-              if (!xs.length) return Number.MAX_SAFE_INTEGER
-              return xs.reduce((a, b) => a + b, 0) / xs.length
-          }
-
-          units.sort((a, b) => {
-              const aScore = a.reduce((sum, id) => sum + parentCenterScore(id), 0) / a.length
-              const bScore = b.reduce((sum, id) => sum + parentCenterScore(id), 0) / b.length
-              if (aScore !== bScore) return aScore - bScore
-              return a[0] - b[0]
-          })
-
           const fallbackStartX = width / 2 - ((Math.max(units.length, 1) - 1) * siblingGap) / 2
-          const unitDesiredCenter = new Map<number, number>()
-          units.forEach((unit, idx) => {
-              const parentXs: number[] = []
+          const unitMeta = units.map((unit, idx) => {
+              const parentSet = new Set<number>()
               unit.forEach((memberId) => {
                   const parents = Array.from(parentByChild.get(memberId) || [])
                   parents.forEach((pid) => {
-                      const px = previousLevelX.get(pid)
-                      if (px !== undefined) parentXs.push(px)
+                      if (previousLevelX.get(pid) !== undefined) parentSet.add(pid)
                   })
               })
-              const desired = parentXs.length
-                  ? parentXs.reduce((sum, x) => sum + x, 0) / parentXs.length
+
+              let anchorParents = Array.from(parentSet)
+              if (anchorParents.length > 2) {
+                  const centerGuess = anchorParents
+                      .map((pid) => previousLevelX.get(pid) as number)
+                      .reduce((sum, x) => sum + x, 0) / anchorParents.length
+                  anchorParents = anchorParents
+                      .sort((a, b) => {
+                          const ax = previousLevelX.get(a) as number
+                          const bx = previousLevelX.get(b) as number
+                          return Math.abs(ax - centerGuess) - Math.abs(bx - centerGuess)
+                      })
+                      .slice(0, 2)
+              }
+
+              const anchorXs = anchorParents
+                  .map((pid) => previousLevelX.get(pid))
+                  .filter((x) => x !== undefined) as number[]
+              const desiredCenter = anchorXs.length
+                  ? anchorXs.reduce((sum, x) => sum + x, 0) / anchorXs.length
                   : fallbackStartX + idx * siblingGap
-              unitDesiredCenter.set(idx, desired)
+              const parentSignature = anchorParents.length
+                  ? [...anchorParents].sort((a, b) => a - b).join('|')
+                  : `root-${idx}`
+
+              return {
+                  unit,
+                  desiredCenter,
+                  parentSignature,
+                  tieBreaker: unit[0],
+              }
           })
 
-          const unitHalfWidths = units.map((unit) => (unit.length === 2 ? spouseGap / 2 : 0))
-          const centers = units.map((_, idx) => unitDesiredCenter.get(idx) ?? (fallbackStartX + idx * siblingGap))
+          const groupedMeta = new Map<string, Array<{ unit: number[]; desiredCenter: number; parentSignature: string; tieBreaker: number }>>()
+          unitMeta.forEach((meta) => {
+              if (!groupedMeta.has(meta.parentSignature)) groupedMeta.set(meta.parentSignature, [])
+              groupedMeta.get(meta.parentSignature)!.push(meta)
+          })
+
+          const orderedMeta = Array.from(groupedMeta.entries())
+              .map(([signature, metas]) => {
+                  const groupCenter = metas.reduce((sum, m) => sum + m.desiredCenter, 0) / metas.length
+                  return { signature, metas, groupCenter }
+              })
+              .sort((a, b) => a.groupCenter - b.groupCenter)
+              .flatMap((group) =>
+                  group.metas.sort((a, b) => {
+                      if (a.desiredCenter !== b.desiredCenter) return a.desiredCenter - b.desiredCenter
+                      return a.tieBreaker - b.tieBreaker
+                  })
+              )
+
+          const orderedUnits = orderedMeta.map((meta) => meta.unit)
+          const desiredCenters = orderedMeta.map((meta) => meta.desiredCenter)
+
+          const unitHalfWidths = orderedUnits.map((unit) => (unit.length === 2 ? spouseGap / 2 : 0))
+          const centers = desiredCenters.map((center) => center)
 
           for (let pass = 0; pass < 4; pass += 1) {
               for (let idx = 1; idx < centers.length; idx += 1) {
@@ -2064,9 +2096,7 @@ const focusFromQuery = () => {
           // Keep the whole row anchored around its parent-driven target
           // to avoid end nodes drifting to one side after spacing constraints.
           if (centers.length) {
-              const desiredMean = centers
-                  .map((_, idx) => unitDesiredCenter.get(idx) ?? (fallbackStartX + idx * siblingGap))
-                  .reduce((sum, x) => sum + x, 0) / centers.length
+              const desiredMean = desiredCenters.reduce((sum, x) => sum + x, 0) / centers.length
               const actualMean = centers.reduce((sum, x) => sum + x, 0) / centers.length
               const shift = desiredMean - actualMean
               for (let idx = 0; idx < centers.length; idx += 1) {
@@ -2075,8 +2105,8 @@ const focusFromQuery = () => {
           }
 
           const localUnitPositions: Array<{ unit: number[]; x: number[] }> = []
-          for (let idx = 0; idx < units.length; idx += 1) {
-              const unit = units[idx]
+          for (let idx = 0; idx < orderedUnits.length; idx += 1) {
+              const unit = orderedUnits[idx]
               const halfWidth = unitHalfWidths[idx]
               const center = centers[idx]
 
