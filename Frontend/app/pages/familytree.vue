@@ -2061,6 +2061,19 @@ const focusFromQuery = () => {
               }
           }
 
+          // Keep the whole row anchored around its parent-driven target
+          // to avoid end nodes drifting to one side after spacing constraints.
+          if (centers.length) {
+              const desiredMean = centers
+                  .map((_, idx) => unitDesiredCenter.get(idx) ?? (fallbackStartX + idx * siblingGap))
+                  .reduce((sum, x) => sum + x, 0) / centers.length
+              const actualMean = centers.reduce((sum, x) => sum + x, 0) / centers.length
+              const shift = desiredMean - actualMean
+              for (let idx = 0; idx < centers.length; idx += 1) {
+                  centers[idx] += shift
+              }
+          }
+
           const localUnitPositions: Array<{ unit: number[]; x: number[] }> = []
           for (let idx = 0; idx < units.length; idx += 1) {
               const unit = units[idx]
