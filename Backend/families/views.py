@@ -170,9 +170,6 @@ class UserProfileView(APIView):
                      return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
                  death_date = _parse_iso_date(death_input) if is_deceased_flag else None
                  calculated_age = _calculate_age(dob_date, death_date)
-                 wedding_anniversary_input = data.get('wedding_anniversary') or None
-                 if wedding_anniversary_input and not _parse_iso_date(wedding_anniversary_input):
-                     return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
 
                  try:
                      committee_role_value = _normalize_committee_role_or_error(data.get('committee_role'))
@@ -186,7 +183,6 @@ class UserProfileView(APIView):
                  member = FamilyMember.objects.create(
                      family=family,
                      name=f"{data.get('first_name', '')} {data.get('last_name', '')}".strip() or user.username,
-                     name_ml=(data.get('name_ml') or '').strip() or None,
                      member_id=requested_member_id or None,
                      age=calculated_age,
                      date_of_birth=dob_date,
@@ -194,7 +190,6 @@ class UserProfileView(APIView):
                      is_deceased=is_deceased_flag,
                      blood_group=data.get('blood_group', 'Unknown'),
                      committee_role=committee_role_value,
-                     wedding_anniversary=wedding_anniversary_input,
                      relation='Member'
                  )
                  # Link user to member (since User.member is the field)
@@ -210,7 +205,6 @@ class UserProfileView(APIView):
                 member.name = data['name']
             
             if 'nickname' in data: member.nickname = data['nickname']
-            if 'name_ml' in data: member.name_ml = (data.get('name_ml') or '').strip() or None
             if 'gender' in data: member.gender = data['gender']
             if 'bio' in data: member.bio = data['bio']
             if 'phone_no' in data: member.phone_no = data['phone_no']
@@ -221,11 +215,6 @@ class UserProfileView(APIView):
                     member.committee_role = _normalize_committee_role_or_error(data.get('committee_role'))
                 except ValueError as e:
                     return Response({"error": str(e)}, status=400)
-            if 'wedding_anniversary' in data:
-                anniv_input = data.get('wedding_anniversary') or None
-                if anniv_input and not _parse_iso_date(anniv_input):
-                    return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
-                member.wedding_anniversary = anniv_input
             if 'member_id' in data:
                 requested_member_id = (data.get('member_id') or '').strip()
                 if requested_member_id and FamilyMember.objects.filter(member_id=requested_member_id).exclude(pk=member.pk).exists():
@@ -625,9 +614,6 @@ class FamilyTreeAddRelativeView(APIView):
 
         computed_age = _calculate_age(dob_input, death_input if is_deceased_flag else None)
         manual_age = data.get('age') if data.get('age') not in ('', None) else None
-        wedding_anniversary_input = data.get('wedding_anniversary') or None
-        if wedding_anniversary_input and not _parse_iso_date(wedding_anniversary_input):
-            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
 
         try:
             committee_role_value = _normalize_committee_role_or_error(data.get('committee_role'))
@@ -637,7 +623,6 @@ class FamilyTreeAddRelativeView(APIView):
         new_member = FamilyMember.objects.create(
             family=member.family,
             name=full_name,
-            name_ml=(data.get('name_ml') or '').strip() or None,
             member_id=requested_member_id or None,
             nickname=data.get('nickname', ''),
             age=computed_age if computed_age is not None else manual_age,
@@ -655,7 +640,6 @@ class FamilyTreeAddRelativeView(APIView):
             bio=data.get('bio') or None,
             church_parish=data.get('church_parish') or None,
             committee_role=committee_role_value,
-            wedding_anniversary=wedding_anniversary_input,
             created_by=request.user,
         )
 
@@ -789,9 +773,6 @@ class ManagedMembersView(APIView):
 
             computed_age = _calculate_age(dob_input, death_input if is_deceased_flag else None)
             manual_age = data.get('age') if data.get('age') not in ('', None) else None
-            wedding_anniversary_input = data.get('wedding_anniversary') or None
-            if wedding_anniversary_input and not _parse_iso_date(wedding_anniversary_input):
-                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
 
             try:
                 committee_role_value = _normalize_committee_role_or_error(data.get('committee_role'))
@@ -801,7 +782,6 @@ class ManagedMembersView(APIView):
             member = FamilyMember.objects.create(
                 family=family,
                 name=full_name,
-                name_ml=(data.get('name_ml') or '').strip() or None,
                 member_id=requested_member_id or None,
                 age=computed_age if computed_age is not None else manual_age,
                 gender=data.get('gender', 'M'),
@@ -819,7 +799,6 @@ class ManagedMembersView(APIView):
                 bio=data.get('bio', ''),
                 church_parish=data.get('church_parish', ''),
                 committee_role=committee_role_value,
-                wedding_anniversary=wedding_anniversary_input,
                 nickname=data.get('nickname', ''),
                 created_by=request.user
             )

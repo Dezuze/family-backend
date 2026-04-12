@@ -362,7 +362,6 @@
                     </select>
                     <input v-model="addRelativeForm.phone_no" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.phoneNumber')" />
                     <input v-model="addRelativeForm.email_id" type="email" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.email')" />
-                    <input v-model="addRelativeForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
                     <input v-model="addRelativeForm.church_parish" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.parishChurch')" />
                     <textarea v-model="addRelativeForm.address" rows="2" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.address')"></textarea>
                     <textarea v-model="addRelativeForm.bio" rows="2" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.bio')"></textarea>
@@ -394,12 +393,6 @@
                     </div>
                 </template>
                 <template v-else>
-                    <input
-                        v-if="addRelationType === 'SPOUSE'"
-                        v-model="addRelativeForm.wedding_anniversary"
-                        type="date"
-                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-                    />
                     <div class="relative">
                         <input
                             v-model="linkSearchQuery"
@@ -675,7 +668,6 @@ const addRelativeForm = ref({
     committee_role: '',
     phone_no: '',
     email_id: '',
-    wedding_anniversary: '',
     address: '',
     bio: '',
     church_parish: '',
@@ -859,7 +851,6 @@ const resetAddRelativeForm = () => {
         committee_role: '',
         phone_no: '',
         email_id: '',
-        wedding_anniversary: '',
         address: '',
         bio: '',
         church_parish: '',
@@ -1373,7 +1364,7 @@ const addRelativeFromPanel = async () => {
             const body = {
                 target_member_id: selectedLinkTarget.value.id,
                 relation_type: addRelationType.value,
-                anniversary_date: addRelationType.value === 'SPOUSE' ? (addRelativeForm.value.wedding_anniversary || null) : null,
+                anniversary_date: null,
             }
             res = await fetch(endpoint, {
                 method: 'POST',
@@ -1402,12 +1393,6 @@ const addRelativeFromPanel = async () => {
             if (addRelativeForm.value.committee_role) formData.append('committee_role', addRelativeForm.value.committee_role)
             if (addRelativeForm.value.phone_no) formData.append('phone_no', addRelativeForm.value.phone_no)
             if (addRelativeForm.value.email_id) formData.append('email_id', addRelativeForm.value.email_id)
-            if (addRelativeForm.value.wedding_anniversary) {
-                formData.append('wedding_anniversary', addRelativeForm.value.wedding_anniversary)
-                if (addRelationType.value === 'SPOUSE') {
-                    formData.append('anniversary_date', addRelativeForm.value.wedding_anniversary)
-                }
-            }
             if (addRelativeForm.value.address) formData.append('address', addRelativeForm.value.address)
             if (addRelativeForm.value.bio) formData.append('bio', addRelativeForm.value.bio)
             if (addRelativeForm.value.church_parish) formData.append('church_parish', addRelativeForm.value.church_parish)
