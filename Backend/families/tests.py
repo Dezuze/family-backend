@@ -994,3 +994,94 @@ class TreeEditEndpointsTests(TestCase):
         )
         self.assertEqual(res.status_code, 400)
         self.assertIn('already has a father', str(res.data.get('error', '')).lower())
+
+    def test_claimed_relative_can_manage_spouse_and_descendants(self):
+        child = FamilyMember.objects.create(
+            family=self.family,
+            name="Claimed Child",
+            relation="Son",
+            gender="M",
+            created_by=self.guardian,
+            is_independent=False,
+        )
+        spouse = FamilyMember.objects.create(
+            family=self.family,
+            name="Claimed Spouse",
+            relation="Spouse",
+            gender="F",
+            created_by=self.guardian,
+            is_independent=False,
+        )
+        grandchild = FamilyMember.objects.create(
+            family=self.family,
+            name="Claimed Grandchild",
+            relation="Daughter",
+            gender="F",
+            created_by=self.guardian,
+            is_independent=False,
+        )
+
+        self.guardian_member.parents.clear()
+        child.parents.add(self.guardian_member)
+        grandchild.parents.add(child)
+
+        Relationship.objects.create(from_member=self.guardian_member, to_member=child, relation_type='CHILD')
+        Relationship.objects.create(from_member=child, to_member=self.guardian_member, relation_type='PARENT')
+        Relationship.objects.create(from_member=child, to_member=spouse, relation_type='SPOUSE')
+        Relationship.objects.create(from_member=spouse, to_member=child, relation_type='SPOUSE')
+        Relationship.objects.create(from_member=child, to_member=grandchild, relation_type='CHILD')
+        Relationship.objects.create(from_member=grandchild, to_member=child, relation_type='PARENT')
+
+        claimed_user = User.objects.create_user(
+            username="claimed_child_user",
+            email="claimed_child_user@example.com",
+            password="Pass123!",
+            member=child,
+        )
+
+        self.client.force_authenticate(user=claimed_user)
+
+        add_res = self.client.post(
+            f'/api/families/tree-edit/{spouse.id}/add-relative/',
+            {
+                "name": "Descendant Via Spouse",
+                "relation_type": "CHILD",
+                "gender": "M",
+            },
+            format='json',
+        )
+        self.assertEqual(add_res.status_code, 201)
+
+        remove_res = self.client.delete(f'/api/families/tree-edit/{grandchild.id}/remove/')
+        self.assertEqual(remove_res.status_code, 204)
+
+    def test_claimed_relative_cannot_manage_parent_branch(self):
+        child = FamilyMember.objects.create(
+            family=self.family,
+            name="Claimed Child",
+            relation="Son",
+            gender="M",
+            created_by=self.guardian,
+            is_independent=False,
+        )
+        Relationship.objects.create(from_member=self.guardian_member, to_member=child, relation_type='CHILD')
+        Relationship.objects.create(from_member=child, to_member=self.guardian_member, relation_type='PARENT')
+        child.parents.add(self.guardian_member)
+
+        claimed_user = User.objects.create_user(
+            username="claimed_child_forbidden",
+            email="claimed_child_forbidden@example.com",
+            password="Pass123!",
+            member=child,
+        )
+
+        self.client.force_authenticate(user=claimed_user)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/add-relative/',
+            {
+                "name": "Should Be Forbidden",
+                "relation_type": "SIBLING",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 403)

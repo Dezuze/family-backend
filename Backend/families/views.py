@@ -417,11 +417,82 @@ def _member_has_account(member):
     return hasattr(member, 'user_account') and member.user_account is not None
 
 
+def _member_spouse_ids(member_id):
+    spouse_qs = Relationship.objects.filter(relation_type='SPOUSE').filter(
+        Q(from_member_id=member_id) | Q(to_member_id=member_id)
+    )
+    spouse_ids = set()
+    for rel in spouse_qs:
+        if rel.from_member_id == member_id:
+            spouse_ids.add(rel.to_member_id)
+        else:
+            spouse_ids.add(rel.from_member_id)
+    return spouse_ids
+
+
+def _member_child_ids(member_id):
+    child_ids = set(
+        Relationship.objects.filter(
+            relation_type='CHILD',
+            from_member_id=member_id,
+        ).values_list('to_member_id', flat=True)
+    )
+    child_ids.update(
+        Relationship.objects.filter(
+            relation_type='PARENT',
+            to_member_id=member_id,
+        ).values_list('from_member_id', flat=True)
+    )
+    child_ids.update(
+        FamilyMember.objects.filter(parents__id=member_id).values_list('id', flat=True)
+    )
+    child_ids.discard(member_id)
+    return child_ids
+
+
+def _managed_branch_ids(user):
+    root_member = getattr(user, 'member', None)
+    if not root_member:
+        return set()
+
+    managed_ids = {root_member.id}
+    queue = [root_member.id]
+    seen = set()
+
+    while queue:
+        current_id = queue.pop(0)
+        if current_id in seen:
+            continue
+        seen.add(current_id)
+
+        for spouse_id in _member_spouse_ids(current_id):
+            if spouse_id not in managed_ids:
+                managed_ids.add(spouse_id)
+                queue.append(spouse_id)
+
+        for child_id in _member_child_ids(current_id):
+            if child_id not in managed_ids:
+                managed_ids.add(child_id)
+                queue.append(child_id)
+
+    return managed_ids
+
+
 def _can_manage_member(user, member):
     if not getattr(user, 'is_authenticated', False):
         return False
+
     if _member_has_account(member) and member.user_account == user:
         return True
+
+    managed_branch_ids = _managed_branch_ids(user)
+    if member.id in managed_branch_ids:
+        if _member_has_account(member) and member.user_account != user:
+            return False
+        if member.is_independent and member.user_account != user:
+            return False
+        return True
+
     if member.created_by == user and not member.is_independent and not _member_has_account(member):
         return True
     return False

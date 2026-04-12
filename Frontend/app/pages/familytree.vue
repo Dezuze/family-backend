@@ -2029,25 +2029,48 @@ const focusFromQuery = () => {
               return a[0] - b[0]
           })
 
+          const fallbackStartX = width / 2 - ((Math.max(units.length, 1) - 1) * siblingGap) / 2
+          const unitDesiredCenter = new Map<number, number>()
+          units.forEach((unit, idx) => {
+              const parentXs: number[] = []
+              unit.forEach((memberId) => {
+                  const parents = Array.from(parentByChild.get(memberId) || [])
+                  parents.forEach((pid) => {
+                      const px = previousLevelX.get(pid)
+                      if (px !== undefined) parentXs.push(px)
+                  })
+              })
+              const desired = parentXs.length
+                  ? parentXs.reduce((sum, x) => sum + x, 0) / parentXs.length
+                  : fallbackStartX + idx * siblingGap
+              unitDesiredCenter.set(idx, desired)
+          })
+
           const localUnitPositions: Array<{ unit: number[]; x: number[] }> = []
-          let cursor = 0
-          for (const unit of units) {
+          let rightEdge = Number.NEGATIVE_INFINITY
+          for (let idx = 0; idx < units.length; idx += 1) {
+              const unit = units[idx]
+              const pairWidth = unit.length === 2 ? spouseGap : 0
+              const halfWidth = pairWidth / 2
+              const desiredCenter = unitDesiredCenter.get(idx) ?? (fallbackStartX + idx * siblingGap)
+              const minCenter = rightEdge === Number.NEGATIVE_INFINITY
+                  ? desiredCenter
+                  : rightEdge + siblingGap + halfWidth
+              const center = Math.max(desiredCenter, minCenter)
+
               if (unit.length === 2) {
-                  localUnitPositions.push({ unit, x: [cursor, cursor + spouseGap] })
-                  cursor += spouseGap + siblingGap
+                  localUnitPositions.push({ unit, x: [center - halfWidth, center + halfWidth] })
               } else {
-                  localUnitPositions.push({ unit, x: [cursor] })
-                  cursor += siblingGap
+                  localUnitPositions.push({ unit, x: [center] })
               }
+              rightEdge = center + halfWidth
           }
 
-          const span = Math.max(0, cursor - siblingGap)
-          const startX = width / 2 - span / 2
           const y = topOffset + level * levelGap
 
           for (const block of localUnitPositions) {
               block.unit.forEach((id, idx) => {
-                  const x = startX + block.x[idx]
+                  const x = block.x[idx]
                   nodeCanvasCoords.set(id, { x, y })
                   previousLevelX.set(id, x)
               })
