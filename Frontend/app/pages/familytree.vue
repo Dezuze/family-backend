@@ -2046,24 +2046,32 @@ const focusFromQuery = () => {
               unitDesiredCenter.set(idx, desired)
           })
 
+          const unitHalfWidths = units.map((unit) => (unit.length === 2 ? spouseGap / 2 : 0))
+          const centers = units.map((_, idx) => unitDesiredCenter.get(idx) ?? (fallbackStartX + idx * siblingGap))
+
+          for (let pass = 0; pass < 4; pass += 1) {
+              for (let idx = 1; idx < centers.length; idx += 1) {
+                  const minCenter = centers[idx - 1] + unitHalfWidths[idx - 1] + siblingGap + unitHalfWidths[idx]
+                  if (centers[idx] < minCenter) centers[idx] = minCenter
+              }
+
+              for (let idx = centers.length - 2; idx >= 0; idx -= 1) {
+                  const maxCenter = centers[idx + 1] - (unitHalfWidths[idx] + siblingGap + unitHalfWidths[idx + 1])
+                  if (centers[idx] > maxCenter) centers[idx] = maxCenter
+              }
+          }
+
           const localUnitPositions: Array<{ unit: number[]; x: number[] }> = []
-          let rightEdge = Number.NEGATIVE_INFINITY
           for (let idx = 0; idx < units.length; idx += 1) {
               const unit = units[idx]
-              const pairWidth = unit.length === 2 ? spouseGap : 0
-              const halfWidth = pairWidth / 2
-              const desiredCenter = unitDesiredCenter.get(idx) ?? (fallbackStartX + idx * siblingGap)
-              const minCenter = rightEdge === Number.NEGATIVE_INFINITY
-                  ? desiredCenter
-                  : rightEdge + siblingGap + halfWidth
-              const center = Math.max(desiredCenter, minCenter)
+              const halfWidth = unitHalfWidths[idx]
+              const center = centers[idx]
 
               if (unit.length === 2) {
                   localUnitPositions.push({ unit, x: [center - halfWidth, center + halfWidth] })
               } else {
                   localUnitPositions.push({ unit, x: [center] })
               }
-              rightEdge = center + halfWidth
           }
 
           const y = topOffset + level * levelGap
@@ -2092,7 +2100,12 @@ const focusFromQuery = () => {
                   .filter(Boolean) as Array<{ x: number; y: number }>
               if (!parentCoords.length) return null
 
-              const avgX = parentCoords.reduce((sum, p) => sum + p.x, 0) / parentCoords.length
+              const anchorParents = parentCoords.length <= 2
+                  ? parentCoords
+                  : [...parentCoords]
+                      .sort((a, b) => Math.abs(a.x - child.x) - Math.abs(b.x - child.x))
+                      .slice(0, 2)
+              const avgX = anchorParents.reduce((sum, p) => sum + p.x, 0) / anchorParents.length
               const sourceY = Math.max(...parentCoords.map((p) => p.y))
               return {
                   source: { x: avgX, y: sourceY },
