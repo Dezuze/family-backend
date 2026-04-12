@@ -272,6 +272,7 @@ class RelationshipEngine:
                     "id": member.id,
                     "member_id": member.member_id,
                     "name": member.name,
+                    "name_ml": member.name_ml,
                     "photo": member.photo.url if member.photo else None,
                     "role": viewer_label or member.role,
                     "relation": viewer_label or member.relation,

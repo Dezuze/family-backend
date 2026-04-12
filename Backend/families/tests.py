@@ -424,7 +424,7 @@ class FamilyTreeViewTests(TestCase):
         self.client = APIClient()
         self.family = Family.objects.create(sl_no="1", branch="Main", member_no="F-TREE-001")
         self.member = FamilyMember.objects.create(
-            family=self.family, name="Tree User", age=30, relation="Head"
+            family=self.family, name="Tree User", name_ml="ട്രി യൂസർ", age=30, relation="Head"
         )
         self.user = User.objects.create_user(
             username="treeuser", email="tree@example.com",
@@ -439,6 +439,10 @@ class FamilyTreeViewTests(TestCase):
         self.assertIn('edges', res.data)
         self.assertIn('computed_relations', res.data)
         self.assertIn('generation_depth', res.data)
+
+        me = next((n for n in res.data['nodes'] if n['id'] == self.member.id), None)
+        self.assertIsNotNone(me)
+        self.assertEqual(me.get('name_ml'), "ട്രി യൂസർ")
 
     def test_tree_unauthenticated(self):
         res = self.client.get('/api/families/tree/')

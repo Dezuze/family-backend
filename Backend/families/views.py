@@ -183,6 +183,7 @@ class UserProfileView(APIView):
                  member = FamilyMember.objects.create(
                      family=family,
                      name=f"{data.get('first_name', '')} {data.get('last_name', '')}".strip() or user.username,
+                     name_ml=(data.get('name_ml') or '').strip() or None,
                      member_id=requested_member_id or None,
                      age=calculated_age,
                      date_of_birth=dob_date,
@@ -205,6 +206,7 @@ class UserProfileView(APIView):
                 member.name = data['name']
             
             if 'nickname' in data: member.nickname = data['nickname']
+            if 'name_ml' in data: member.name_ml = (data.get('name_ml') or '').strip() or None
             if 'gender' in data: member.gender = data['gender']
             if 'bio' in data: member.bio = data['bio']
             if 'phone_no' in data: member.phone_no = data['phone_no']
@@ -692,6 +694,7 @@ class FamilyTreeAddRelativeView(APIView):
         new_member = FamilyMember.objects.create(
             family=member.family,
             name=full_name,
+            name_ml=(data.get('name_ml') or '').strip() or None,
             member_id=requested_member_id or None,
             nickname=data.get('nickname', ''),
             age=computed_age if computed_age is not None else manual_age,
@@ -851,6 +854,7 @@ class ManagedMembersView(APIView):
             member = FamilyMember.objects.create(
                 family=family,
                 name=full_name,
+                name_ml=(data.get('name_ml') or '').strip() or None,
                 member_id=requested_member_id or None,
                 age=computed_age if computed_age is not None else manual_age,
                 gender=data.get('gender', 'M'),
