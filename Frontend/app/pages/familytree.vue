@@ -1761,51 +1761,9 @@ const focusFromQuery = () => {
 
       const membersById = new Map<number, any>(nodes.value.map((n: any) => [n.id, n]))
 
-      // Pick a person context, climb to root patriarch parent, then render only
-      // that downwards subtree (+ spouses). This intentionally excludes spouse
-      // parents and their side branches.
-      const loggedInMember = nodes.value.find((n: any) => n.username === auth.user?.username)
-    const contextPersonId = loggedInMember?.id || nodes.value[0]?.id
-
-      const choosePatriarchParent = (childId: number): number | null => {
-          const parentIds = Array.from(parentByChild.get(childId) || []).filter((pid) => membersById.has(pid))
-          if (!parentIds.length) return null
-          const maleParent = parentIds.find((pid) => membersById.get(pid)?.gender === 'M')
-          return maleParent ?? parentIds[0]
-      }
-
-      let rootPatriarchId = contextPersonId
-      const climbGuard = new Set<number>()
-      while (rootPatriarchId && !climbGuard.has(rootPatriarchId)) {
-          climbGuard.add(rootPatriarchId)
-          const nextParent = choosePatriarchParent(rootPatriarchId)
-          if (!nextParent) break
-          rootPatriarchId = nextParent
-      }
-
-      const descendants = new Set<number>()
-      const q: number[] = rootPatriarchId ? [rootPatriarchId] : []
-      while (q.length) {
-          const id = q.shift()!
-          if (descendants.has(id)) continue
-          descendants.add(id)
-
-          const spouseId = spouseByMember.get(id)
-          const parentSources = spouseId ? [id, spouseId] : [id]
-          for (const src of parentSources) {
-              const kids = Array.from(childrenByParent.get(src) || [])
-              for (const childId of kids) {
-                  if (!descendants.has(childId)) q.push(childId)
-              }
-          }
-      }
-
-      // If scoped traversal ends up tiny, fall back to full graph visibility
-      // rather than collapsing the rendered tree.
-      if (descendants.size <= 2 && nodes.value.length > 2) {
-          nodes.value.forEach((n: any) => descendants.add(n.id))
-      }
-
+      // Render the full family set so members outside the current branch
+      // are still visible in the tree.
+      const descendants = new Set<number>(nodes.value.map((n: any) => n.id))
       const visibleIds = new Set<number>(descendants)
       descendants.forEach((id) => {
           const spouseId = spouseByMember.get(id)
