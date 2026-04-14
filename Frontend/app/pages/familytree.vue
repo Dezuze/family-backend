@@ -157,7 +157,7 @@
      <!-- Member Modal -->
      <MemberDetailsModal 
                     v-if="selectedMember && !editMode" 
-        :member="selectedMember" 
+                :member="selectedMemberForModal" 
           :canEdit="editMode && allowedActions.can_manage"
         @edit="openQuickEditForSelected"
         @close="selectedMember = null" 
@@ -1001,6 +1001,32 @@ const sortedMembers = computed(() => {
        return list.filter(m => m.name.toLowerCase().includes(q))
    }
    return list
+})
+
+const selectedMemberForModal = computed(() => {
+    if (!selectedMember.value) return null
+
+    const member = selectedMember.value as any
+    const memberId = member.id
+    const byId = new Map((nodes.value || []).map((n: any) => [n.id, n]))
+
+    const spouseLink = (links.value || []).find(
+        (l: any) => l.type === 'spouse' && (l.source === memberId || l.target === memberId)
+    )
+    const spouseId = spouseLink ? (spouseLink.source === memberId ? spouseLink.target : spouseLink.source) : null
+    const spouse = spouseId ? byId.get(spouseId) : null
+
+    const children = (links.value || [])
+        .filter((l: any) => l.type === 'parent' && l.source === memberId)
+        .map((l: any) => byId.get(l.target))
+        .filter(Boolean)
+        .map((c: any) => ({ name: c.name, age: c.age }))
+
+    return {
+        ...member,
+        spouse: spouse?.name || member.spouse || null,
+        children,
+    }
 })
 
 // --- Global D3 State ---
