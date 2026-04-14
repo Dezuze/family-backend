@@ -448,6 +448,23 @@ class FamilyTreeViewTests(TestCase):
         res = self.client.get('/api/families/tree/')
         self.assertEqual(res.status_code, 200)  # Tree is public
 
+    def test_authenticated_user_sees_members_from_other_families(self):
+        other_family = Family.objects.create(sl_no="2", branch="Other", member_no="F-TREE-002")
+        other_member = FamilyMember.objects.create(
+            family=other_family,
+            name="Other Family Member",
+            relation="Head",
+            gender="F",
+        )
+
+        self.client.force_authenticate(user=self.user)
+        res = self.client.get('/api/families/tree/')
+        self.assertEqual(res.status_code, 200)
+
+        node_ids = {node['id'] for node in res.data.get('nodes', [])}
+        self.assertIn(self.member.id, node_ids)
+        self.assertIn(other_member.id, node_ids)
+
 
 class PerspectiveBranchingTests(TestCase):
     """Ensure relationship creation stays perspective-safe unless explicit targets are provided."""

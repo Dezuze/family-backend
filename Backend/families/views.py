@@ -347,9 +347,6 @@ class FamilyTreeView(APIView):
         viewer_member = getattr(request.user, 'member', None) if getattr(request.user, 'is_authenticated', False) else None
 
         members_qs = FamilyMember.objects.all().prefetch_related('parents')
-        if viewer_member and viewer_member.family_id:
-            members_qs = members_qs.filter(family_id=viewer_member.family_id)
-
         member_ids = list(members_qs.values_list('id', flat=True))
         relationships = Relationship.objects.filter(
             from_member_id__in=member_ids,
