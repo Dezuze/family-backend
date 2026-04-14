@@ -126,6 +126,28 @@ class SignupTests(TestCase):
         self.assertEqual(me_res.status_code, 200)
         self.assertEqual(me_res.data['username'], "autouser")
 
+    def test_signup_with_member_token_already_claimed_falls_back_to_generic(self):
+        """Invite token tied to an already-account-linked member should still allow generic signup."""
+        existing_user = User.objects.create_user(
+            username="already_linked",
+            email="already_linked@example.com",
+            password="ComplexPass123!",
+            member=self.member,
+        )
+        token = InviteToken.objects.create(member=self.member)
+
+        res = self.client.post('/api/auth/signup/', {
+            "username": "new_from_used_member_token",
+            "email": "new_from_used_member_token@example.com",
+            "password": "ComplexPass123!",
+            "invite_token": str(token.token)
+        }, format='json')
+
+        self.assertEqual(res.status_code, 201)
+        created = User.objects.get(username="new_from_used_member_token")
+        self.assertIsNone(created.member)
+        self.assertNotEqual(created.id, existing_user.id)
+
 
 class GenerateInviteTokenTests(TestCase):
     """Test invite token generation permissions."""

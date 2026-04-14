@@ -87,6 +87,11 @@ class SignupView(APIView):
         try:
             # We use the member pre-linked to the token if it exists
             member = token_obj.member
+
+            # If the token points to a profile that already has an account,
+            # avoid binding a second user to the same one-to-one member link.
+            if member and hasattr(member, 'user_account') and member.user_account:
+                member = None
             
             user = User.objects.create_user(
                 username=username, 
