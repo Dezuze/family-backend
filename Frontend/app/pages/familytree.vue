@@ -85,7 +85,6 @@
                 </div>
             </div>
         </div>
-        <p v-if="viewMode === 'visual'" class="mt-2 text-center text-xs font-semibold text-slate-500">{{ t('familyTree.editor.zoomHint') }}</p>
     </div>
 
     <!-- Visual View -->
@@ -97,11 +96,24 @@
     >
        <!-- Tree area backdrop -->
        <div class="absolute inset-0 rounded-none" style="background: radial-gradient(ellipse at center, rgba(160,128,80,0.04) 0%, transparent 70%);"></div>
-       <div
-           v-if="isMobileView"
-           class="pointer-events-none absolute left-3 top-3 z-20 rounded-xl border border-slate-200/80 bg-white/92 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm backdrop-blur"
-       >
-           {{ t('familyTree.editor.mobileGestureHint', '1 finger scroll page, 2 fingers move tree') }}
+       <div v-if="isMobileView" class="absolute left-3 top-3 z-20 md:hidden">
+          <button
+              type="button"
+              class="h-9 w-9 rounded-xl border border-slate-200 bg-white/95 text-sm font-black text-slate-700 shadow-lg backdrop-blur active:scale-95"
+              @click="showMobileTreeHelp = !showMobileTreeHelp"
+              aria-label="Tree help"
+          >
+              ?
+          </button>
+          <Transition name="fade-scale">
+              <div
+                  v-if="showMobileTreeHelp"
+                  class="mt-2 w-52 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] font-semibold text-slate-700 shadow-xl backdrop-blur"
+              >
+                  <p class="font-black text-slate-800">{{ t('familyTree.editor.helpTitle') }}</p>
+                  <p class="mt-1 leading-relaxed">{{ t('familyTree.editor.helpTouchGesture') }}</p>
+              </div>
+          </Transition>
        </div>
        <div v-if="isMobileView" class="pointer-events-none absolute bottom-16 right-3 z-20 flex flex-col gap-2 md:hidden">
           <button
@@ -614,6 +626,7 @@ const viewMode = ref<'visual' | 'grid'>(resolveInitialViewMode())
 const editMode = ref(resolveInitialEditMode())
 const isEditorSheetOpen = ref(true)
 const isMobileView = ref(false)
+const showMobileTreeHelp = ref(false)
 const MOBILE_EDITOR_MIN_VH = 34
 const MOBILE_EDITOR_MAX_VH = 88
 const MOBILE_EDITOR_DEFAULT_VH = 58
@@ -1146,7 +1159,7 @@ const focusOnMember = (targetMember: any, options?: { select?: boolean }) => {
         if (container) {
             const width = container.clientWidth
             const height = container.clientHeight
-            const scale = 1.5
+            const scale = isMobileViewport() ? 0.74 : 1.5
             globalSVG.transition().duration(1500).call(
                 globalZoom.transform as any, 
                 d3.zoomIdentity.translate(width/2 - targetX*scale, height/2 - targetY*scale).scale(scale)
@@ -1676,6 +1689,9 @@ const startEditorResize = (event: PointerEvent) => {
 
 const onViewportResize = () => {
     isMobileView.value = isMobileViewport()
+    if (!isMobileView.value) {
+        showMobileTreeHelp.value = false
+    }
     mobileEditorSheetVh.value = clampMobileEditorHeight(mobileEditorSheetVh.value)
 }
 
@@ -1803,27 +1819,9 @@ const focusFromQuery = () => {
           siblingsByMember.get(l.target)!.add(l.source)
       }
 
-      // Sibling links can fill missing parent edges, but avoid merging two
-      // already-populated parent sets (that can create cross-branch links).
-      for (const l of rawSiblingLinks) {
-          const a = l.source as number
-          const b = l.target as number
-          const aParents = parentByChild.get(a) || new Set<number>()
-          const bParents = parentByChild.get(b) || new Set<number>()
-
-          // Only propagate when one side is missing parent info.
-          if (aParents.size > 0 && bParents.size === 0) {
-              aParents.forEach((parentId) => {
-                  addParentEdge(parentId, b)
-              })
-          } else if (bParents.size > 0 && aParents.size === 0) {
-              bParents.forEach((parentId) => {
-                  addParentEdge(parentId, a)
-              })
-          }
-      }
-
-      // Rebuild parent maps after sibling reinforcement.
+      // Do not infer/copy parent edges through sibling relationships here.
+      // That heuristic can create visually incorrect cross-branch links.
+      // Rebuild parent maps from explicit parent edges only.
       parentByChild.clear()
       childrenByParent.clear()
       for (const l of parentLinks) {
@@ -2013,7 +2011,13 @@ const focusFromQuery = () => {
       const renderParentLinks = parentLinks.filter((l) => {
           const sourceGen = generation.get(l.source) || 0
           const targetGen = generation.get(l.target) || 0
-          return nodeIdSet.has(l.source) && nodeIdSet.has(l.target) && targetGen > sourceGen
+          const generationGap = targetGen - sourceGen
+          return (
+              nodeIdSet.has(l.source) &&
+              nodeIdSet.has(l.target) &&
+              generationGap >= 1 &&
+              generationGap <= 2
+          )
       })
     const maxLevel = Math.max(...Array.from(generation.values()))
       const levels = Array.from({ length: maxLevel + 1 }, () => [] as number[])
@@ -2174,17 +2178,34 @@ const focusFromQuery = () => {
 
       globalNodeCoords = nodeCanvasCoords
 
+      const isCompactMobileCard = isMobileViewport()
+      const cardHalfWidth = isCompactMobileCard ? 64 : 82
+    const maxParentLinkHorizontalSpan = isCompactMobileCard ? siblingGap * 1.9 : siblingGap * 2.35
+
       const parentOverlayData = Array.from(new Set(renderParentLinks.map((l) => l.target)))
           .map((childId) => {
               const child = nodeCanvasCoords.get(childId)
               if (!child) return null
 
-              const parentIds = renderParentLinks
+              let target = child
+              const spouseId = spouseByMemberVisible.get(childId)
+              if (spouseId && nodeIdSet.has(spouseId)) {
+                  const spouse = nodeCanvasCoords.get(spouseId)
+                  const spouseGen = generation.get(spouseId)
+                  const childGen = generation.get(childId)
+                  if (spouse && spouseGen !== undefined && spouseGen === childGen) {
+                      target = {
+                          x: (child.x + spouse.x) / 2,
+                          y: child.y,
+                      }
+                  }
+              }
+
+              const parentCoords = renderParentLinks
                   .filter((l) => l.target === childId)
-                  .map((l) => l.source)
-              const parentCoords = parentIds
-                  .map((pid) => nodeCanvasCoords.get(pid))
+                  .map((l) => nodeCanvasCoords.get(l.source))
                   .filter(Boolean) as Array<{ x: number; y: number }>
+
               if (!parentCoords.length) return null
 
               const anchorParents = parentCoords.length <= 2
@@ -2192,11 +2213,14 @@ const focusFromQuery = () => {
                   : [...parentCoords]
                       .sort((a, b) => Math.abs(a.x - child.x) - Math.abs(b.x - child.x))
                       .slice(0, 2)
-              const avgX = anchorParents.reduce((sum, p) => sum + p.x, 0) / anchorParents.length
-              const sourceY = Math.max(...parentCoords.map((p) => p.y))
+
+              const sourceX = anchorParents.reduce((sum, p) => sum + p.x, 0) / anchorParents.length
+              const sourceYBase = Math.max(...anchorParents.map((p) => p.y))
+              if (Math.abs(sourceX - target.x) > maxParentLinkHorizontalSpan) return null
+
               return {
-                  source: { x: avgX, y: sourceY },
-                  target: child,
+                  source: { x: sourceX, y: sourceYBase },
+                  target,
               }
           })
           .filter(Boolean) as Array<{ source: { x: number; y: number }; target: { x: number; y: number } }>
@@ -2212,10 +2236,10 @@ const focusFromQuery = () => {
           .attr("stroke-linecap", "round")
           .attr("stroke-opacity", 0.7)
           .attr("d", (d) => {
-              const sourceY = d.source.y + 96
-              const targetY = d.target.y - 106
-              const midY = (sourceY + targetY) / 2
-              return `M ${d.source.x} ${sourceY} C ${d.source.x} ${midY}, ${d.target.x} ${midY}, ${d.target.x} ${targetY}`
+              const sourceY = d.source.y + (isCompactMobileCard ? 76 : 96)
+              const targetY = d.target.y - (isCompactMobileCard ? 86 : 106)
+              const bendY = sourceY + (targetY - sourceY) * 0.55
+              return `M ${d.source.x} ${sourceY} C ${d.source.x} ${bendY}, ${d.target.x} ${bendY}, ${d.target.x} ${targetY}`
           })
 
       const nodeGroup = g.append("g")
@@ -2254,7 +2278,6 @@ const focusFromQuery = () => {
           .data(spouseOverlayData)
           .join("path")
           .attr("d", (d) => {
-              const cardHalfWidth = 82
               const yOffset = -10
               const leftFirst = d.a.x <= d.b.x
               const startX = leftFirst ? d.a.x + cardHalfWidth : d.a.x - cardHalfWidth
@@ -2276,8 +2299,18 @@ const focusFromQuery = () => {
 
       function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any) {
           if (!d) return
-          const cardWidth = 164
-          const cardHeight = 210
+          const cardWidth = isCompactMobileCard ? 128 : 164
+          const cardHeight = isCompactMobileCard ? 170 : 210
+          const cardRadius = isCompactMobileCard ? 13 : 16
+          const avatarRadius = isCompactMobileCard ? 30 : 40
+          const avatarClipRadius = isCompactMobileCard ? 27 : 36
+          const avatarDiameter = avatarClipRadius * 2
+          const avatarCenterY = -cardHeight/4 + 2
+          const nameFontSize = isCompactMobileCard ? 11.5 : 13
+          const pillWidth = isCompactMobileCard ? 62 : 72
+          const pillHeight = isCompactMobileCard ? 20 : 22
+          const pillY = isCompactMobileCard ? 43 : 52
+          const pillFontSize = isCompactMobileCard ? 9.5 : 10.5
           const group = selection.append("g").attr("transform", `translate(${dx}, 0)`)
           const isUser = auth.user && d.username === auth.user.username
           const isMale = d.gender === 'M'
@@ -2298,7 +2331,7 @@ const focusFromQuery = () => {
                     // Card shadow layer
           group.append("rect")
                         .attr("x", -cardWidth/2 + 4).attr("y", -cardHeight/2 + 8)
-            .attr("width", cardWidth).attr("height", cardHeight).attr("rx", 16)
+                        .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
                         .attr("fill", "rgba(15,23,42,0.04)")
             .attr("filter", d.is_deceased ? "grayscale(100%)" : "")
                         .style("filter", `drop-shadow(0 10px 22px ${isMale ? 'rgba(74,107,138,0.20)' : isFemale ? 'rgba(156,79,99,0.20)' : 'rgba(89,101,119,0.18)'})`)
@@ -2306,7 +2339,7 @@ const focusFromQuery = () => {
           // Main card rect with rounded corners
           group.append("rect")
             .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
-            .attr("width", cardWidth).attr("height", cardHeight).attr("rx", 16)
+                        .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
             .attr("fill", cardFill)
             .attr("stroke", cardStroke)
             .attr("stroke-width", isUser ? 3 : 1.8)
@@ -2325,7 +2358,7 @@ const focusFromQuery = () => {
             .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
                         .attr("width", cardWidth).attr("height", 8).attr("rx", 0)
             .attr("fill", `url(#${gradId})`)
-            .attr("clip-path", `inset(0 round 16px 16px 0 0)`)
+            .attr("clip-path", `inset(0 round ${cardRadius}px ${cardRadius}px 0 0)`)
 
                     if (d.is_deceased) {
                         const badgeR = 8
@@ -2354,8 +2387,8 @@ const focusFromQuery = () => {
 
           // Avatar ring
           group.append("circle")
-            .attr("cx", 0).attr("cy", -cardHeight/4 + 2)
-            .attr("r", 40)
+                        .attr("cx", 0).attr("cy", avatarCenterY)
+                        .attr("r", avatarRadius)
             .attr("fill", avatarBg)
             .attr("stroke", avatarRing)
             .attr("stroke-width", 2.5)
@@ -2365,12 +2398,12 @@ const focusFromQuery = () => {
             .attr("id", clipId)
             .append("circle")
             .attr("cx", 0)
-            .attr("cy", -cardHeight/4 + 2)
-            .attr("r", 36)
+                        .attr("cy", avatarCenterY)
+                        .attr("r", avatarClipRadius)
 
           group.append("image")
                         .attr("href", resolveImage(d.photo || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
-                        .attr("x", -36).attr("y", -cardHeight/4 + 2 - 36).attr("width", 72).attr("height", 72)
+                                                .attr("x", -avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
             .attr("preserveAspectRatio", "xMidYMid slice")
             .attr("clip-path", `url(#${clipId})`)
             .style("pointer-events", "none")
@@ -2382,14 +2415,11 @@ const focusFromQuery = () => {
             .attr("text-anchor", "middle")
             .attr("fill", accentColor)
             .attr("font-weight", "800")
-                        .attr("font-size", "13px")
+                                                .attr("font-size", `${nameFontSize}px`)
             .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
             .style("pointer-events", "none")
           
           // Gender & Age pill
-                    const pillWidth = 72
-                    const pillHeight = 22
-                                        const pillY = 52
           group.append("rect")
             .attr("x", -pillWidth/2).attr("y", pillY - pillHeight/2)
             .attr("width", pillWidth).attr("height", pillHeight).attr("rx", 10)
@@ -2400,7 +2430,7 @@ const focusFromQuery = () => {
                         .attr("x", 0).attr("y", pillY + 4)
             .attr("text-anchor", "middle")
             .attr("fill", accentColor)
-                        .attr("font-size", "10.5px")
+                        .attr("font-size", `${pillFontSize}px`)
             .attr("font-weight", "700")
       }
 
@@ -2419,12 +2449,38 @@ const focusFromQuery = () => {
     })()
 
     const userCoords = loggedInMember ? nodeCanvasCoords.get(loggedInMember.id) : null
+    const coordsList = Array.from(nodeCanvasCoords.values())
+    const minScale = 0.35
+    const maxScale = isMobileViewport() ? 1.05 : 1.4
       
       if (userCoords) {
-         const scale = 1.2
+         const scale = isMobileViewport() ? 0.72 : 1.2
          svg.transition().duration(1500).call(
              zoom.transform as any, 
              d3.zoomIdentity.translate(width/2 - userCoords.x*scale, height/2 - userCoords.y*scale).scale(scale)
+         )
+      } else if (coordsList.length > 0) {
+         const xs = coordsList.map((p) => p.x)
+         const ys = coordsList.map((p) => p.y)
+         const minX = Math.min(...xs)
+         const maxX = Math.max(...xs)
+         const minY = Math.min(...ys)
+         const maxY = Math.max(...ys)
+
+         const cardPaddingX = isMobileViewport() ? 150 : 190
+         const cardPaddingY = isMobileViewport() ? 180 : 230
+         const treeWidth = Math.max(1, (maxX - minX) + cardPaddingX)
+         const treeHeight = Math.max(1, (maxY - minY) + cardPaddingY)
+         const viewportWidth = Math.max(1, width - (isMobileViewport() ? 28 : 72))
+         const viewportHeight = Math.max(1, height - (isMobileViewport() ? 50 : 90))
+         const scale = Math.max(minScale, Math.min(maxScale, Math.min(viewportWidth / treeWidth, viewportHeight / treeHeight)))
+
+         const centerX = (minX + maxX) / 2
+         const centerY = (minY + maxY) / 2
+
+         svg.transition().duration(950).call(
+             zoom.transform as any,
+             d3.zoomIdentity.translate(width / 2 - centerX * scale, height / 2 - centerY * scale).scale(scale)
          )
       } else {
          svg.transition().duration(750).call(
@@ -2470,6 +2526,7 @@ watch([nodes, links], () => {
 }, { deep: true })
 
 watch(viewMode, (val) => {
+    showMobileTreeHelp.value = false
     if (val === 'visual') {
         setTimeout(initGraph, 100) 
     }

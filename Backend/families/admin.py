@@ -73,3 +73,11 @@ class DeceasedMemberAdmin(ModelAdmin):
     list_display = ('name', 'family', 'relation', 'age_at_death')
     list_filter = ('family',)
     search_fields = ('name',)
+
+
+@admin.register(models.FamilyCommitteeMember)
+class FamilyCommitteeMemberAdmin(ModelAdmin):
+    list_display = ('term_label', 'category', 'role_title', 'name', 'member_code', 'phone_no', 'is_active')
+    list_filter = ('term_label', 'category', 'is_active')
+    search_fields = ('name', 'role_title', 'member_code', 'phone_no', 'email_id')
+    ordering = ('term_label', 'category', 'display_order', 'name')

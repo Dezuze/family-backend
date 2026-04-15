@@ -1,7 +1,7 @@
 {
   "app": {
-    "siteName": "Kollamparambil Family",
-    "metaDescription": "Kollamparambil Family Association - connecting our heritage and future.",
+    "siteName": "Kollamparampil Family",
+    "metaDescription": "Kollamparampil Family Association - connecting our heritage and future.",
     "themeColor": "#A08050",
     "language": {
       "en": "English",
@@ -9,7 +9,7 @@
     }
   },
   "nav": {
-    "brand": "Kollamparambil Family",
+    "brand": "Kollamparampil Family",
     "language": "Language",
     "links": {
       "familyTree": "Family Tree",
@@ -64,7 +64,7 @@
   },
   "home": {
     "hero": {
-      "title": "Kollamparambil Family",
+      "title": "Kollamparampil Family",
       "imageAlt": "Family gathering",
       "verse": "Children's children are a crown to the aged, and parents are the pride of their children.",
       "verseRef": "Proverbs 17:6"
@@ -96,7 +96,7 @@
     },
     "meta": {
       "title": "Home",
-      "description": "Kollamparambil Family Association - connecting our heritage and future. Find events, news, and family history."
+      "description": "Kollamparampil Family Association - connecting our heritage and future. Find events, news, and family history."
     }
   },
   "events": {
@@ -127,13 +127,13 @@
     },
     "meta": {
       "title": "Upcoming Gatherings",
-      "description": "Upcoming gatherings and events for the Kollamparambil family. Join us for fellowship, ceremonies, and community updates."
+      "description": "Upcoming gatherings and events for the Kollamparampil family. Join us for fellowship, ceremonies, and community updates."
     }
   },
   "newsEvents": {
     "header": {
       "title": "Every Story Matters",
-      "description": "Explore the latest updates, events, and announcements from the Kollamparambil family.",
+      "description": "Explore the latest updates, events, and announcements from the Kollamparampil family.",
       "postNews": "Post News"
     },
     "card": {
@@ -153,7 +153,7 @@
     },
     "meta": {
       "title": "News & Events",
-      "description": "Read the latest news, announcements, and event recaps from the Kollamparambil family association."
+      "description": "Read the latest news, announcements, and event recaps from the Kollamparampil family association."
     }
   },
   "contact": {
@@ -166,7 +166,7 @@
     },
     "info": {
       "addressTitle": "Address",
-      "addressLine1": "Kollamparambil Family Association",
+      "addressLine1": "Kollamparampil Family Association",
       "addressLine2": "Near St. Mary's Church,",
       "addressLine3": "Kochi, Kerala - 682001",
       "emailTitle": "Email",
@@ -186,11 +186,11 @@
   "committee": {
     "header": {
       "title": "Committee Members",
-      "term": "Term 2025 - 2027"
+      "term": "Term 2026-28"
     },
     "meta": {
       "title": "Committee",
-      "description": "Committee members and leadership of the Kollamparambil Family Association. Meet the team for 2025-2027."
+      "description": "Committee members and leadership of the Kollamparampil Family Association. Meet the team for 2026-28."
     },
     "searchPlaceholder": "Search committee...",
     "alt": {
@@ -210,7 +210,7 @@
       "contactNumber": "Contact Number",
       "notPubliclyListed": "Not Publicly Listed",
       "representation": "Representation",
-      "executiveBody": "Kollamparambil Executive Body",
+      "executiveBody": "Kollamparampil Executive Body",
       "closeProfile": "Close Profile"
     }
   },
@@ -218,7 +218,7 @@
     "header": {
       "title": "Under Development",
       "descriptionLine1": "We are currently setting up our secure donation system.",
-      "descriptionLine2": "Please check back soon to support the Kollamparambil Family Association.",
+      "descriptionLine2": "Please check back soon to support the Kollamparampil Family Association.",
       "returnHome": "Return Home"
     },
     "meta": {
@@ -242,7 +242,7 @@
     },
     "meta": {
       "title": "Family Tree",
-      "description": "Interactive genealogy tree and member directory for the Kollamparambil family."
+      "description": "Interactive genealogy tree and member directory for the Kollamparampil family."
     },
     "labels": {
       "visualMap": "Visual Map",
@@ -260,6 +260,8 @@
       "editMode": "Edit Mode",
       "editModeOn": "Edit Mode On",
       "zoomHint": "Ctrl/Cmd + scroll to zoom.",
+      "helpTitle": "Tree gestures",
+      "helpTouchGesture": "Use one finger to scroll the page. Use two fingers to move and zoom the tree.",
       "openTreeEditor": "Open Tree Editor",
       "title": "Tree Editor",
       "subtitle": "Select a member card to edit relationships",

@@ -14,7 +14,7 @@
         <NuxtLink to="/history" class="hover:text-brand-gold hover:underline transition-colors leading-tight">{{ t('footer.links.familyHistory') }}</NuxtLink>
         <NuxtLink to="/events" class="hover:text-brand-gold hover:underline transition-colors leading-tight">{{ t('footer.links.events') }}</NuxtLink>
         <NuxtLink v-if="auth.isAuthenticated" to="/committee" class="hover:text-brand-gold hover:underline transition-colors leading-tight">{{ t('footer.links.committee') }}</NuxtLink>
-        <NuxtLink v-if="auth.isAuthenticated" to="/directory" class="hover:text-brand-gold hover:underline transition-colors leading-tight">{{ t('footer.links.directory') }}</NuxtLink>
+        <NuxtLink v-if="auth.isAuthenticated" to="/familytree?view=grid" class="hover:text-brand-gold hover:underline transition-colors leading-tight">{{ t('footer.links.directory') }}</NuxtLink>
         <NuxtLink v-if="auth.isAuthenticated" to="/gallery" class="hover:text-brand-gold hover:underline transition-colors leading-tight">{{ t('footer.links.gallery') }}</NuxtLink>
         <NuxtLink to="/donate" class="hover:text-brand-gold hover:underline transition-colors leading-tight">{{ t('footer.links.donations') }}</NuxtLink>
         <NuxtLink to="/contact" class="hover:text-brand-gold hover:underline transition-colors leading-tight">{{ t('footer.links.contact') }}</NuxtLink>

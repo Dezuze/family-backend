@@ -16,8 +16,13 @@ Key Views:
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from .models import FamilyMember, FamilyMedia, Family, Relationship
-from .serializers import FamilyMemberSerializer, FamilyTreeSerializer, FamilyMediaSerializer
+from .models import FamilyMember, FamilyMedia, Family, Relationship, FamilyCommitteeMember
+from .serializers import (
+    FamilyMemberSerializer,
+    FamilyTreeSerializer,
+    FamilyMediaSerializer,
+    FamilyCommitteeMemberSerializer,
+)
 from .permissions import IsGuardianOrSelf
 from rest_framework import generics
 from django.shortcuts import get_object_or_404
@@ -379,6 +384,34 @@ class FamilyMediaDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = FamilyMedia.objects.all()
     serializer_class = FamilyMediaSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+class FamilyCommitteeMemberListCreateView(generics.ListCreateAPIView):
+    serializer_class = FamilyCommitteeMemberSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = FamilyCommitteeMember.objects.select_related('member').all().order_by('term_label', 'category', 'display_order', 'name')
+
+        term_label = (self.request.query_params.get('term_label') or '').strip()
+        if term_label:
+            queryset = queryset.filter(term_label=term_label)
+
+        category = (self.request.query_params.get('category') or '').strip()
+        if category:
+            queryset = queryset.filter(category=category)
+
+        include_inactive = (self.request.query_params.get('include_inactive') or '').strip().lower() in {'1', 'true', 'yes'}
+        if not include_inactive:
+            queryset = queryset.filter(is_active=True)
+
+        return queryset
+
+
+class FamilyCommitteeMemberDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FamilyCommitteeMember.objects.all()
+    serializer_class = FamilyCommitteeMemberSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 def _create_auto_relationship(member, creator_member, relation_override=None):
     if not creator_member:

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import FamilyMember, Relationship
+from .models import FamilyMember, Relationship, FamilyMedia, FamilyCommitteeMember
 
 class RelationshipSerializer(serializers.ModelSerializer):
     to_member_name = serializers.CharField(source='to_member.name', read_only=True)
@@ -63,8 +63,71 @@ class FamilyTreeSerializer(serializers.ModelSerializer):
         fields = ['id', 'member_id', 'name', 'name_ml', 'role', 'is_committee', 'photo', 'parents', 'children']
         depth = 1 
 
-from .models import FamilyMedia
 class FamilyMediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = FamilyMedia
         fields = '__all__'
+
+
+class FamilyCommitteeMemberSerializer(serializers.ModelSerializer):
+    member_id = serializers.CharField(source='member_code', required=False, allow_null=True, allow_blank=True)
+    photo_url = serializers.SerializerMethodField()
+    phone_no = serializers.SerializerMethodField()
+    email_id = serializers.SerializerMethodField()
+    occupation = serializers.SerializerMethodField()
+    education = serializers.SerializerMethodField()
+    church_parish = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FamilyCommitteeMember
+        fields = [
+            'id', 'term_label', 'category', 'role_title', 'name', 'house_name',
+            'member', 'member_id', 'phone_no', 'email_id', 'photo', 'photo_url',
+            'occupation', 'education', 'church_parish', 'bio',
+            'display_order', 'is_active', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def get_photo_url(self, obj):
+        if obj.photo:
+            return obj.photo.url
+        if obj.member and obj.member.photo:
+            return obj.member.photo.url
+        return None
+
+    def get_phone_no(self, obj):
+        if obj.phone_no:
+            return obj.phone_no
+        if obj.member and obj.member.phone_no:
+            return obj.member.phone_no
+        return None
+
+    def get_email_id(self, obj):
+        if obj.email_id:
+            return obj.email_id
+        if obj.member and obj.member.email_id:
+            return obj.member.email_id
+        return None
+
+    def get_occupation(self, obj):
+        if obj.member and obj.member.occupation:
+            return obj.member.occupation
+        return None
+
+    def get_education(self, obj):
+        if obj.member and obj.member.education:
+            return obj.member.education
+        return None
+
+    def get_church_parish(self, obj):
+        if obj.member and obj.member.church_parish:
+            return obj.member.church_parish
+        return None
+
+    def get_bio(self, obj):
+        if obj.member and obj.member.bio:
+            return obj.member.bio
+        if obj.house_name:
+            return obj.house_name
+        return None

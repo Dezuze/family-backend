@@ -4,6 +4,7 @@ from .views import (
     ManagedMembersView, ManagedMemberDetailView,
     FamilyMemberContextView, FamilyMemberSearchView,
     FamilyTreeAddRelativeView, FamilyTreeLinkExistingMemberView, FamilyTreeRemoveMemberView,
+    FamilyCommitteeMemberListCreateView, FamilyCommitteeMemberDetailView,
 )
 
 urlpatterns = [
@@ -11,6 +12,8 @@ urlpatterns = [
     path('tree/', FamilyTreeView.as_view(), name='family-tree'),
     path('media/', FamilyMediaList.as_view(), name='family-media-list'),
     path('media/<int:pk>/', FamilyMediaDetail.as_view(), name='family-media-detail'),
+    path('committee-members/', FamilyCommitteeMemberListCreateView.as_view(), name='committee-member-list'),
+    path('committee-members/<int:pk>/', FamilyCommitteeMemberDetailView.as_view(), name='committee-member-detail'),
     path('managed/', ManagedMembersView.as_view(), name='managed-members'),
     path('managed/<int:pk>/', ManagedMemberDetailView.as_view(), name='managed-member-detail'),
     path('member-context/<int:pk>/', FamilyMemberContextView.as_view(), name='member-context'),

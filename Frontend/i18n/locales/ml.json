@@ -1,6 +1,6 @@
 {
   "app": {
-    "siteName": "Kollamparambil Family",
+    "siteName": "Kollamparampil Family",
     "metaDescription": "കൊല്ലംപറമ്പിൽ കുടുംബ അസോസിയേഷൻ - നമ്മുടെ പാരമ്പര്യത്തെയും ഭാവിയെയും ബന്ധിപ്പിക്കുന്നു.",
     "themeColor": "#A08050",
     "language": {
@@ -9,7 +9,7 @@
     }
   },
   "nav": {
-    "brand": "Kollamparambil Family",
+    "brand": "Kollamparampil Family",
     "language": "ഭാഷ",
     "links": {
       "familyTree": "കുടുംബവൃക്ഷം",
@@ -64,7 +64,7 @@
   },
   "home": {
     "hero": {
-      "title": "Kollamparambil Family",
+      "title": "Kollamparampil Family",
       "imageAlt": "കുടുംബ സംഗമം",
       "verse": "മക്കളുടെ മക്കള്‍ വൃദ്ധന്മാര്‍ക്കും കിരീടമാകുന്നു; മക്കളുടെ മഹത്വം അവരുടെ അപ്പന്മാര്‍ തന്നേ.",
       "verseRef": "സദൃശ്യവാക്യങ്ങൾ 17:6"
@@ -166,7 +166,7 @@
     },
     "info": {
       "addressTitle": "വിലാസം",
-      "addressLine1": "Kollamparambil Family Association",
+      "addressLine1": "Kollamparampil Family Association",
       "addressLine2": "St. Mary's Church ന് സമീപം,",
       "addressLine3": "കൊച്ചി, കേരളം - 682001",
       "emailTitle": "ഇമെയിൽ",
@@ -186,7 +186,7 @@
   "committee": {
     "header": {
       "title": "കമ്മിറ്റി അംഗങ്ങൾ",
-      "term": "കാലയളവ് 2025 - 2027"
+      "term": "കാലയളവ് 2026-28"
     },
     "meta": {
       "title": "കമ്മിറ്റി",
@@ -210,7 +210,7 @@
       "contactNumber": "ബന്ധപ്പെടാനുള്ള നമ്പർ",
       "notPubliclyListed": "പൊതുവായി ലഭ്യമല്ല",
       "representation": "പ്രതിനിധാനം",
-      "executiveBody": "Kollamparambil Executive Body",
+      "executiveBody": "Kollamparampil Executive Body",
       "closeProfile": "പ്രൊഫൈൽ അടയ്ക്കുക"
     }
   },
@@ -260,6 +260,8 @@
       "editMode": "എഡിറ്റ് മോഡ്",
       "editModeOn": "എഡിറ്റ് മോഡ് ഓൺ",
       "zoomHint": "സൂം ചെയ്യാൻ Ctrl/Cmd + സ്ക്രോൾ ഉപയോഗിക്കുക.",
+      "helpTitle": "ട്രീ ജെസ്‌ചറുകൾ",
+      "helpTouchGesture": "ഒരു വിരലിൽ പേജ് സ്ക്രോൾ ചെയ്യാം. രണ്ട് വിരലിൽ ട്രീ നീക്കാനും സൂം ചെയ്യാനും കഴിയും.",
       "openTreeEditor": "ട്രീ എഡിറ്റർ തുറക്കുക",
       "title": "ട്രീ എഡിറ്റർ",
       "subtitle": "ബന്ധങ്ങൾ തിരുത്താൻ ഒരു അംഗ കാർഡ് തിരഞ്ഞെടുക്കുക",

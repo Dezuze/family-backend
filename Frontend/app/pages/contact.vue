@@ -28,9 +28,9 @@
 
           <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-lg hover:shadow-xl transition-all">
             <h3 class="text-xl font-bold text-brand-gold mb-4 uppercase tracking-wide">{{ t('contact.info.emailTitle') }}</h3>
-            <a href="mailto:contact@kollamparambil.com" class="text-slate-600 hover:text-brand-gold transition-colors flex items-center gap-2 font-medium">
+            <a href="mailto:contact@kollamparampil.com" class="text-slate-600 hover:text-brand-gold transition-colors flex items-center gap-2 font-medium">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-              contact@kollamparambil.com
+              contact@kollamparampil.com
             </a>
           </div>
 

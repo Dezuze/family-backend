@@ -30,7 +30,7 @@ useHead(() => ({
     // Primary Meta Tags
     { name: 'title', content: t('app.siteName') },
     { name: 'description', content: t('app.metaDescription') },
-    { name: 'keywords', content: 'Kollamparambil, Family, Heritage, Association, Kerala, India' },
+    { name: 'keywords', content: 'Kollamparampil, Family, Heritage, Association, Kerala, India' },
     { name: 'author', content: t('app.siteName') },
     { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
     
@@ -43,7 +43,7 @@ useHead(() => ({
     { property: 'og:image', content: '/images/logo.png' },
     { property: 'og:image:width', content: '1200' },
     { property: 'og:image:height', content: '630' },
-    { property: 'og:image:alt', content: 'Kollamparambil Family Logo' },
+    { property: 'og:image:alt', content: 'Kollamparampil Family Logo' },
     
     // Twitter
     { name: 'twitter:card', content: 'summary_large_image' },

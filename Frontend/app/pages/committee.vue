@@ -40,15 +40,16 @@
           <div 
             v-for="m in filtered" 
             :key="m.id"
-            class="group relative"
+            class="group relative mx-auto w-full max-w-[320px] sm:max-w-none"
           >
             <!-- Card Container with Glassmorphism -->
-            <div 
+            <div
+              @click="openDetails(m)"
               class="relative bg-white/90 backdrop-blur-md rounded-3xl overflow-hidden shadow-xl border transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl flex flex-col h-full"
               :class="getPriority(m.role) <= 6 ? 'border-brand-gold/40 ring-1 ring-brand-gold/10' : 'border-slate-200'"
             >
               <!-- Image Section -->
-              <div class="h-64 w-full relative overflow-hidden bg-slate-50">
+              <div class="h-52 w-full relative overflow-hidden bg-slate-50 sm:h-64">
                 <img 
                   v-if="m.photo" 
                   :src="m.photo" 
@@ -63,9 +64,9 @@
                 <div class="absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-black/70 via-black/30 to-transparent"></div>
                 
                 <!-- Role Badge (Floating) -->
-                <div class="absolute top-4 right-4 animate-in fade-in zoom-in duration-700">
+                <div class="absolute top-3 right-3 animate-in fade-in zoom-in duration-700 sm:top-4 sm:right-4">
                     <span 
-                      class="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg backdrop-blur-md border"
+                      class="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg backdrop-blur-md border sm:px-4"
                       :class="getPriority(m.role) <= 6 
                          ? 'bg-brand-gold text-white border-brand-gold-dark' 
                          : 'bg-white/90 text-slate-800 border-slate-200'"
@@ -74,36 +75,31 @@
                     </span>
                 </div>
 
-                <!-- Profile Link Hover Overlay -->
-                <div class="absolute inset-0 bg-brand-gold/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none flex items-center justify-center">
-                    <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/40 scale-50 group-hover:scale-100 transition-transform duration-500">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                    </div>
-                </div>
+                <!-- Subtle hover wash only (no plus icon) -->
+                <div class="absolute inset-0 bg-brand-gold/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
               </div>
               
               <!-- Info Section -->
-              <div class="p-5 flex-1 flex flex-col justify-between relative">
+              <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between relative">
                 <!-- Name & Title -->
                 <div>
-                  <h3 class="text-xl font-serif font-bold text-slate-900 leading-tight mb-1 group-hover:text-brand-gold transition-colors">
-                    {{ m.name }}
+                  <h3 class="text-lg sm:text-xl font-serif font-bold text-slate-900 leading-tight mb-1 group-hover:text-brand-gold transition-colors">
+                    {{ displayHonorificName(m.name) }}
                   </h3>
                   <p class="text-[10px] font-sans font-extrabold uppercase tracking-[0.2em] text-brand-gold/80 mb-3">
                     {{ m.role || t('committee.labels.committeeMember') }}
                   </p>
+                  <div class="space-y-1.5 text-[11px] text-slate-600 pb-3">
+                    <p v-if="m.member_id" class="truncate"><span class="font-semibold text-slate-500">ID:</span> {{ m.member_id }}</p>
+                    <p v-if="m.phone_no" class="truncate"><span class="font-semibold text-slate-500">Phone:</span> {{ m.phone_no }}</p>
+                    <p v-if="m.email_id" class="truncate"><span class="font-semibold text-slate-500">Email:</span> {{ m.email_id }}</p>
+                  </div>
                 </div>
 
                 <!-- Action Footer -->
-                <div class="flex items-center justify-between mt-auto pt-6 border-t border-slate-100/50">
+                 <div class="flex items-center justify-between mt-auto pt-4 sm:pt-6 border-t border-slate-100/50">
                    <span class="text-xs font-bold text-slate-500">{{ t('committee.labels.committeeMember') }}</span>
-                   <button 
-                     @click="openDetails(m)"
-                     class="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 text-brand-gold border border-slate-100 hover:bg-brand-gold hover:text-white hover:border-brand-gold transition-all duration-300"
-                   >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                   </button>
-                </div>
+                 </div>
 
                 <!-- Subtle Pattern Overlay for Officers -->
                 <div v-if="getPriority(m.role) <= 6" class="absolute -right-4 -bottom-4 opacity-[0.03] rotate-12 pointer-events-none">
@@ -155,7 +151,7 @@
                <span class="px-4 py-1 bg-brand-gold text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-3 inline-block">
                  {{ selectedMember.role || t('committee.labels.committee') }}
                </span>
-               <h2 class="text-3xl font-serif font-bold text-white drop-shadow-md">{{ selectedMember.name }}</h2>
+               <h2 class="text-3xl font-serif font-bold text-white drop-shadow-md">{{ displayHonorificName(selectedMember.name) }}</h2>
             </div>
           </div>
 
@@ -180,6 +176,18 @@
                   <div v-if="selectedMember.member_id" class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
                     <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Member ID</div>
                     <div class="mt-1 text-sm font-bold text-slate-800">{{ selectedMember.member_id }}</div>
+                  </div>
+                  <div v-if="selectedMember.phone_no" class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Phone</div>
+                    <div class="mt-1 text-sm font-bold text-slate-800">{{ selectedMember.phone_no }}</div>
+                  </div>
+                  <div v-if="selectedMember.email_id" class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
+                    <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Email</div>
+                    <div class="mt-1 text-sm font-bold text-slate-800 break-all">{{ selectedMember.email_id }}</div>
+                  </div>
+                  <div v-if="selectedMember.relation" class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
+                    <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Category</div>
+                    <div class="mt-1 text-sm font-bold text-slate-800">{{ selectedMember.relation }}</div>
                   </div>
                   <div v-if="selectedMember.occupation" class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
                     <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Occupation</div>
@@ -243,6 +251,8 @@ const committee = ref<FamilyMember[]>([])
 const loading = ref(true)
 const query = ref('')
 const selectedMember = ref<FamilyMember | null>(null)
+const committeeRefreshMs = 30000
+let committeeRefreshTimer: ReturnType<typeof setInterval> | null = null
 
 const openDetails = (m: FamilyMember) => {
     selectedMember.value = m
@@ -258,10 +268,12 @@ const closeDetails = () => {
 const rolePriority: Record<string, number> = {
     'Patron': 1,
     'President': 2,
+  'Working President': 3,
     'Vice President': 3,
-    'Secretary': 4,
-    'Joint Secretary': 5,
-    'Treasurer': 6,
+  'Secretary': 4,
+  'Joint Secretary': 5,
+  'Treasurer': 6,
+  'Auditor': 7,
     'Committee Member': 99
 }
 
@@ -274,6 +286,44 @@ const getPriority = (role?: string) => {
 
 const apiBase = runtimeConfig.public.apiBase || 'http://localhost:8000'
 
+const honorificOverrides: Record<string, string> = {
+  'k c varghese': 'Sri.',
+  'saju elias': 'Prof.',
+  'jojo jacob': 'Mr.',
+  'praveen mani': 'Mr.',
+  'korula issac': 'Mr.',
+  'korula isaac': 'Mr.',
+  'anish chacko': 'Mr.',
+  'manoj andrews': 'Mr.',
+  'k a abraham': 'Mr.',
+  'baby kuriakose': 'Mr.',
+  'kurian mathew': 'Mr.',
+  'mini phillip': 'Mrs.',
+  'mini philip': 'Mrs.',
+  'gabi praveen': 'Mrs.',
+}
+
+const hasHonorificPrefix = (name: string) => {
+  return /^(mr\.|mrs\.|ms\.|dr\.|prof\.|sri\.)\s+/i.test(String(name || '').trim())
+}
+
+const normalizeNameKey = (name: string) => {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+}
+
+const displayHonorificName = (name: string) => {
+  const safeName = String(name || '').trim()
+  if (!safeName) return ''
+  if (hasHonorificPrefix(safeName)) return safeName
+
+  const prefix = honorificOverrides[normalizeNameKey(safeName)] || 'Mr.'
+  return `${prefix} ${safeName}`
+}
+
 // Fetch Data
 const resolveImage = (path: string) => {
     if (!path) return undefined
@@ -282,32 +332,86 @@ const resolveImage = (path: string) => {
     return `${apiBase}${cleanPath}`
 }
 
-onMounted(async () => {
-    try {
-        const res = await fetch(`${apiBase}/api/profiles/committee/`)
-        if (res.ok) {
-            const rawData = await res.json()
-            // Map raw API data to FamilyMember interface
-            committee.value = rawData.map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                photo: resolveImage(item.pic),
-                role: item.role,
-              member_id: item.member_id,
-              occupation: item.occupation,
-              education: item.education,
-              church_parish: item.church_parish,
-              bio: item.bio,
-                // Fallback age/relation if not present in API
-                relation: 'Committee', 
-            }))
-        }
+const fetchCommittee = async (opts?: { silent?: boolean }) => {
+  if (!opts?.silent) loading.value = true
+  try {
+    let rows: any[] = []
+
+    // Preferred source: dedicated families committee dataset.
+    const newRes = await fetch(`${apiBase}/api/families/committee-members/?term_label=2026-28`)
+    if (newRes.ok) {
+      rows = await newRes.json()
+      committee.value = rows.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        photo: resolveImage(item.photo_url || item.photo),
+        role: item.role_title,
+        member_id: item.member_id,
+        phone_no: item.phone_no,
+        email_id: item.email_id,
+        occupation: item.occupation,
+        education: item.education,
+        church_parish: item.church_parish,
+        relation: item.category === 'office_bearer' ? 'Office Bearer' : 'Committee',
+        bio: item.bio || item.house_name || '',
+      }))
+      return
+    }
+
+    // Backward compatibility: legacy profiles endpoint.
+    const legacyRes = await fetch(`${apiBase}/api/profiles/committee/`)
+    if (legacyRes.ok) {
+      rows = await legacyRes.json()
+      committee.value = rows.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        photo: resolveImage(item.pic),
+        role: item.role,
+        member_id: item.member_id,
+        occupation: item.occupation,
+        education: item.education,
+        church_parish: item.church_parish,
+        bio: item.bio,
+        relation: 'Committee',
+      }))
+    }
     } catch (e) {
         console.error("Failed to load committee", e)
     } finally {
-        loading.value = false
+      if (!opts?.silent) loading.value = false
     }
+  }
+
+  const onWindowFocus = () => {
+    fetchCommittee({ silent: true })
+  }
+
+  const onVisibilityChange = () => {
+    if (!document.hidden) {
+      fetchCommittee({ silent: true })
+    }
+  }
+
+  onMounted(async () => {
+    await fetchCommittee()
+
+    committeeRefreshTimer = setInterval(() => {
+      fetchCommittee({ silent: true })
+    }, committeeRefreshMs)
+
+    window.addEventListener('focus', onWindowFocus)
+    document.addEventListener('visibilitychange', onVisibilityChange)
 })
+
+  onUnmounted(() => {
+    if (committeeRefreshTimer) {
+      clearInterval(committeeRefreshTimer)
+      committeeRefreshTimer = null
+    }
+    window.removeEventListener('focus', onWindowFocus)
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+    document.body.style.overflow = ''
+  })
 
 // Search & Filter
 const normalized = (s: string) => s.trim().toLowerCase()

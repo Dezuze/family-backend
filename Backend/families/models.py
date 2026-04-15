@@ -179,6 +179,45 @@ class FamilyMedia(models.Model):
     image = models.ImageField(upload_to="family/gallery/")
 
 
+class FamilyCommitteeMember(models.Model):
+    CATEGORY_OFFICE_BEARER = 'office_bearer'
+    CATEGORY_COMMITTEE_MEMBER = 'committee_member'
+    CATEGORY_CHOICES = [
+        (CATEGORY_OFFICE_BEARER, 'Office Bearer'),
+        (CATEGORY_COMMITTEE_MEMBER, 'Committee Member'),
+    ]
+
+    term_label = models.CharField(max_length=20, default='2026-28')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    role_title = models.CharField(max_length=120)
+    name = models.CharField(max_length=120)
+    house_name = models.CharField(max_length=200, blank=True, null=True)
+
+    # Optional link to an existing family member.
+    member = models.ForeignKey(
+        FamilyMember,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='committee_records',
+    )
+    member_code = models.CharField(max_length=50, blank=True, null=True)
+    phone_no = models.CharField(max_length=20, blank=True, null=True)
+    email_id = models.EmailField(blank=True, null=True)
+    photo = models.ImageField(upload_to='committee/photos/', blank=True, null=True)
+
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['term_label', 'category', 'display_order', 'name']
+
+    def __str__(self):
+        return f'{self.term_label} | {self.role_title} | {self.name}'
+
+
 class Relationship(models.Model):
     RELATION_CHOICES = [
         ('Father', 'Father'),

@@ -139,7 +139,7 @@ onUnmounted(() => {
       <div class="hidden bg-white lg:flex lg:rounded-br-[80px] lg:rounded-tr-[10px] lg:hover:rounded-br-[100px] lg:hover:rounded-tr-[10px] px-4 items-center relative h-15 shadow-sm transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
         <div class="flex items-center gap-4 h-full">
           <NuxtLink to="/" class="flex font-fleur text-2xl items-center text-right h-full">
-           Kollamparambil<br>Family
+           Kollamparampil<br>Family
          </NuxtLink>
           <div class="flex absolute items-center right-5 gap-1">
             <NuxtLink
@@ -182,8 +182,9 @@ onUnmounted(() => {
         class="flex lg:hidden items-center z-30 justify-between h-14 px-5 transition-all duration-300"
         :class="mobileOpen ? 'bg-white shadow-none' : 'bg-white shadow-md'"
       >
-        <NuxtLink to="/" class="font-fleur text-xl text-slate-800 leading-tight" @click="mobileOpen = false">
-          Kollamparambil Family
+        <NuxtLink to="/" class="font-fleur text-lg text-slate-800 leading-none" @click="mobileOpen = false">
+          <span class="block">Kollamparampil</span>
+          <span class="block -mt-0.5">Family</span>
         </NuxtLink>
 
         <button
