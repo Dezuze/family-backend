@@ -29,3 +29,8 @@ github-actions.pub
 *.tgz
 *.tar.gz
 *.zip
+
+# Local DB backup/export artifacts
+Backend/*.bak
+Backend/prod_dump_*.json
+Backend/prod_full_*.dump
