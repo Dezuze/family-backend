@@ -24,3 +24,8 @@ venv/
 # Deployment Keys
 github-actions
 github-actions.pub
+
+# Local deployment artifacts
+*.tgz
+*.tar.gz
+*.zip

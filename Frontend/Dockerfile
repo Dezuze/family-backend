@@ -1,8 +1,9 @@
 # Stage 1: Build
-FROM node:20-slim AS builder
+ARG NODE_IMAGE=node:22-bookworm-slim
+FROM ${NODE_IMAGE} AS builder
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
+# Install security updates + build dependencies
+RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends \
     build-essential \
     python3 \
     pkg-config \
@@ -11,16 +12,19 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY package*.json ./
-# Use npm ci for a cleaner install in CI
-RUN npm ci --legacy-peer-deps
+# Use npm install because this repo does not include package-lock.json in production builds.
+RUN npm install --legacy-peer-deps
 
 COPY . .
-RUN npm run build
+RUN npx nuxt build
 
 # Stage 2: Runtime
-FROM node:20-slim
+FROM ${NODE_IMAGE}
 
 WORKDIR /app
+
+# Apply runtime security updates
+RUN apt-get update && apt-get -y upgrade && rm -rf /var/lib/apt/lists/*
 
 # Install production dependencies for runtime if needed (usually not for nuxt .output)
 # But let's keep it minimal

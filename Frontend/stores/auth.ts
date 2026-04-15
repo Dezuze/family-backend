@@ -140,7 +140,12 @@ export const useAuthStore = defineStore('auth', {
       const base = apiBase()
       try {
         const res = await fetch(base + '/api/auth/me/', { credentials: 'include' })
-        if (!res.ok) return null
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            this.clearAuth()
+          }
+          return null
+        }
         const data = await res.json()
         this.setAuth(data, null)
         return data

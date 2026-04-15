@@ -89,9 +89,20 @@
     </div>
 
     <!-- Visual View -->
-    <div v-show="viewMode === 'visual'" :class="['w-full h-[calc(100vh-100px)] cursor-move touch-none relative transition-all duration-300', editMode ? 'md:pr-[430px]' : '']" ref="chartContainer">
+    <div
+        v-show="viewMode === 'visual'"
+        :class="['w-full h-[calc(100vh-100px)] cursor-move touch-pan-y md:touch-none relative transition-all duration-300', editMode ? 'md:pr-[430px]' : '']"
+        :style="isMobileView ? { touchAction: 'pan-y pinch-zoom' } : {}"
+        ref="chartContainer"
+    >
        <!-- Tree area backdrop -->
        <div class="absolute inset-0 rounded-none" style="background: radial-gradient(ellipse at center, rgba(160,128,80,0.04) 0%, transparent 70%);"></div>
+       <div
+           v-if="isMobileView"
+           class="pointer-events-none absolute left-3 top-3 z-20 rounded-xl border border-slate-200/80 bg-white/92 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm backdrop-blur"
+       >
+           {{ t('familyTree.editor.mobileGestureHint', '1 finger scroll page, 2 fingers move tree') }}
+       </div>
        <div v-if="isMobileView" class="pointer-events-none absolute bottom-16 right-3 z-20 flex flex-col gap-2 md:hidden">
           <button
               type="button"
@@ -111,7 +122,7 @@
        <div v-if="loading" class="absolute inset-0 flex items-center justify-center z-10">
           <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-gold"></div>
        </div>
-         <svg ref="svgRef" class="w-full h-full relative z-1 touch-none"></svg>
+            <svg ref="svgRef" class="w-full h-full relative z-1 touch-pan-y md:touch-none"></svg>
     </div>
 
      <!-- Grid View -->
@@ -1092,6 +1103,19 @@ const getDisplayName = (member: any): string => {
     return baseName || t('familyTree.labels.member')
 }
 
+const resolveLoggedInMemberId = (): number | null => {
+    const rawMember = (auth.user as any)?.member
+    const direct = Number(rawMember)
+    if (Number.isFinite(direct) && direct > 0) return direct
+
+    if (rawMember && typeof rawMember === 'object') {
+        const nested = Number((rawMember as any).id)
+        if (Number.isFinite(nested) && nested > 0) return nested
+    }
+
+    return null
+}
+
 watch(searchQuery, (val) => {
     if (!val || viewMode.value !== 'visual') {
         searchResults.value = []
@@ -1105,9 +1129,10 @@ watch(searchQuery, (val) => {
  * Search-to-Focus: smoothly pan/zoom the tree to center on a member.
  * Searches across ALL forest trees (not just the first).
  */
-const focusOnMember = (targetMember: any) => {
+const focusOnMember = (targetMember: any, options?: { select?: boolean }) => {
     searchQuery.value = '' // clear search
     searchResults.value = []
+    const shouldSelect = options?.select ?? true
     
     if (!targetMember || !globalZoom || !globalSVG) return
 
@@ -1127,7 +1152,9 @@ const focusOnMember = (targetMember: any) => {
                 d3.zoomIdentity.translate(width/2 - targetX*scale, height/2 - targetY*scale).scale(scale)
             )
         }
-        selectedMember.value = targetMember 
+        if (shouldSelect) {
+            selectedMember.value = targetMember
+        }
     }
 }
 
@@ -1291,9 +1318,28 @@ const fetchCommunityRoles = async () => {
 }
 
 const loadMemberContext = async (memberId: number) => {
+    if (!auth.user) return
     try {
         const res = await fetch(`${apiBase}/api/families/member-context/${memberId}/`, { credentials: 'include' })
-        if (!res.ok) return
+        if (!res.ok) {
+            if (res.status === 401 || res.status === 403) {
+                contextOwnership.value = {
+                    is_independent: false,
+                    has_account: false,
+                    created_by_me: false,
+                    is_self: false,
+                }
+                allowedActions.value = {
+                    can_manage: false,
+                    can_add_parent: false,
+                    can_add_spouse: false,
+                    can_add_sibling: false,
+                    can_add_child: false,
+                    can_remove: false,
+                }
+            }
+            return
+        }
         const data = await res.json()
         contextOwnership.value = data.ownership_status || contextOwnership.value
         allowedActions.value = data.allowed_actions || allowedActions.value
@@ -1653,7 +1699,15 @@ const toggleEditMode = () => {
 const focusFromQuery = () => {
     const qFocus = Array.isArray(route.query.focus) ? route.query.focus[0] : route.query.focus
     const focusId = qFocus ? parseInt(qFocus) : NaN
-    if (!focusId || Number.isNaN(focusId)) return
+
+    if (!focusId || Number.isNaN(focusId)) {
+        const meId = resolveLoggedInMemberId()
+        if (!meId) return
+        const me = nodes.value.find((n: any) => n.id === meId)
+        if (!me) return
+        setTimeout(() => focusOnMember(me, { select: false }), 120)
+        return
+    }
 
     const member = nodes.value.find((n: any) => n.id === focusId)
     if (!member) return
@@ -2350,6 +2404,20 @@ const focusFromQuery = () => {
             .attr("font-weight", "700")
       }
 
+    const loggedInMember = (() => {
+        const authMemberId = resolveLoggedInMemberId()
+        if (authMemberId) {
+            return visibleNodes.find((n: any) => n.id === authMemberId) || null
+        }
+
+        const authUsername = String(auth.user?.username || '').trim().toLowerCase()
+        if (authUsername) {
+            return visibleNodes.find((n: any) => String(n.username || '').trim().toLowerCase() === authUsername) || null
+        }
+
+        return null
+    })()
+
     const userCoords = loggedInMember ? nodeCanvasCoords.get(loggedInMember.id) : null
       
       if (userCoords) {
@@ -2371,6 +2439,10 @@ onMounted(async () => {
     onViewportResize()
     if (isMobileViewport() && editMode.value) {
         isEditorSheetOpen.value = false
+    }
+    const profile = await auth.fetchProfile()
+    if (!profile) {
+        auth.clearAuth()
     }
     await Promise.all([
         familyStore.fetchFamily(),
@@ -2435,10 +2507,12 @@ watch(
     () => {
         editMode.value = resolveInitialEditMode()
         if (editMode.value) {
-            isEditorSheetOpen.value = !isMobileViewport()
+            isEditorSheetOpen.value = true
             if (isMobileViewport()) {
                 mobileEditorSheetVh.value = MOBILE_EDITOR_DEFAULT_VH
             }
+        } else {
+            isEditorSheetOpen.value = false
         }
         focusFromQuery()
     },
