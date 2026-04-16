@@ -279,9 +279,20 @@ const rolePriority: Record<string, number> = {
 
 const getPriority = (role?: string) => {
     if (!role) return 100
-    // Check for partial matches if exact match fails (e.g. "Vice-President")
-    const cleanRole = role.trim()
-    return rolePriority[cleanRole] || 100
+  const cleanRole = role.trim()
+  const exact = rolePriority[cleanRole]
+  if (exact) return exact
+
+  const lowered = cleanRole.toLowerCase()
+  if (lowered.includes('working president')) return rolePriority['Working President']
+  if (lowered.includes('vice president') || lowered.includes('vice-president')) return rolePriority['Vice President']
+  if (lowered.includes('joint secretary') || lowered.includes('joint-secretary')) return rolePriority['Joint Secretary']
+  if (lowered.includes('secretary')) return rolePriority['Secretary']
+  if (lowered.includes('treasurer')) return rolePriority['Treasurer']
+  if (lowered.includes('auditor')) return rolePriority['Auditor']
+  if (lowered.includes('president')) return rolePriority['President']
+  if (lowered.includes('committee member')) return rolePriority['Committee Member']
+  return 100
 }
 
 const apiBase = runtimeConfig.public.apiBase || 'http://localhost:8000'
