@@ -138,6 +138,7 @@ jobs:
             docker compose -p app -f infra/production/docker-compose.yml --env-file .env --env-file .env_deploy up -d --remove-orphans
             # Trigger immediate image check/update so production refreshes right after successful image push.
             docker run --rm \
+              -e DOCKER_API_VERSION=1.41 \
               -v /var/run/docker.sock:/var/run/docker.sock \
               -v ~/.docker/config.json:/config.json:ro \
               containrrr/watchtower \
