@@ -43,9 +43,14 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     // Login: uses frontend local users when localAuth enabled; otherwise hits backend
-    async login(email: string, password: string) {
+    async login(identifier: string, password: string) {
       if (useLocalAuth()) {
-        const u = users.find((x) => x.email.toLowerCase() === email.toLowerCase() && x.password === password)
+        const lookup = identifier.toLowerCase()
+        const u = users.find(
+          (x) =>
+            (x.email.toLowerCase() === lookup || x.name.toLowerCase() === lookup) &&
+            x.password === password,
+        )
         if (!u) return false
         this.setAuth({ id: u.id, email: u.email, name: u.name }, 'local')
         return { ok: true, data: { id: u.id, email: u.email, name: u.name } }
@@ -64,7 +69,7 @@ export const useAuthStore = defineStore('auth', {
             ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}),
           },
           credentials: 'include',
-          body: JSON.stringify({ identifier: email, password }),
+          body: JSON.stringify({ identifier, password }),
         })
 
         if (!res.ok) {

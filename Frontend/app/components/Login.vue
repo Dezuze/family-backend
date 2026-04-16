@@ -13,7 +13,7 @@ const auth = useAuthStore()
 const { t } = useI18n()
 
 const open = ref(false)
-const email = ref('')
+const username = ref('')
 const password = ref('')
 const sponsorId = ref('')
 const showPassword = ref(false)
@@ -125,7 +125,7 @@ const close = () => {
 
 const submit = async () => {
   error.value = ''
-  const res: any = await (auth as any).login(email.value, password.value)
+  const res: any = await (auth as any).login(username.value, password.value)
   if (res && res.ok) {
     close()
   } else {
@@ -351,9 +351,9 @@ defineExpose({ toggle })
       <template v-if="!registering">
         <h2 class="text-xl font-bold mb-4 text-brand-gold">{{ t('login.actions.login') }}</h2>
         <input
-          v-model="email"
-          type="email"
-          :placeholder="t('login.fields.email')"
+          v-model="username"
+          type="text"
+          :placeholder="t('login.fields.username')"
           class="w-full mb-3 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-gold"
         />
 

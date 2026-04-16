@@ -611,6 +611,7 @@
       "cancel": "Cancel"
     },
     "fields": {
+      "username": "Username",
       "email": "Email",
       "password": "Password",
       "inviteToken": "Invite Token",
@@ -640,7 +641,7 @@
       "inviteCopied": "Invite link and message copied to clipboard! You can now paste it directly into WhatsApp."
     },
     "errors": {
-      "invalidCredentials": "Invalid email or password",
+      "invalidCredentials": "Invalid username or password",
       "inviteFailed": "Failed to generate invite token. Please make sure your profile is completed.",
       "inviteError": "Error generating invite.",
       "fillAllFields": "Please fill all fields, including Sponsor ID.",

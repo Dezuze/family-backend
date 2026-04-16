@@ -429,8 +429,19 @@ const filtered = computed(() => {
         })
     }
 
-    // 2. Sort by Role Priority
+    // 2. Sort with office roles first and generic committee members last.
+    const isGenericCommitteeMember = (m: FamilyMember) => {
+      const role = normalized(m.role || '')
+      return role === 'committee member' || role.includes('committee member')
+    }
+
     result.sort((a, b) => {
+        const aIsCommittee = isGenericCommitteeMember(a)
+        const bIsCommittee = isGenericCommitteeMember(b)
+
+        // Keep special/named roles above the generic committee block.
+        if (aIsCommittee !== bIsCommittee) return aIsCommittee ? 1 : -1
+
         const pA = getPriority(a.role)
         const pB = getPriority(b.role)
         if (pA !== pB) return pA - pB
