@@ -134,8 +134,8 @@ jobs:
             fi
             echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
             mkdir -p ~/app/infra/production/traefik/letsencrypt ~/management ~/management/portainer_data
-            docker compose -f infra/production/docker-compose.yml --env-file .env --env-file .env_deploy config >/dev/null
-            docker compose -f infra/production/docker-compose.yml --env-file .env --env-file .env_deploy up -d --remove-orphans
+            docker compose -p app -f infra/production/docker-compose.yml --env-file .env --env-file .env_deploy config >/dev/null
+            docker compose -p app -f infra/production/docker-compose.yml --env-file .env --env-file .env_deploy up -d --remove-orphans
             # Trigger immediate image check/update so production refreshes right after successful image push.
             docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
@@ -144,9 +144,9 @@ jobs:
               --run-once \
               --cleanup \
               --label-enable
-            docker compose -f infra/production/docker-compose.yml exec -T backend python manage.py migrate --noinput || echo "Migrations failed, check logs"
-            docker compose -f infra/production/docker-compose.yml ps
-            docker compose -f infra/production/docker-compose.yml exec -T backend curl -fsS http://localhost:8000/health/ >/dev/null
+            docker compose -p app -f infra/production/docker-compose.yml exec -T backend python manage.py migrate --noinput || echo "Migrations failed, check logs"
+            docker compose -p app -f infra/production/docker-compose.yml ps
+            docker compose -p app -f infra/production/docker-compose.yml exec -T backend curl -fsS http://localhost:8000/health/ >/dev/null
 
             # Keep Portainer management stack source-controlled from this repository.
             cp ~/app/infra/management/docker-compose.yml ~/management/docker-compose.yml
