@@ -2007,17 +2007,25 @@ const focusFromQuery = () => {
           if (!changed) break
       }
 
-      // Only keep parent edges that move downward exactly one+ generation.
-      const renderParentLinks = parentLinks.filter((l) => {
+      // Keep primary parent edges that move downward by a sane generation gap.
+      const visibleParentLinks = parentLinks.filter((l) => nodeIdSet.has(l.source) && nodeIdSet.has(l.target))
+      const renderParentLinks = visibleParentLinks.filter((l) => {
           const sourceGen = generation.get(l.source) || 0
           const targetGen = generation.get(l.target) || 0
           const generationGap = targetGen - sourceGen
           return (
-              nodeIdSet.has(l.source) &&
-              nodeIdSet.has(l.target) &&
               generationGap >= 1 &&
               generationGap <= 2
           )
+      })
+
+      // Fallback: if heuristics dropped all links for a child, keep explicit
+      // parent link(s) so legitimate families never appear disconnected.
+      const renderedChildSet = new Set<number>(renderParentLinks.map((l) => l.target))
+      visibleParentLinks.forEach((l) => {
+          if (renderedChildSet.has(l.target)) return
+          renderParentLinks.push(l)
+          renderedChildSet.add(l.target)
       })
     const maxLevel = Math.max(...Array.from(generation.values()))
       const levels = Array.from({ length: maxLevel + 1 }, () => [] as number[])
