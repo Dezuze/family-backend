@@ -179,12 +179,12 @@ onUnmounted(() => {
 
       <!-- Mobile Top Bar -->
       <div 
-        class="flex lg:hidden items-center z-30 justify-between h-14 px-5 transition-all duration-300"
+        class="flex lg:hidden items-center z-30 justify-between h-16 px-4 transition-all duration-300"
         :class="mobileOpen ? 'bg-white shadow-none' : 'bg-white shadow-md'"
       >
-        <NuxtLink to="/" class="font-fleur text-lg text-slate-800 leading-none" @click="mobileOpen = false">
+        <NuxtLink to="/" class="font-fleur text-[1.7rem] text-slate-800 leading-[0.82]" @click="mobileOpen = false">
           <span class="block">Kollamparampil</span>
-          <span class="block -mt-0.5">Family</span>
+          <span class="block -mt-1">Family</span>
         </NuxtLink>
 
         <button

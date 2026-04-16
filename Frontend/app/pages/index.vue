@@ -1,16 +1,16 @@
 <template>
   <div class="min-h-screen bg-slate-50 font-sans text-slate-800 overflow-x-hidden">
     <!-- Hero Section -->
-    <div class="relative w-full h-[110vh] overflow-hidden">
+    <div class="relative w-full h-[100svh] md:h-[110vh] overflow-hidden">
       <!-- Background Image -->
     <img src="/images/family.jpg" :alt="t('home.hero.imageAlt')" class="absolute inset-0 w-full h-full object-cover" />
       
       <div class="absolute inset-0 bg-linear-to-b from-black/30 via-black/60 to-slate-50"></div>
 
       <!-- Hero Content -->
-    <div class="absolute top-0 left-0 w-full h-screen flex flex-col items-center md:items-start justify-end px-3 pb-32 sm:px-4 sm:pb-36 md:px-24 md:pb-24">
+    <div class="absolute inset-0 w-full h-full flex flex-col items-center md:items-start justify-end px-3 pb-[calc(env(safe-area-inset-bottom)+6rem)] sm:px-4 sm:pb-[calc(env(safe-area-inset-bottom)+6.5rem)] md:px-24 md:pb-24">
         
-        <div class="bg-black/80 backdrop-blur-md shadow-[0_0_40px_40px_rgba(0,0,0,0.8)] absolute left-3 right-3 bottom-0 p-5 sm:p-7 md:left-0 md:right-auto md:p-10 rounded-t-3xl md:rounded-t-none md:rounded-tr-3xl max-w-none md:max-w-3xl text-center md:text-left">
+        <div class="bg-black/80 backdrop-blur-md shadow-[0_0_40px_40px_rgba(0,0,0,0.8)] w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] md:w-auto p-5 sm:p-7 md:p-10 rounded-3xl md:rounded-t-none md:rounded-tr-3xl max-w-none md:max-w-3xl text-center md:text-left">
             <h1 class="font-fleur text-[2.65rem] sm:text-[3.6rem] md:text-8xl lg:text-8xl text-white mb-4 drop-shadow-2xl mx-auto md:mx-0 leading-[0.95] whitespace-normal break-words max-w-[86vw] md:max-w-none">
                 {{ t('home.hero.title') }}
             </h1>
