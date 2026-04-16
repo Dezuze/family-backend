@@ -2209,22 +2209,31 @@ const focusFromQuery = () => {
                   }
               }
 
-              const parentCoords = renderParentLinks
+              const parentLinksForChild = renderParentLinks
                   .filter((l) => l.target === childId)
-                  .map((l) => nodeCanvasCoords.get(l.source))
-                  .filter(Boolean) as Array<{ x: number; y: number }>
+                  .map((l) => ({
+                      sourceId: l.source,
+                      coord: nodeCanvasCoords.get(l.source),
+                  }))
+                  .filter((item) => Boolean(item.coord)) as Array<{ sourceId: number; coord: { x: number; y: number } }>
 
-              if (!parentCoords.length) return null
+              if (!parentLinksForChild.length) return null
 
-              const anchorParents = parentCoords.length <= 2
-                  ? parentCoords
-                  : [...parentCoords]
-                      .sort((a, b) => Math.abs(a.x - child.x) - Math.abs(b.x - child.x))
+              const anchorParentLinks = parentLinksForChild.length <= 2
+                  ? parentLinksForChild
+                  : [...parentLinksForChild]
+                      .sort((a, b) => Math.abs(a.coord.x - child.x) - Math.abs(b.coord.x - child.x))
                       .slice(0, 2)
 
-              const sourceX = anchorParents.reduce((sum, p) => sum + p.x, 0) / anchorParents.length
-              const sourceYBase = Math.max(...anchorParents.map((p) => p.y))
-              if (Math.abs(sourceX - target.x) > maxParentLinkHorizontalSpan) return null
+              const sourceX = anchorParentLinks.reduce((sum, p) => sum + p.coord.x, 0) / anchorParentLinks.length
+              const sourceYBase = Math.max(...anchorParentLinks.map((p) => p.coord.y))
+
+              const anchorParentIds = anchorParentLinks.map((p) => p.sourceId)
+              const isSpouseParentUnit =
+                  anchorParentIds.length === 2 &&
+                  spousePairSet.has(pairKey(anchorParentIds[0], anchorParentIds[1]))
+
+              if (Math.abs(sourceX - target.x) > maxParentLinkHorizontalSpan && !isSpouseParentUnit) return null
 
               return {
                   source: { x: sourceX, y: sourceYBase },
