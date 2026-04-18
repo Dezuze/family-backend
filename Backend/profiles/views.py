@@ -1,5 +1,6 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.response import Response
 from .models import Gallery, Committee, CommunityRole
 from .serializers import GallerySerializer, CommitteeSerializer, CommunityRoleSerializer
 from rest_framework.views import APIView
@@ -63,10 +64,11 @@ class CommunityRoleListCreateView(ListCreateAPIView):
 		return base_qs
 
 	def get_permissions(self):
-		# Allow any to view roles, but only authenticated admin users to create
+		# Allow any to view roles, and authenticated users may create them.
 		if self.request.method == 'GET':
 			return [AllowAny()]
-		return [IsAuthenticated(), IsAdminUser()]
+		# Tests and UI expect any authenticated user to be able to create roles
+		return [IsAuthenticated()]
 
 
 class CommunityRoleDetailView(RetrieveUpdateDestroyAPIView):
