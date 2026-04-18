@@ -21,7 +21,7 @@
     </div>
 
     <!-- Events Grid -->
-    <div class="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-10">
+    <div class="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-10 items-start">
       
       <!-- Skeleton Cards -->
       <template v-if="loading">
@@ -40,7 +40,10 @@
           v-for="event in events" 
           :key="event.id" 
           @click="openDetails(event)"
-          class="group relative flex flex-col bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl border border-slate-200 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+          @keydown.enter.prevent="openDetails(event)"
+          tabindex="0"
+          role="button"
+          class="group relative flex flex-col bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl border border-slate-200 transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-0 max-h-[calc(100vh-12rem)]"
         >
           <!-- Image & Date -->
           <div class="relative aspect-4/3 overflow-hidden">
@@ -59,7 +62,7 @@
           </div>
 
           <!-- Content -->
-          <div class="flex-1 p-6 flex flex-col relative text-left">
+          <div class="flex-1 p-6 flex flex-col relative text-left overflow-hidden">
             <div class="flex items-center gap-4 text-xs font-medium text-brand-gold mb-3 tracking-wide uppercase">
               <div v-if="event.location" class="flex items-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
@@ -71,7 +74,7 @@
               {{ event.title }}
             </h2>
             
-            <p class="text-slate-600 text-sm leading-relaxed mb-6 line-clamp-3 font-medium">
+            <p class="text-slate-600 text-sm leading-relaxed mb-6 font-medium overflow-auto" style="max-height:6.5rem;">
               {{ event.description }}
             </p>
 

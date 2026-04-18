@@ -13,11 +13,12 @@
         <!-- Left Side: Image & Age -->
         <div class="w-full md:w-1/3 bg-slate-50 p-8 flex flex-col items-center justify-center border-r border-slate-100 relative">
              <div class="w-48 h-48 rounded-full border-4 border-white overflow-hidden shadow-xl mb-6 ring-1 ring-slate-200">
-               <img 
-                 :src="resolveImage(member.photo) || `https://ui-avatars.com/api/?name=${member.name}&background=cbd5e1&color=fff`" 
-                 :alt="member.name || t('nav.photoAlt.member')"
-                 class="w-full h-full object-cover"
-               />
+              <img
+                     :src="imgSrc || resolveImage(member.photo) || `https://ui-avatars.com/api/?name=${member.name}&background=cbd5e1&color=fff`"
+                     :alt="member.name || t('nav.photoAlt.member')"
+                     class="w-full h-full object-cover"
+                     @error="onImageError"
+                   />
              </div>
              
              <h2 class="text-2xl font-serif font-bold text-slate-800 text-center mb-2">{{ member.name }}</h2>
@@ -146,11 +147,12 @@
 <script setup>
 import { useRuntimeConfig } from '#imports'
 import { useI18n } from 'vue-i18n'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase || 'http://localhost:8000'
 const { t } = useI18n()
 
-defineProps({
+const props = defineProps({
   member: Object,
   canEdit: {
     type: Boolean,
@@ -159,10 +161,69 @@ defineProps({
 })
 defineEmits(['close', 'edit'])
 
+const createdBlobs = []
+const imgSrc = ref('')
+
+const defaultAvatarFor = (name = '') => `https://ui-avatars.com/api/?name=${encodeURIComponent(name || '')}&background=cbd5e1&color=fff`
+
+const setBlobUrl = (blob) => {
+  const blobUrl = URL.createObjectURL(blob)
+  createdBlobs.push(blobUrl)
+  imgSrc.value = blobUrl
+}
+
+const loadMemberImage = async () => {
+  const name = (props.member && (props.member.name || '')) || ''
+  imgSrc.value = defaultAvatarFor(name)
+
+  const candidate = resolveImage(props.member?.photo) || null
+  if (!candidate) return
+
+  if (candidate.startsWith('data:') || candidate.startsWith('blob:')) {
+    imgSrc.value = candidate
+    return
+  }
+
+  try {
+    const res = await fetch(candidate, { credentials: 'include' })
+    if (res.ok) {
+      const contentType = res.headers.get('content-type') || ''
+      if (contentType.startsWith('image/') || contentType.includes('image')) {
+        const blob = await res.blob()
+        setBlobUrl(blob)
+        return
+      }
+    }
+    // fallback: try using the direct URL
+    imgSrc.value = candidate
+  } catch (err) {
+    console.debug('Failed to fetch member image with credentials:', err)
+    imgSrc.value = defaultAvatarFor(name)
+  }
+}
+
+onMounted(() => loadMemberImage())
+watch(() => props.member && props.member.photo, () => loadMemberImage())
+
+onUnmounted(() => {
+  for (const url of createdBlobs) {
+    try { URL.revokeObjectURL(url) } catch (e) { /* ignore */ }
+  }
+  createdBlobs.length = 0
+})
+
 const resolveImage = (path) => {
-    if (!path) return null
-    if (path.startsWith('http')) return path
-    return `${apiBase}${path}`
+  if (!path) return null
+  // Support objects returned by some endpoints: { url }, { photo_url }, { photo }
+  let p = path
+  if (typeof p !== 'string') {
+    p = (p && (p.url || p.photo_url || p.photo)) || null
+  }
+  if (!p) return null
+  if (typeof p !== 'string') return null
+  if (p.startsWith('http') || p.startsWith('data:') || p.startsWith('blob:')) return p
+  const clean = p.startsWith('/') ? p : `/${p}`
+  return `${apiBase}${clean}`
 }
 </script>
 

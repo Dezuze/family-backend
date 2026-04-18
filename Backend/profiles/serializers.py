@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Gallery, Committee, CommunityRole
+from families.models import FamilyMember
 
 
 class GallerySerializer(serializers.ModelSerializer):
@@ -66,9 +67,15 @@ class CommitteeSerializer(serializers.ModelSerializer):
 
 
 class CommunityRoleSerializer(serializers.ModelSerializer):
+    members = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=FamilyMember.objects.all(),
+        required=False,
+    )
+
     class Meta:
         model = CommunityRole
-        fields = ('id', 'name', 'priority', 'is_active', 'created_at')
+        fields = ('id', 'name', 'priority', 'can_manage_all', 'is_active', 'members', 'created_at')
         read_only_fields = ('id', 'created_at')
 
     def validate_name(self, value):

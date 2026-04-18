@@ -16,6 +16,12 @@ class Post(models.Model):
     event_date = models.DateTimeField(null=True, blank=True) # Null if post_type is 'news'
     location = models.CharField(max_length=255, blank=True, null=True)
     is_kudumbayogam = models.BooleanField(default=False)
+    # Indicates posts created automatically by imports or background tasks.
+    # DB previously had this column as NOT NULL; ensure model has it with default.
+    is_auto_generated = models.BooleanField(default=False)
+    # Visibility of the post. Possible values may include 'public' or 'private'.
+    # Add a sensible default to avoid NOT NULL DB errors from older rows.
+    visibility = models.CharField(max_length=32, default='public')
     
     created_at = models.DateTimeField(auto_now_add=True)
 

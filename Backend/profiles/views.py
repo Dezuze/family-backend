@@ -1,7 +1,40 @@
-from rest_framework.generics import ListCreateAPIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from .models import Gallery, Committee, CommunityRole
 from .serializers import GallerySerializer, CommitteeSerializer, CommunityRoleSerializer
+from rest_framework.views import APIView
+
+
+class CommunityRoleManageFlagView(APIView):
+	"""Admin-only endpoint to set `can_manage_all` and optionally update members on a CommunityRole.
+
+	POST body:
+	  {
+		"can_manage_all": true|false,
+		"members": [1,2,3]  # optional list of FamilyMember ids to set
+	  }
+	"""
+	permission_classes = [IsAuthenticated, IsAdminUser]
+
+	def post(self, request, pk):
+		try:
+			role = CommunityRole.objects.get(pk=pk)
+		except CommunityRole.DoesNotExist:
+			return Response({"error": "Not found"}, status=404)
+
+		data = request.data
+		if 'can_manage_all' in data:
+			role.can_manage_all = bool(data.get('can_manage_all'))
+
+		if 'members' in data:
+			try:
+				member_ids = list(map(int, data.get('members') or []))
+				role.members.set(member_ids)
+			except Exception:
+				return Response({"error": "Invalid members list"}, status=400)
+
+		role.save()
+		return Response(CommunityRoleSerializer(role).data)
 
 
 class GalleryListCreateView(ListCreateAPIView):
@@ -30,6 +63,18 @@ class CommunityRoleListCreateView(ListCreateAPIView):
 		return base_qs
 
 	def get_permissions(self):
+		# Allow any to view roles, but only authenticated admin users to create
 		if self.request.method == 'GET':
 			return [AllowAny()]
-		return [IsAuthenticated()]
+		return [IsAuthenticated(), IsAdminUser()]
+
+
+class CommunityRoleDetailView(RetrieveUpdateDestroyAPIView):
+	queryset = CommunityRole.objects.all()
+	serializer_class = CommunityRoleSerializer
+
+	def get_permissions(self):
+		# Allow read to anyone; mutations require admin
+		if self.request.method == 'GET':
+			return [AllowAny()]
+		return [IsAuthenticated(), IsAdminUser()]

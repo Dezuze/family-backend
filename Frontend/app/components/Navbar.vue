@@ -216,7 +216,7 @@ onUnmounted(() => {
     <Transition name="fade-backdrop">
       <div
         v-if="mobileOpen"
-        class="lg:hidden fixed inset-0 z-30 bg-black/30 backdrop-blur-[2px]"
+        class="lg:hidden fixed inset-0 z-30"
         @click="mobileOpen = false"
       />
     </Transition>
@@ -225,7 +225,7 @@ onUnmounted(() => {
     <Transition name="slide">
       <div
         v-if="mobileOpen"
-        class="lg:hidden fixed inset-x-0 top-14 z-40 bg-white/95 backdrop-blur-xl shadow-2xl flex flex-col rounded-b-3xl border-b border-slate-100 max-h-[calc(100vh-80px)] overflow-y-auto"
+        class="lg:hidden fixed inset-x-0 top-15 z-40 bg-white/95 shadow-2xl flex flex-col rounded-b-3xl border-b border-slate-100 max-h-[calc(100vh-80px)] overflow-y-auto"
       >
         <!-- Nav Links -->
         <div class="flex flex-col px-4 pt-3 pb-1">

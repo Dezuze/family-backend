@@ -8,11 +8,11 @@
         <div class="h-1.5 w-32 bg-brand-gold mx-auto rounded-full"></div>
     </div>
         
-                <div class="bg-white rounded-xl p-3 md:p-6 backdrop-blur-sm border border-slate-200 shadow-xl w-full overflow-hidden">
+                <div class="bg-white rounded-xl p-3 md:p-6 backdrop-blur-sm border border-slate-200 shadow-xl w-full">
             <client-only>
-                        <div class="w-full h-[62vh] md:h-[70vh] lg:h-[74vh]">
-                <PdfViewer :src="pdfUrl" />
-            </div>
+                <div class="w-full h-auto max-h-[calc(100vh-14rem)] overflow-auto">
+                    <PdfViewer :src="pdfUrl" />
+                </div>
             </client-only>
         </div>
 

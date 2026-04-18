@@ -1,6 +1,6 @@
 <template>
   <teleport to="body">
-    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-8 sm:pt-0 overflow-auto">
       <!-- Backdrop -->
       <Transition name="fade" appear>
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="close"></div>
@@ -8,7 +8,7 @@
 
       <!-- Modal Content -->
       <Transition name="scale-fade" appear>
-        <div class="relative bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl border border-slate-100 flex flex-col">
+        <div class="relative bg-white rounded-2xl p-6 sm:p-8 w-full max-w-lg shadow-2xl border border-slate-100 flex flex-col max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-8rem)] overflow-y-auto">
           <h2 class="text-2xl font-serif font-bold text-slate-800 mb-6 flex items-center gap-2">
             <span v-if="initialData">{{ t('addPostModal.heading.edit', { type: type === 'news' ? t('shared.types.news') : t('shared.types.event') }) }}</span>
             <span v-else-if="type === 'news'">{{ t('addPostModal.heading.addNews') }}</span>
@@ -206,14 +206,29 @@ async function submit() {
     })
 
     if (!res.ok) {
-      throw new Error(t('addPostModal.errors.submitFailed'))
+      // Try to extract error details from the response for debugging
+      let errText = ''
+      try {
+        const ct = res.headers.get('content-type') || ''
+        if (ct.includes('application/json')) {
+          const json = await res.json()
+          errText = JSON.stringify(json)
+        } else {
+          errText = await res.text()
+        }
+      } catch (readErr) {
+        errText = '<failed to read response body>'
+      }
+      console.error('AddPostModal submit failed', res.status, errText)
+      throw new Error(`${t('addPostModal.errors.submitFailed')} (${res.status}) ${errText}`)
     }
 
     emit('refresh')
     close()
-  } catch (e) {
-    console.error(e)
-    alert(t('addPostModal.errors.createFailed'))
+  } catch (e: any) {
+    console.error('AddPostModal submit error', e)
+    const msg = e?.message || t('addPostModal.errors.createFailed')
+    alert(msg)
   } finally {
     loading.value = false
   }

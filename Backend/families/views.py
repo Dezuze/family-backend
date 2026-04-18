@@ -517,6 +517,17 @@ def _can_manage_member(user, member):
     if _member_has_account(member) and member.user_account == user:
         return True
 
+    # Global managers: users whose linked FamilyMember belongs to an active CommunityRole
+    try:
+        from profiles.models import CommunityRole
+        user_member = getattr(user, 'member', None)
+        if user_member:
+            if CommunityRole.objects.filter(is_active=True, can_manage_all=True, members__id=user_member.id).exists():
+                return True
+    except Exception:
+        # If profiles app is unavailable or query fails, fall back silently
+        pass
+
     managed_branch_ids = _managed_branch_ids(user)
     if member.id in managed_branch_ids:
         if member.is_independent and member.user_account != user:
