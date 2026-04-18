@@ -25,19 +25,17 @@
                     - {{ t('home.hero.verseRef') }}
                 </p>
             </div>
+            </div>
         </div>
-
-      </div>
     </div>
 </div>
     <!-- Navigation Buttons (Intersection Layout) -->
-    <div class="relative z-20 -mt-12 px-4 md:px-12 pb-20 md:pb-12">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 max-w-6xl mx-auto place-items-center md:place-items-stretch">
-            
+   <div class="relative z-20 -mt-12 px-4 md:px-12 pb-20 md:pb-12">
+        <div class="grid mt-10 grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 max-w-6xl mx-auto">
             <!-- Button 1: Committee Members (Public) -->
             <NuxtLink 
                 to="/committee" 
-                class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 bg-white border border-slate-100 w-11/12 max-w-md md:w-auto mx-auto"
+                class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 bg-white border border-slate-100"
             >
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
                     <h3 class="text-lg md:text-xl font-bold text-slate-800 uppercase tracking-wide leading-tight group-hover:text-brand-gold transition-colors">{{ t('home.quick.committeeLine1') }}<br>{{ t('home.quick.committeeLine2') }}</h3>
@@ -45,7 +43,7 @@
             </NuxtLink>
 
             <!-- Button 2: Events (Public) -->
-            <NuxtLink to="/news-events" class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 bg-linear-to-b from-brand-gold to-brand-gold-dark w-11/12 max-w-md md:w-auto mx-auto">
+            <NuxtLink to="/news-events" class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 bg-linear-to-b from-brand-gold to-brand-gold-dark">
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
                     <h3 class="text-lg md:text-xl font-bold text-white uppercase tracking-wide leading-tight">{{ t('home.quick.eventsNews') }}</h3>
                 </div>
@@ -54,18 +52,17 @@
             <!-- Button 3: Annual Kudumbayogam (Restricted) -->
              <div 
                 @click="handleRestrictedNavigation('/yogam')"
-                class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 cursor-pointer bg-white border border-slate-100 w-11/12 max-w-md md:w-auto mx-auto"
+                class="group relative h-32 md:h-40 rounded-xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-1 cursor-pointer bg-white border border-slate-100"
             >
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3">
                     <h3 class="text-lg md:text-xl font-bold text-slate-800 uppercase tracking-wide leading-tight group-hover:text-brand-gold transition-colors">{{ t('home.quick.annualLine1') }}<br>{{ t('home.quick.annualLine2') }}</h3>
                 </div>
             </div>
-
         </div>
     </div>
 
     <!-- News Section -->
-    <div class="bg-slate-50 py-16 px-4 md:px-12">
+    <div class="bg-slate-50 py-5 px-4 md:px-12">
         <div class="max-w-7xl mx-auto">
             <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
                 <div class="space-y-2">
@@ -198,7 +195,6 @@
         @close="isAddModalOpen = false"
         @refresh="refreshNews"
     ></AddPostModal>
-
     </div>
 </template>
 
