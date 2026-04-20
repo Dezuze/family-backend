@@ -63,7 +63,7 @@ def _normalize_user_relation_or_error(value):
 def _safe_create_base_relationship(from_member, to_member, relation_type):
     if relation_type not in BASE_RELATIONS:
         return
-    if from_member.id == to_member.id:
+    if getattr(from_member, 'id', None) == getattr(to_member, 'id', None):
         return
     try:
         obj, created = Relationship.objects.get_or_create(
@@ -136,7 +136,7 @@ class UserProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        member = FamilyMember.objects.filter(user_account=request.user).first()
+        member = FamilyMember.objects.filter(user_account=getattr(request, 'user', None)).first()
         if member:
             serializer = FamilyMemberSerializer(member, context={'request': request})
             return Response(serializer.data)
@@ -324,7 +324,8 @@ class UserProfileView(APIView):
         except Exception as e:
             import traceback
             traceback.print_exc() # Print to server logs for debugging
-            return Response({"error": str(e)}, status=500)
+            # Return a user-friendly generic message for unexpected server errors
+            return Response({"error": "An unexpected error occurred. Please contact the technical team for help."}, status=500)
 
 
 class FamilyTreeView(APIView):
@@ -978,7 +979,9 @@ class ManagedMembersView(APIView):
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            import traceback
+            traceback.print_exc()
+            return Response({"error": "An unexpected error occurred. Please contact the technical team for help."}, status=500)
 
 class ManagedMemberDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -1128,7 +1131,9 @@ class ManagedMemberDetailView(APIView):
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            import traceback
+            traceback.print_exc()
+            return Response({"error": "An unexpected error occurred. Please contact the technical team for help."}, status=500)
 
     def delete(self, request, pk):
         member = self.get_object(pk, request.user)

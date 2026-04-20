@@ -96,10 +96,12 @@
                   </div>
                 </div>
 
-                <!-- Action Footer -->
-                 <div class="flex items-center justify-between mt-auto pt-4 sm:pt-6 border-t border-slate-100/50">
-                   <span class="text-xs font-bold text-slate-500">{{ t('committee.labels.committeeMember') }}</span>
-                 </div>
+                <!-- Action Footer (removed Committee Member label) -->
+                <!--
+                <div class="flex items-center justify-between mt-auto pt-4 sm:pt-6 border-t border-slate-100/50">
+                  <span class="text-xs font-bold text-slate-500">{{ t('committee.labels.committeeMember') }}</span>
+                </div>
+                -->
 
                 <!-- Subtle Pattern Overlay for Officers -->
                 <div v-if="getPriority(m.role) <= 6" class="absolute -right-4 -bottom-4 opacity-[0.03] rotate-12 pointer-events-none">

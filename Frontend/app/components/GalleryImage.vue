@@ -18,9 +18,7 @@
       draggable="false"
     />
 
-    <div class="meta">
-      <span class="date">{{ formattedDate }}</span>
-    </div>
+    <!-- Removed committee member display from card bottom -->
   </div>
 </template>
 

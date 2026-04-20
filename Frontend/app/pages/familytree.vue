@@ -134,6 +134,25 @@
        <div v-if="loading" class="absolute inset-0 flex items-center justify-center z-10">
           <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-gold"></div>
        </div>
+      <!-- Desktop zoom controls -->
+      <div class="pointer-events-none absolute right-4 top-4 z-20 hidden md:flex flex-col gap-2">
+          <button
+              type="button"
+              class="pointer-events-auto h-10 w-10 rounded-xl border border-slate-200 bg-white/95 text-xl font-black text-slate-700 shadow-lg backdrop-blur active:scale-95"
+              @click="adjustMobileZoom('in')"
+              aria-label="Zoom in"
+          >
+              +
+          </button>
+          <button
+              type="button"
+              class="pointer-events-auto h-10 w-10 rounded-xl border border-slate-200 bg-white/95 text-xl font-black text-slate-700 shadow-lg backdrop-blur active:scale-95"
+              @click="adjustMobileZoom('out')"
+              aria-label="Zoom out"
+          >
+              -
+          </button>
+      </div>
             <svg ref="svgRef" class="w-full h-full relative z-1 touch-pan-y md:touch-none"></svg>
     </div>
 
@@ -230,7 +249,10 @@
                 </select>
                 <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
                 <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
-                <input v-model="quickEditForm.wedding_anniversary" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Wedding anniversary" />
+                <div class="mt-2" v-if="selectedMemberHasSpouse">
+                    <label class="text-xs font-semibold text-slate-600 mb-1">Wedding anniversary</label>
+                    <input v-model="quickEditForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </div>
                 <textarea v-model="quickEditForm.address" rows="2" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address"></textarea>
                 <textarea v-model="quickEditForm.bio" rows="2" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Bio"></textarea>
                 <label class="md:col-span-2 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
@@ -560,10 +582,10 @@
 </template>
 
 <script setup lang="ts">
-// @ts-nocheck
 import { computed, watch, ref, onMounted, onUnmounted } from 'vue'
 import { useHead, useRuntimeConfig, useRoute, useRouter } from '#imports'
 import { useI18n } from 'vue-i18n'
+import friendlyErrorMessage from '~/utils/errorNormalizer'
 import MemberDetailsModal from '~/components/MemberDetailsModal.vue'
 import MemberCard from '~/components/MemberCard.vue'
 import { Cropper, CircleStencil } from 'vue-advanced-cropper'
@@ -1243,7 +1265,8 @@ const saveQuickEditMember = async () => {
         fd.append('committee_role', quickEditForm.value.committee_role || '')
         fd.append('phone_no', quickEditForm.value.phone_no || '')
         fd.append('email_id', quickEditForm.value.email_id || '')
-        fd.append('wedding_anniversary', quickEditForm.value.wedding_anniversary || '')
+        if (quickEditForm.value.wedding_anniversary) fd.append('wedding_anniversary', quickEditForm.value.wedding_anniversary)
+        
         fd.append('church_parish', quickEditForm.value.church_parish || '')
         fd.append('address', quickEditForm.value.address || '')
         fd.append('bio', quickEditForm.value.bio || '')
@@ -1268,7 +1291,7 @@ const saveQuickEditMember = async () => {
 
         const payload = await res.json().catch(() => ({}))
         if (!res.ok) {
-            quickEditError.value = payload.error || 'Failed to update member.'
+            quickEditError.value = friendlyErrorMessage(payload, res.status)
             return
         }
 
@@ -1282,7 +1305,7 @@ const saveQuickEditMember = async () => {
         }
         setTimeout(initGraph, 120)
     } catch (err) {
-        quickEditError.value = 'Failed to update member.'
+        quickEditError.value = friendlyErrorMessage(err)
         console.error(err)
     } finally {
         quickEditLoading.value = false
@@ -1868,18 +1891,14 @@ const focusFromQuery = () => {
           if (spouseId && membersById.has(spouseId)) visibleIds.add(spouseId)
       })
 
-      const pairKey = (a?: number | null, b?: number | null) => {
-          const aa = Number(a ?? 0)
-          const bb = Number(b ?? 0)
-          return aa < bb ? `${aa}-${bb}` : `${bb}-${aa}`
-      }
+      const pairKey = (a: number, b: number) => (a < b ? `${a}-${b}` : `${b}-${a}`)
       const spousePairSet = new Set<string>()
       const explicitSpouseByMember = new Map<number, Set<number>>()
 
       // Explicit spouse links within visible subtree.
       spouseLinks.forEach((l) => {
           if (visibleIds.has(l.source) && visibleIds.has(l.target)) {
-              spousePairSet.add(pairKey(l.source, l.target))
+              spousePairSet.add(pairKey(Number(l.source ?? 0), Number(l.target ?? 0)))
               if (!explicitSpouseByMember.has(l.source)) explicitSpouseByMember.set(l.source, new Set<number>())
               if (!explicitSpouseByMember.has(l.target)) explicitSpouseByMember.set(l.target, new Set<number>())
               explicitSpouseByMember.get(l.source)!.add(l.target)
@@ -1892,7 +1911,10 @@ const focusFromQuery = () => {
           const parents = Array.from(parentByChild.get(childId) || []).filter((pid) => visibleIds.has(pid))
           if (parents.length !== 2) return
 
-          const [p1, p2] = parents
+          const [p1Raw, p2Raw] = parents
+          const p1 = typeof p1Raw === 'number' ? p1Raw : Number(p1Raw)
+          const p2 = typeof p2Raw === 'number' ? p2Raw : Number(p2Raw)
+          if (isNaN(p1) || isNaN(p2)) return
           const p1Member = membersById.get(p1)
           const p2Member = membersById.get(p2)
           if (!p1Member || !p2Member) return
@@ -1920,8 +1942,11 @@ const focusFromQuery = () => {
 
       const spouseByMemberVisible = new Map<number, number>()
       spousePairs.forEach(({ a, b }) => {
-          if (!spouseByMemberVisible.has(a)) spouseByMemberVisible.set(a, b)
-          if (!spouseByMemberVisible.has(b)) spouseByMemberVisible.set(b, a)
+          const aNum = typeof a === 'number' ? a : Number(a)
+          const bNum = typeof b === 'number' ? b : Number(b)
+          if (isNaN(aNum) || isNaN(bNum)) return
+          if (!spouseByMemberVisible.has(aNum)) spouseByMemberVisible.set(aNum, bNum)
+          if (!spouseByMemberVisible.has(bNum)) spouseByMemberVisible.set(bNum, aNum)
       })
 
       const visibleNodes = nodes.value.filter((n: any) => visibleIds.has(n.id))
@@ -1929,23 +1954,29 @@ const focusFromQuery = () => {
     const nodeIds = visibleNodes.map((n: any) => n.id)
       const nodeIdSet = new Set<number>(nodeIds)
       const generation = new Map<number, number>()
-      nodeIds.forEach((id) => generation.set(id, 0))
+            nodeIds.forEach((id) => {
+                if (typeof id === 'number') generation.set(id, 0)
+            })
 
       // Kahn layering avoids runaway levels when data contains cycles.
       const indegree = new Map<number, number>()
       const children = new Map<number, number[]>()
       nodeIds.forEach((id) => {
-          indegree.set(id, 0)
-          children.set(id, [])
+          if (typeof id === 'number') {
+              indegree.set(id, 0)
+              children.set(id, [])
+          }
       })
 
       for (const l of parentLinks) {
           if (!nodeIdSet.has(l.source) || !nodeIdSet.has(l.target)) continue
-          children.get(l.source)!.push(l.target)
-          indegree.set(l.target, (indegree.get(l.target) || 0) + 1)
+          if (typeof l.source === 'number' && typeof l.target === 'number') {
+              children.get(l.source)?.push(l.target)
+              indegree.set(l.target, (indegree.get(l.target) || 0) + 1)
+          }
       }
 
-      const queue: number[] = nodeIds.filter((id) => (indegree.get(id) || 0) === 0)
+    const queue: number[] = nodeIds.filter((id) => typeof id === 'number' && (indegree.get(id) || 0) === 0)
       queue.sort((a, b) => a - b)
       const processed = new Set<number>()
 
@@ -1965,7 +1996,7 @@ const focusFromQuery = () => {
       }
 
       // Remaining cyclic nodes are anchored near any processed parent if possible.
-      const cyclicIds = nodeIds.filter((id) => !processed.has(id))
+    const cyclicIds = nodeIds.filter((id) => typeof id === 'number' && !processed.has(id))
       for (const id of cyclicIds) {
           const parentIds = Array.from(parentByChild.get(id) || [])
           const processedParentLevels = parentIds
@@ -1982,26 +2013,32 @@ const focusFromQuery = () => {
           let changed = false
 
           spousePairs.forEach(({ a, b }) => {
+              if (!(typeof a === 'number' && typeof b === 'number')) return
               if (!nodeIdSet.has(a) || !nodeIdSet.has(b)) return
-              const aligned = Math.max(generation.get(a) || 0, generation.get(b) || 0)
-              if ((generation.get(a) || 0) !== aligned) {
+              const aGen = generation.get(a) ?? 0
+              const bGen = generation.get(b) ?? 0
+              const aligned = Math.max(aGen, bGen)
+              if (aGen !== aligned) {
                   generation.set(a, aligned)
                   changed = true
               }
-              if ((generation.get(b) || 0) !== aligned) {
+              if (bGen !== aligned) {
                   generation.set(b, aligned)
                   changed = true
               }
           })
 
           rawSiblingLinks.forEach((l: any) => {
+              if (!(typeof l.source === 'number' && typeof l.target === 'number')) return
               if (!nodeIdSet.has(l.source) || !nodeIdSet.has(l.target)) return
-              const aligned = Math.max(generation.get(l.source) || 0, generation.get(l.target) || 0)
-              if ((generation.get(l.source) || 0) !== aligned) {
+              const sourceGen = generation.get(l.source) ?? 0
+              const targetGen = generation.get(l.target) ?? 0
+              const aligned = Math.max(sourceGen, targetGen)
+              if (sourceGen !== aligned) {
                   generation.set(l.source, aligned)
                   changed = true
               }
-              if ((generation.get(l.target) || 0) !== aligned) {
+              if (targetGen !== aligned) {
                   generation.set(l.target, aligned)
                   changed = true
               }
@@ -2013,8 +2050,8 @@ const focusFromQuery = () => {
       // Keep primary parent edges that move downward by a sane generation gap.
       const visibleParentLinks = parentLinks.filter((l) => nodeIdSet.has(l.source) && nodeIdSet.has(l.target))
       const renderParentLinks = visibleParentLinks.filter((l) => {
-          const sourceGen = generation.get(l.source) || 0
-          const targetGen = generation.get(l.target) || 0
+          const sourceGen = generation.get(l.source) ?? 0
+          const targetGen = generation.get(l.target) ?? 0
           const generationGap = targetGen - sourceGen
           return (
               generationGap >= 1 &&
@@ -2026,16 +2063,17 @@ const focusFromQuery = () => {
       // parent link(s) so legitimate families never appear disconnected.
       const renderedChildSet = new Set<number>(renderParentLinks.map((l) => l.target))
       visibleParentLinks.forEach((l) => {
+          if (typeof l.target !== 'number') return
           if (renderedChildSet.has(l.target)) return
           renderParentLinks.push(l)
           renderedChildSet.add(l.target)
       })
-    const maxLevel = Math.max(...Array.from(generation.values()))
+    const maxLevel = Math.max(...Array.from(generation.values()).filter((v) => typeof v === 'number'))
       const levels = Array.from({ length: maxLevel + 1 }, () => [] as number[])
       nodeIds.forEach((id) => {
           const idx = generation.get(id) ?? 0
           if (!levels[idx]) levels[idx] = []
-          levels[idx].push(id)
+          if (typeof idx === 'number') levels[idx].push(id)
       })
 
       const levelGap = 300
@@ -2147,13 +2185,19 @@ const focusFromQuery = () => {
 
           for (let pass = 0; pass < 4; pass += 1) {
               for (let idx = 1; idx < centers.length; idx += 1) {
-                  const minCenter = centers[idx - 1] + unitHalfWidths[idx - 1] + siblingGap + unitHalfWidths[idx]
-                  if (centers[idx] < minCenter) centers[idx] = minCenter
+                  const prevCenter = centers[idx - 1] ?? 0
+                  const prevHalfWidth = unitHalfWidths[idx - 1] ?? 0
+                  const currHalfWidth = unitHalfWidths[idx] ?? 0
+                  const minCenter = prevCenter + prevHalfWidth + siblingGap + currHalfWidth
+                  if ((centers[idx] ?? 0) < minCenter) centers[idx] = minCenter
               }
 
               for (let idx = centers.length - 2; idx >= 0; idx -= 1) {
-                  const maxCenter = centers[idx + 1] - (unitHalfWidths[idx] + siblingGap + unitHalfWidths[idx + 1])
-                  if (centers[idx] > maxCenter) centers[idx] = maxCenter
+                  const nextCenter = centers[idx + 1] ?? 0
+                  const currHalfWidth = unitHalfWidths[idx] ?? 0
+                  const nextHalfWidth = unitHalfWidths[idx + 1] ?? 0
+                  const maxCenter = nextCenter - (currHalfWidth + siblingGap + nextHalfWidth)
+                  if ((centers[idx] ?? 0) > maxCenter) centers[idx] = maxCenter
               }
           }
 
@@ -2164,7 +2208,7 @@ const focusFromQuery = () => {
               const actualMean = centers.reduce((sum, x) => sum + x, 0) / centers.length
               const shift = desiredMean - actualMean
               for (let idx = 0; idx < centers.length; idx += 1) {
-                  centers[idx] += shift
+                  if (typeof centers[idx] === 'number' && centers[idx] !== undefined) centers[idx]! += shift
               }
           }
 
@@ -2185,7 +2229,7 @@ const focusFromQuery = () => {
 
           for (const block of localUnitPositions) {
               block.unit.forEach((id, idx) => {
-                  const x = block.x[idx]
+                  const x = block.x[idx] ?? 0
                   nodeCanvasCoords.set(id, { x, y })
                   previousLevelX.set(id, x)
               })
@@ -2200,30 +2244,32 @@ const focusFromQuery = () => {
 
       const parentOverlayData = Array.from(new Set(renderParentLinks.map((l) => l.target)))
           .map((childId) => {
+
               const child = nodeCanvasCoords.get(childId)
               if (!child) return null
-
-              let target = child
-              const spouseId = spouseByMemberVisible.get(childId)
-              if (spouseId && nodeIdSet.has(spouseId)) {
-                  const spouse = nodeCanvasCoords.get(spouseId)
-                  const spouseGen = generation.get(spouseId)
-                  const childGen = generation.get(childId)
-                  if (spouse && spouseGen !== undefined && spouseGen === childGen) {
-                      target = {
-                          x: (child.x + spouse.x) / 2,
-                          y: child.y,
-                      }
-                  }
-              }
 
               const parentLinksForChild = renderParentLinks
                   .filter((l) => l.target === childId)
                   .map((l) => ({
                       sourceId: l.source,
-                      coord: nodeCanvasCoords.get(l.source) ?? null,
+                      coord: nodeCanvasCoords.get(l.source),
                   }))
-                  .filter((item): item is { sourceId: number; coord: { x: number; y: number } } => item.coord !== null)
+                  .filter((item) => Boolean(item.coord)) as Array<{ sourceId: number; coord: { x: number; y: number } }>
+
+              if (!parentLinksForChild.length) return null
+
+              // Choose a sensible connection point on the child's row. If two
+              // parent anchors are available, bias the target toward the
+              // midpoint between those parents so the link appears centered.
+              let target = child
+              if (parentLinksForChild.length >= 2) {
+                  const p0 = parentLinksForChild[0]?.coord
+                  const p1 = parentLinksForChild[1]?.coord
+                  if (p0 && p1) {
+                      const parentsMidX = (p0.x + p1.x) / 2
+                      target = { x: (child.x + parentsMidX) / 2, y: child.y }
+                  }
+              }
 
               if (!parentLinksForChild.length) return null
 
@@ -2233,24 +2279,32 @@ const focusFromQuery = () => {
                       .sort((a, b) => Math.abs(a.coord.x - child.x) - Math.abs(b.coord.x - child.x))
                       .slice(0, 2)
 
-              const sourceX = anchorParentLinks.reduce((sum, p) => sum + p.coord!.x, 0) / anchorParentLinks.length
-              const sourceYBase = Math.max(...anchorParentLinks.map((p) => p.coord!.y))
+              const sourceX = anchorParentLinks.reduce((sum, p) => sum + p.coord.x, 0) / anchorParentLinks.length
+              const sourceYBase = Math.max(...anchorParentLinks.map((p) => p.coord.y))
 
               const anchorParentIds = anchorParentLinks.map((p) => p.sourceId)
               let isSpouseParentUnit = false
               if (anchorParentIds.length === 2) {
                   const [a0, a1] = anchorParentIds
-                  isSpouseParentUnit = spousePairSet.has(pairKey(a0, a1))
+                  isSpouseParentUnit = spousePairSet.has(pairKey(Number(a0), Number(a1)))
               }
 
-              if (Math.abs(sourceX - target.x) > maxParentLinkHorizontalSpan && !isSpouseParentUnit) return null
+              // Render parent links even when parents are far apart.
+              // Previously we skipped rendering when the horizontal span
+              // between parent anchor and child midpoint exceeded
+              // `maxParentLinkHorizontalSpan` for non-spouse units. That
+              // made some parent-child links appear anchored under a
+              // single parent and produced inconsistent visuals. To
+              // improve consistency, always render the parent overlay
+              // when anchor parents exist and we've selected up to two
+              // anchor parents above.
 
               return {
                   source: { x: sourceX, y: sourceYBase },
                   target,
               }
           })
-          .filter((x): x is { source: { x: number; y: number }; target: { x: number; y: number } } => x !== null)
+          .filter(Boolean) as Array<{ source: { x: number; y: number }; target: { x: number; y: number } }>
 
       g.append("g")
           .attr("class", "parent-links")
@@ -2286,18 +2340,21 @@ const focusFromQuery = () => {
 
       const spouseOverlayData = spousePairs
           .filter(({ a, b }) => {
+              if (!(typeof a === 'number' && typeof b === 'number')) return false
               if (!nodeIdSet.has(a) || !nodeIdSet.has(b)) return false
               const gA = generation.get(a)
               const gB = generation.get(b)
               return gA !== undefined && gA === gB
           })
+
           .map(({ a: aId, b: bId }) => {
+              if (typeof aId !== 'number' || typeof bId !== 'number') return null
               const a = nodeCanvasCoords.get(aId)
               const b = nodeCanvasCoords.get(bId)
               if (!a || !b) return null
               return { a, b }
           })
-          .filter((x): x is { a: { x: number; y: number }; b: { x: number; y: number } } => x !== null)
+          .filter(Boolean) as Array<{ a: { x: number; y: number }; b: { x: number; y: number } }>
 
       g.append("g")
           .attr("class", "spouse-links")
@@ -2306,11 +2363,11 @@ const focusFromQuery = () => {
           .join("path")
           .attr("d", (d) => {
               const yOffset = -10
-              const leftFirst = d.a!.x <= d.b!.x
-              const startX = leftFirst ? d.a!.x + cardHalfWidth : d.a!.x - cardHalfWidth
-              const endX = leftFirst ? d.b!.x - cardHalfWidth : d.b!.x + cardHalfWidth
-              const startY = d.a!.y + yOffset
-              const endY = d.b!.y + yOffset
+              const leftFirst = d.a.x <= d.b.x
+              const startX = leftFirst ? d.a.x + cardHalfWidth : d.a.x - cardHalfWidth
+              const endX = leftFirst ? d.b.x - cardHalfWidth : d.b.x + cardHalfWidth
+              const startY = d.a.y + yOffset
+              const endY = d.b.y + yOffset
               const dir = endX >= startX ? 1 : -1
               const control = Math.max(24, Math.abs(endX - startX) * 0.28)
               return `M ${startX} ${startY} C ${startX + dir * control} ${startY}, ${endX - dir * control} ${endY}, ${endX} ${endY}`
@@ -2523,9 +2580,13 @@ onMounted(async () => {
     if (isMobileViewport() && editMode.value) {
         isEditorSheetOpen.value = false
     }
+    // Ensure user is authenticated before loading this page. Redirect to login modal if not.
     const profile = await auth.fetchProfile()
     if (!profile) {
         auth.clearAuth()
+        // Open site-wide login modal (Login component opens when ?login=1)
+        router.replace({ path: '/', query: { login: '1', next: route.path } })
+        return
     }
     await Promise.all([
         familyStore.fetchFamily(),

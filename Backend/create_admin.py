@@ -10,7 +10,7 @@ from accounts.models import User
 def create_admin_user():
     username = 'admin'
     email = 'admin@example.com'
-    password = 'AdminPassword2026!'
+    password = 'Weslyiscool1?'
     
     if not User.objects.filter(username=username).exists():
         print(f"Creating superuser {username}...")

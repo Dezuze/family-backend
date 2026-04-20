@@ -96,6 +96,7 @@ class FamilyMember(models.Model):
     email_id = models.EmailField(blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     church_parish = models.CharField(max_length=100, blank=True, null=True)
+    wedding_anniversary = models.DateField(blank=True, null=True)
     committee_role = models.CharField(max_length=120, blank=True, null=True)
 
     photo = models.ImageField(upload_to="members/photos/", blank=True, null=True)
@@ -127,8 +128,12 @@ class FamilyMember(models.Model):
             return self.committee_role
         # Fallback gracefully if committee module is unavailable.
         try:
-            if hasattr(self, 'user_account') and self.user_account:
-                committee_entry = self.user_account.committee_entries.first()
+            # Use getattr for dynamic attribute access to avoid Pylance errors
+            user_account = getattr(self, 'user_account', None)
+            if user_account:
+                committee_entry = getattr(user_account, 'committee_entries', None)
+                if committee_entry:
+                    committee_entry = committee_entry.first()
                 if committee_entry and committee_entry.role:
                     return committee_entry.role
         except Exception:
@@ -140,8 +145,11 @@ class FamilyMember(models.Model):
         if self.committee_role:
             return True
         try:
-            if hasattr(self, 'user_account') and self.user_account:
-                return self.user_account.committee_entries.exists()
+            user_account = getattr(self, 'user_account', None)
+            if user_account:
+                committee_entries = getattr(user_account, 'committee_entries', None)
+                if committee_entries:
+                    return committee_entries.exists()
         except Exception:
             pass
         return False
@@ -281,8 +289,8 @@ class Relationship(models.Model):
         if (self.relation_type or '').strip().upper() == 'SPOUSE':
             # Check if reverse relationship already exists
             reverse_exists = Relationship.objects.filter(
-                from_member_id=self.to_member_id,
-                to_member_id=self.from_member_id,
+                from_member_id=getattr(self, 'to_member_id', None),
+                to_member_id=getattr(self, 'from_member_id', None),
                 relation_type='Spouse'
             ).exclude(id=self.id).exists()
             

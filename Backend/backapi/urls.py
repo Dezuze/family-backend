@@ -2,10 +2,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.shortcuts import redirect
 from accounts.views import CsrfInitView
 from backapi.views import health_check
 
 urlpatterns = [
+    # Redirect the site root to the admin dashboard
+    path('', lambda request: redirect('admin:index')),
     path('health/', health_check),
     path('admin/', admin.site.urls),
     # families API mounted at /api/families/

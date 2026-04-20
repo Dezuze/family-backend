@@ -367,6 +367,11 @@ UNFOLD = {
                         "link": reverse_lazy("admin:families_familymedia_changelist"),
                     },
                     {
+                        "title": "Committee (Records)",
+                        "icon": "people",
+                        "link": reverse_lazy("admin:families_familycommitteemember_changelist"),
+                    },
+                    {
                         "title": "Committee",
                         "icon": "work",
                         "link": reverse_lazy("admin:profiles_committee_changelist"),

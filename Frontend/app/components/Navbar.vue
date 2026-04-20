@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Login from '~/components/Login.vue'
 import { useAuthStore } from '~/stores/auth'
+// import { useFamilyStore } from '~/stores/family' (removed, no longer used)
 import { useLanguage } from '~/composables/useLanguage'
 
 const mobileOpen = ref(false)
@@ -57,7 +58,6 @@ const links = [
 
 const restrictedPaths = new Set(['/gallery', '/familytree', '/donate'])
 const visibleLinks = computed(() => links.filter((l) => !restrictedPaths.has(l.to) || auth.isAuthenticated))
-const managedMembers = computed(() => (auth.user as any)?.managed_members || [])
 
 // Mobile menu actions
 const mobileLogin = () => {
@@ -120,8 +120,8 @@ const handleScroll = () => {
 }
 
 onMounted(() => {
-    window.addEventListener('scroll', handleScroll)
-    lastScrollY.value = window.scrollY
+  window.addEventListener('scroll', handleScroll)
+  lastScrollY.value = window.scrollY
 })
 
 onUnmounted(() => {
@@ -175,6 +175,8 @@ onUnmounted(() => {
         <div class="flex -z-20 ml-150 items-center gap-3">
           <Login ref="loginRef" />
         </div>
+
+        <!-- Remove Managed Members section from desktop dropdown -->
       </div>
 
       <!-- Mobile Top Bar -->
@@ -291,31 +293,6 @@ onUnmounted(() => {
             Edit Profile
           </button>
 
-          <!-- Managed Members (compact, scrollable) -->
-          <div v-if="managedMembers.length > 0" class="mt-1">
-            <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center">
-              <span>Managed Members</span>
-              <span class="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full text-[9px]">{{ managedMembers.length }}</span>
-            </div>
-            <div class="max-h-30 overflow-y-auto">
-              <button 
-                v-for="m in managedMembers" 
-                :key="m.id"
-                @click="mobileNav(`/familytree?view=visual&edit=1&focus=${m.id}`)"
-                class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2.5"
-              >
-                <div class="w-7 h-7 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
-                  <img v-if="m.profile_pic" :src="resolvePhoto(m.profile_pic)" :alt="m.name || 'Member photo'" class="w-full h-full object-cover" />
-                  <div v-else class="w-full h-full flex items-center justify-center text-slate-400 font-bold text-[10px]">{{ m.name?.charAt(0) }}</div>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="font-semibold text-slate-700 text-xs truncate">{{ m.name }}</div>
-                    <div class="text-xs text-slate-400">{{ m.relation }}</div>
-                </div>
-                <svg class="w-3 h-3 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-              </button>
-            </div>
-          </div>
 
           <!-- Logout -->
           <div class="mt-1 pt-2 border-t border-slate-100">
@@ -340,9 +317,8 @@ onUnmounted(() => {
   </nav>
 
   <!-- Login component for its modal (teleported) — ref used for mobile login trigger -->
-  <div class="hidden">
-    <Login ref="loginRef" />
-  </div>
+  <!-- Login component for its modal (teleported) — ref used for mobile login trigger -->
+  <Login ref="loginRef" />
 </template>
 
 <style scoped>

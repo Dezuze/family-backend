@@ -1,9 +1,28 @@
+
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRuntimeConfig, useHead, useRoute } from '#imports'
 import { useI18n } from 'vue-i18n'
 import GalleryImage from '~/components/GalleryImage.vue'
 import GalleryLightbox from '~/components/GalleryLightbox.vue'
+
+// Utility to get CSRF token from cookie or API
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+  return null
+}
+
+async function getCsrfToken(): Promise<string | null> {
+  let token = getCookie('csrftoken')
+  if (token) return token
+  try {
+    const res = await fetch(`${apiBase}/api/csrf/`, { credentials: 'include' })
+    const data = await res.json().catch(() => ({}))
+    return data.csrfToken || null
+  } catch { return null }
+}
 
 interface GalleryItem {
   id: number
@@ -98,9 +117,11 @@ const handleUpload = async () => {
       formData.append('date', uploadForm.value.date)
     }
 
+    const csrfToken = await getCsrfToken()
     const res = await fetch(apiBase + '/api/profiles/gallery/', {
       method: 'POST',
       credentials: 'include',
+      headers: csrfToken ? { 'X-CSRFToken': csrfToken } : undefined,
       body: formData
     })
 
