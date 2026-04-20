@@ -3,7 +3,7 @@
         <!-- Hero Section (no margin-top, navbar overlays) -->
         <div class="relative w-full h-[100svh] md:h-[110vh] overflow-hidden">
             <!-- Background Image -->
-            <img src="/images/family.jpg" :alt="t('home.hero.imageAlt')" class="absolute  left-1/2 -translate-x-1/2 w-screen h-full object-cover" />
+            <img src="/images/family.jpg" :alt="t('home.hero.imageAlt')" class="absolute w-screen h-full object-cover" />
             <div class="absolute inset-0 bg-linear-to-b from-black/30 via-black/60 to-slate-50"></div>
 
             <!-- Hero Content -->

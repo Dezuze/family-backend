@@ -132,7 +132,7 @@ onUnmounted(() => {
 <template>
   <!-- NAVBAR -->
   <nav 
-    class="fixed top-0 left-0 right-0 w-full lg:w-200 z-50 bg-transparent transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+    class="fixed top-0 left-0 w-full lg:w-200 z-50 bg-transparent transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
     :class="[ showNavbar ? 'translate-y-0' : '-translate-y-full' ]"
   >
       <!-- Desktop Navbar -->
@@ -315,10 +315,6 @@ onUnmounted(() => {
       </div>
     </Transition>
   </nav>
-
-  <!-- Login component for its modal (teleported) — ref used for mobile login trigger -->
-  <!-- Login component for its modal (teleported) — ref used for mobile login trigger -->
-  <Login ref="loginRef" />
 </template>
 
 <style scoped>
