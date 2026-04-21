@@ -21,7 +21,7 @@ class FamilyModelTests(TestCase):
         self.family = Family.objects.create(sl_no="1", branch="North", member_no="F-MODEL-001")
 
     def test_family_str(self):
-        self.assertEqual(str(self.family), "F-MODEL-001")
+        self.assertEqual(str(self.family), "North (F-MODEL-001)")
 
     def test_create_member(self):
         m = FamilyMember.objects.create(
