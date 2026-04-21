@@ -9,3 +9,5 @@ django-cors-headers
 python-dotenv
 gunicorn
 django-unfold
+easy-thumbnails
+django-image-cropping

@@ -2,7 +2,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 from .models import Gallery, CommunityRole
-from image_cropping import ImageCroppingMixin
 
 @admin.register(Gallery)
 class GalleryAdmin(ModelAdmin):
