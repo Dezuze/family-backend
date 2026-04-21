@@ -20,7 +20,6 @@ from .models import FamilyMember, FamilyMedia, Family, Relationship, FamilyCommi
 from .serializers import (
     FamilyMemberSerializer,
     FamilyTreeSerializer,
-    FamilyMediaSerializer,
     FamilyCommitteeMemberSerializer,
 )
 from .permissions import IsGuardianOrSelf
@@ -373,18 +372,6 @@ class FamilyTreeView(APIView):
         )
 
 
-class FamilyMediaList(generics.ListCreateAPIView):
-    queryset = FamilyMedia.objects.all()
-    serializer_class = FamilyMediaSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save()
-
-class FamilyMediaDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = FamilyMedia.objects.all()
-    serializer_class = FamilyMediaSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
 
 class FamilyCommitteeMemberListCreateView(generics.ListCreateAPIView):
@@ -987,24 +974,21 @@ class ManagedMemberDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self, pk, user):
-        member = get_object_or_404(FamilyMember, pk=pk, created_by=user)
-        # Enforce guardian permission: can only edit if not independent
-        if member.is_independent:
+        member = get_object_or_404(FamilyMember, pk=pk)
+        if not _can_manage_member(user, member):
             return None
         return member
 
     def get(self, request, pk):
-        member = get_object_or_404(FamilyMember, pk=pk, created_by=request.user)
+        member = get_object_or_404(FamilyMember, pk=pk)
+        if not _can_manage_member(request.user, member):
+            return Response({"error": "You do not have permission to view this member."}, status=403)
         return Response(FamilyMemberSerializer(member, context={'request': request}).data)
 
     def put(self, request, pk):
         member = self.get_object(pk, request.user)
         if member is None:
-            return Response({"error": "This profile is independent and cannot be edited by the guardian."}, status=403)
-        # Prevent editing if the member has their own account now?
-        # The user said "if there isnt an account for them".
-        if hasattr(member, 'user_account') and member.user_account:
-             return Response({"error": "Member has their own account and cannot be managed by others."}, status=403)
+            return Response({"error": "You do not have permission to edit this member."}, status=403)
 
         try:
             data = request.data
@@ -1138,8 +1122,8 @@ class ManagedMemberDetailView(APIView):
     def delete(self, request, pk):
         member = self.get_object(pk, request.user)
         if member is None:
-            return Response({"error": "This profile is independent and cannot be deleted by the guardian."}, status=403)
-        if hasattr(member, 'user_account') and member.user_account:
-             return Response({"error": "Member has their own account and cannot be deleted by others."}, status=403)
+            return Response({"error": "You do not have permission to delete this member."}, status=403)
+        if _member_has_account(member) and member.user_account != request.user:
+            return Response({"error": "This member has a user account and cannot be deleted."}, status=403)
         member.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

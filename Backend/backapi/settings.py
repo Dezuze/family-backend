@@ -16,9 +16,13 @@ try:
 except ImportError:
     pass
 
+
 # Security: Trust the 'X-Forwarded-Proto' header for determining SSL (Traefik handles this)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
+
+# Import easy-thumbnails settings for django-image-cropping
+from .thumbnail_settings import *
 
 # Quick development settings - replace for production
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-key-change-in-prod')
@@ -72,6 +76,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'easy_thumbnails',
+    'image_cropping',
     'accounts',
     'families',
     'news',
@@ -300,12 +306,12 @@ UNFOLD = {
                 "items": [
                     {
                         "title": "Users",
-                        "icon": "manage_accounts", 
+                        "icon": "manage_accounts",
                         "link": reverse_lazy("admin:accounts_user_changelist"),
                     },
                     {
                         "title": "Invite Tokens",
-                        "icon": "vpn_key", 
+                        "icon": "vpn_key",
                         "link": reverse_lazy("admin:accounts_invitetoken_changelist"),
                     },
                 ],
@@ -318,11 +324,6 @@ UNFOLD = {
                         "title": "Families",
                         "icon": "family_restroom",
                         "link": reverse_lazy("admin:families_family_changelist"),
-                    },
-                    {
-                        "title": "Heads of Family",
-                        "icon": "supervisor_account",
-                        "link": reverse_lazy("admin:families_familyhead_changelist"),
                     },
                     {
                         "title": "Members",
@@ -362,19 +363,9 @@ UNFOLD = {
                         "link": reverse_lazy("admin:profiles_gallery_changelist"),
                     },
                     {
-                        "title": "Family Media",
-                        "icon": "collections",
-                        "link": reverse_lazy("admin:families_familymedia_changelist"),
-                    },
-                    {
                         "title": "Committee (Records)",
                         "icon": "people",
                         "link": reverse_lazy("admin:families_familycommitteemember_changelist"),
-                    },
-                    {
-                        "title": "Committee",
-                        "icon": "work",
-                        "link": reverse_lazy("admin:profiles_committee_changelist"),
                     },
                 ],
             },

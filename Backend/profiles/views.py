@@ -1,8 +1,8 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from .models import Gallery, Committee, CommunityRole
-from .serializers import GallerySerializer, CommitteeSerializer, CommunityRoleSerializer
+from .models import Gallery, CommunityRole
+from .serializers import GallerySerializer, CommunityRoleSerializer
 from rest_framework.views import APIView
 
 
@@ -44,14 +44,6 @@ class GalleryListCreateView(ListCreateAPIView):
 	permission_classes = [AllowAny]
 
 
-class CommitteeListCreateView(ListCreateAPIView):
-	queryset = Committee.objects.all().order_by('-created_at')
-	serializer_class = CommitteeSerializer
-
-	def get_permissions(self):
-		if self.request.method == 'GET':
-			return [AllowAny()]
-		return [IsAuthenticated()]
 
 
 class CommunityRoleListCreateView(ListCreateAPIView):

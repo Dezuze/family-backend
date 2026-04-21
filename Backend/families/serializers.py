@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import FamilyMember, Relationship, FamilyMedia, FamilyCommitteeMember
+from .models import FamilyMember, Relationship, FamilyCommitteeMember
 
 class RelationshipSerializer(serializers.ModelSerializer):
     to_member_name = serializers.CharField(source='to_member.name', read_only=True)
@@ -63,10 +63,6 @@ class FamilyTreeSerializer(serializers.ModelSerializer):
         fields = ['id', 'member_id', 'name', 'name_ml', 'role', 'is_committee', 'photo', 'parents', 'children']
         depth = 1 
 
-class FamilyMediaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FamilyMedia
-        fields = '__all__'
 
 
 class FamilyCommitteeMemberSerializer(serializers.ModelSerializer):

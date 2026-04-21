@@ -2,37 +2,21 @@ from django.db import models
 from django.conf import settings
 
 
+# Restored Family model
 class Family(models.Model):
-    sl_no = models.CharField(max_length=20)
+    sl_no = models.CharField(max_length=20, unique=True)
     branch = models.CharField(max_length=100)
-
-    member_no = models.CharField(max_length=50, unique=True)
-
+    member_no = models.CharField(max_length=20, unique=True)
+    address = models.TextField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.member_no
+        return f"{self.branch} ({self.member_no})"
 
-
-class FamilyHead(models.Model):
-    family = models.OneToOneField(Family, on_delete=models.CASCADE, related_name="head")
-
-    # optional link to a registered user
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
-
-    name = models.CharField(max_length=100)
-    nickname = models.CharField(max_length=50, blank=True, null=True)
-
-    age = models.PositiveIntegerField()
-    gender = models.CharField(max_length=1, choices=[("M", "Male"), ("F", "Female"), ("O", "Other")])
-
-    address = models.TextField()
-    phone = models.CharField(max_length=20)
-    email = models.EmailField()
-
-    church = models.CharField(max_length=100)
-    education = models.CharField(max_length=100)
-    occupation = models.CharField(max_length=100)
 
 
 class FamilyMember(models.Model):
@@ -272,6 +256,7 @@ class Relationship(models.Model):
         'Brother-in-law': 'M', 'Sister-in-law': 'F',
     }
 
+    id = models.AutoField(primary_key=True)
     from_member = models.ForeignKey(FamilyMember, on_delete=models.CASCADE, related_name='relationships_from')
     to_member = models.ForeignKey(FamilyMember, on_delete=models.CASCADE, related_name='relationships_to')
     # Free text to support custom links in onboarding while preserving known presets.

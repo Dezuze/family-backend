@@ -243,10 +243,6 @@
                 <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
                 <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
                 <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
-                <select v-model="quickEditForm.committee_role" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold">
-                    <option value="">Community role (none)</option>
-                    <option v-for="role in communityRoles" :key="`quick-role-${role.id}`" :value="role.name">{{ role.name }}</option>
-                </select>
                 <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
                 <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
                 <div class="mt-2" v-if="selectedMemberHasSpouse">
@@ -401,10 +397,6 @@
                     </select>
                     <input v-model="addRelativeForm.occupation" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.occupation')" />
                     <input v-model="addRelativeForm.education" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.education')" />
-                    <select v-model="addRelativeForm.committee_role" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
-                        <option value="">Community role (none)</option>
-                        <option v-for="role in communityRoles" :key="`add-role-${role.id}`" :value="role.name">{{ role.name }}</option>
-                    </select>
                     <input v-model="addRelativeForm.phone_no" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.phoneNumber')" />
                     <input v-model="addRelativeForm.email_id" type="email" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.email')" />
                     <input v-model="addRelativeForm.church_parish" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.parishChurch')" />
@@ -2258,18 +2250,9 @@ const focusFromQuery = () => {
 
               if (!parentLinksForChild.length) return null
 
-              // Choose a sensible connection point on the child's row. If two
-              // parent anchors are available, bias the target toward the
-              // midpoint between those parents so the link appears centered.
-              let target = child
-              if (parentLinksForChild.length >= 2) {
-                  const p0 = parentLinksForChild[0]?.coord
-                  const p1 = parentLinksForChild[1]?.coord
-                  if (p0 && p1) {
-                      const parentsMidX = (p0.x + p1.x) / 2
-                      target = { x: (child.x + parentsMidX) / 2, y: child.y }
-                  }
-              }
+              // Always target the child's actual card position so the
+              // link drops straight down to the card center.
+              const target = child
 
               if (!parentLinksForChild.length) return null
 

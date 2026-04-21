@@ -8,32 +8,6 @@ class FamilyAdmin(ModelAdmin):
     list_display = ('member_no', 'sl_no', 'branch', 'created_at')
 
 
-@admin.register(models.FamilyHead)
-class FamilyHeadAdmin(ModelAdmin):
-    list_display = ('name', 'family', 'phone', 'email')
-    list_filter = ('gender', 'church')
-    search_fields = ('name', 'email', 'phone')
-    
-    tabs = [
-        ("General", ["general_tab"]),
-        ("Contact", ["contact_tab"]),
-        ("Background", ["background_tab"]),
-    ]
-
-    fieldsets = (
-        ("Core Details", {
-            "classes": ["unfold-tab", "unfold-general_tab"],
-            "fields": (("name", "nickname"), ("age", "gender"), "family", "user")
-        }),
-        ("Contact Information", {
-            "classes": ["unfold-tab", "unfold-contact_tab"],
-            "fields": ("address", "phone", "email")
-        }),
-        ("Professional Background", {
-            "classes": ["unfold-tab", "unfold-background_tab"],
-            "fields": ("church", "education", "occupation")
-        }),
-    )
 
 
 @admin.register(models.FamilyMember)
@@ -51,7 +25,7 @@ class FamilyMemberAdmin(ModelAdmin):
     fieldsets = (
         ("Basic Information", {
             "classes": ["unfold-tab", "unfold-info_tab"],
-            "fields": (("name", "relation"), ("age", "date_of_birth"), "blood_group", "family")
+            "fields": (("name", "relation"), ("age", "date_of_birth"), "blood_group", "family", "committee_role")
         }),
         ("Career & Studies", {
             "classes": ["unfold-tab", "unfold-work_tab"],
@@ -63,10 +37,17 @@ class FamilyMemberAdmin(ModelAdmin):
         }),
     )
 
-@admin.register(models.FamilyMedia)
-class FamilyMediaAdmin(ModelAdmin):
-    list_display = ('family', 'category', 'image')
-    list_filter = ('category', 'family')
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        from profiles.models import CommunityRole
+        if db_field.name == "committee_role":
+            # Only show active roles
+            roles = CommunityRole.objects.filter(is_active=True).order_by('priority', 'name')
+            choices = [(role.name, role.name) for role in roles]
+            from django.forms import Select
+            kwargs["widget"] = Select(choices=[("", "---------")] + choices)
+            kwargs["required"] = False
+        return super().formfield_for_dbfield(db_field, **kwargs)
+
 
 @admin.register(models.DeceasedMember)
 class DeceasedMemberAdmin(ModelAdmin):
