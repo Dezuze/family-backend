@@ -2068,7 +2068,7 @@ const focusFromQuery = () => {
           if (typeof idx === 'number') levels[idx].push(id)
       })
 
-                        const levelGap = 280
+                        const levelGap = 360
                 const siblingGap = 240
     const spouseGap = 186
             const topOffset = 120
