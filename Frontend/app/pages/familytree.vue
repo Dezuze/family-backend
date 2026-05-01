@@ -2068,10 +2068,10 @@ const focusFromQuery = () => {
           if (typeof idx === 'number') levels[idx].push(id)
       })
 
-      const levelGap = 300
-    const siblingGap = 236
+                        const levelGap = 280
+                const siblingGap = 240
     const spouseGap = 186
-      const topOffset = 100
+            const topOffset = 120
       const nodeCanvasCoords = new Map<number, { x: number; y: number }>()
       const previousLevelX = new Map<number, number>()
 
@@ -2138,36 +2138,19 @@ const focusFromQuery = () => {
               const desiredCenter = anchorXs.length
                   ? anchorXs.reduce((sum, x) => sum + x, 0) / anchorXs.length
                   : fallbackStartX + idx * siblingGap
-              const parentSignature = anchorParents.length
-                  ? [...anchorParents].sort((a, b) => a - b).join('|')
-                  : `root-${idx}`
 
               return {
                   unit,
                   desiredCenter,
-                  parentSignature,
                   tieBreaker: Number(unit[0] ?? 0),
+                  anchorParents,
               }
           })
 
-          const groupedMeta = new Map<string, Array<{ unit: number[]; desiredCenter: number; parentSignature: string; tieBreaker: number }>>()
-          unitMeta.forEach((meta) => {
-              if (!groupedMeta.has(meta.parentSignature)) groupedMeta.set(meta.parentSignature, [])
-              groupedMeta.get(meta.parentSignature)!.push(meta)
+          const orderedMeta = [...unitMeta].sort((a, b) => {
+              if (a.desiredCenter !== b.desiredCenter) return a.desiredCenter - b.desiredCenter
+              return a.tieBreaker - b.tieBreaker
           })
-
-          const orderedMeta = Array.from(groupedMeta.entries())
-              .map(([signature, metas]) => {
-                  const groupCenter = metas.reduce((sum, m) => sum + m.desiredCenter, 0) / metas.length
-                  return { signature, metas, groupCenter }
-              })
-              .sort((a, b) => a.groupCenter - b.groupCenter)
-              .flatMap((group) =>
-                  group.metas.sort((a, b) => {
-                      if (a.desiredCenter !== b.desiredCenter) return a.desiredCenter - b.desiredCenter
-                      return a.tieBreaker - b.tieBreaker
-                  })
-              )
 
           const orderedUnits = orderedMeta.map((meta) => meta.unit ?? []) as number[][]
           const desiredCenters = orderedMeta.map((meta) => meta.desiredCenter)
@@ -2190,17 +2173,6 @@ const focusFromQuery = () => {
                   const nextHalfWidth = unitHalfWidths[idx + 1] ?? 0
                   const maxCenter = nextCenter - (currHalfWidth + siblingGap + nextHalfWidth)
                   if ((centers[idx] ?? 0) > maxCenter) centers[idx] = maxCenter
-              }
-          }
-
-          // Keep the whole row anchored around its parent-driven target
-          // to avoid end nodes drifting to one side after spacing constraints.
-          if (centers.length && desiredCenters.length) {
-              const desiredMean = desiredCenters.reduce((sum, x) => sum + x, 0) / centers.length
-              const actualMean = centers.reduce((sum, x) => sum + x, 0) / centers.length
-              const shift = desiredMean - actualMean
-              for (let idx = 0; idx < centers.length; idx += 1) {
-                  if (typeof centers[idx] === 'number' && centers[idx] !== undefined) centers[idx]! += shift
               }
           }
 
@@ -2227,6 +2199,96 @@ const focusFromQuery = () => {
               })
           }
       })
+
+      // === Bottom-Up Pass: Center parents over their children's actual spread ===
+      for (let level = levels.length - 2; level >= 0; level -= 1) {
+          const levelIds = levels[level]
+          const processed = new Set<number>()
+          
+          const levelUnits: Array<{ unit: number[]; center: number; halfWidth: number }> = []
+
+          for (const id of levelIds) {
+              if (processed.has(id)) continue
+              
+              const spouse = spouseByMemberVisible.get(id)
+              const hasSpouse = spouse !== undefined && generation.get(spouse) === level
+              const unit = hasSpouse ? [id, spouse] : [id]
+              
+              unit.forEach(u => processed.add(u))
+
+              // Collect X-coordinates of all downstream children for this parent unit
+              const childrenXs: number[] = []
+              unit.forEach(uid => {
+                  const childrenSet = childrenByParent.get(uid)
+                  if (childrenSet) {
+                      for (const cid of childrenSet) {
+                          const childPos = nodeCanvasCoords.get(cid)
+                          if (childPos) childrenXs.push(childPos.x)
+                      }
+                  }
+              })
+              
+              let currentCenter = 0
+              if (unit.length === 1) {
+                  currentCenter = nodeCanvasCoords.get(unit[0])?.x ?? 0
+              } else if (unit.length === 2 && spouse !== undefined) {
+                  const p1 = nodeCanvasCoords.get(unit[0])?.x ?? 0
+                  const p2 = nodeCanvasCoords.get(unit[1])?.x ?? 0
+                  currentCenter = (p1 + p2) / 2
+              }
+
+              // If they have children, pull the parents directly to the horizontal center of those children
+              if (childrenXs.length > 0) {
+                  currentCenter = childrenXs.reduce((sum, x) => sum + x, 0) / childrenXs.length
+              }
+
+              levelUnits.push({
+                  unit,
+                  center: currentCenter,
+                  halfWidth: unit.length === 2 ? spouseGap / 2 : 0
+              })
+          }
+
+          // Re-apply collision resolution to this level's units to fix bottom-up overlaps
+          levelUnits.sort((a, b) => a.center - b.center)
+          
+          for (let pass = 0; pass < 4; pass += 1) {
+              for (let idx = 1; idx < levelUnits.length; idx += 1) {
+                  const prev = levelUnits[idx - 1]!
+                  const curr = levelUnits[idx]!
+                  const minCenter = prev.center + prev.halfWidth + siblingGap + curr.halfWidth
+                  if (curr.center < minCenter) curr.center = minCenter
+              }
+              for (let idx = levelUnits.length - 2; idx >= 0; idx -= 1) {
+                  const next = levelUnits[idx + 1]!
+                  const curr = levelUnits[idx]!
+                  const maxCenter = next.center - (curr.halfWidth + siblingGap + next.halfWidth)
+                  if (curr.center > maxCenter) curr.center = maxCenter
+              }
+          }
+
+          // Apply finalized positions
+          for (const block of levelUnits) {
+              if (block.unit.length === 1) {
+                  const pos = nodeCanvasCoords.get(block.unit[0]!)
+                  if (pos) pos.x = block.center
+              } else if (block.unit.length === 2) {
+                  const u1 = block.unit[0]!
+                  const u2 = block.unit[1]!
+                  const pos1 = nodeCanvasCoords.get(u1)
+                  const pos2 = nodeCanvasCoords.get(u2)
+                  if (pos1 && pos2) {
+                      if (pos1.x < pos2.x) {
+                          pos1.x = block.center - spouseGap / 2
+                          pos2.x = block.center + spouseGap / 2
+                      } else {
+                          pos2.x = block.center - spouseGap / 2
+                          pos1.x = block.center + spouseGap / 2
+                      }
+                  }
+              }
+          }
+      }
 
       globalNodeCoords = nodeCanvasCoords
 
