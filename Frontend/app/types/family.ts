@@ -34,6 +34,7 @@ export interface FamilyMember {
   is_committee?: boolean
   date_of_death?: string
   crematory?: string
+  family_id?: number
   parent?: any // FK object or ID
   username?: string // for tree focus
 }

@@ -1,0 +1,41 @@
+# Database files
+db.sqlite3
+db.sqlite3.pre_*
+*.bak
+
+# Database dumps and backups (for local development sync only)
+*.sql
+*.dump
+*.json
+
+# Media files (synced from production for local development)
+media/
+media_from_prod/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Virtual environments
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+
+# Django
+staticfiles/
+local_settings.py

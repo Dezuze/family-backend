@@ -270,6 +270,7 @@ class RelationshipEngine:
             nodes.append(
                 {
                     "id": member.id,
+                    "family_id": member.family_id,
                     "member_id": member.member_id,
                     "name": member.name,
                     "name_ml": member.name_ml,

@@ -267,8 +267,17 @@ class Relationship(models.Model):
         unique_together = ('from_member', 'to_member', 'relation_type')
 
     def clean(self):
-        """Prevent duplicate spouse relationships in reverse direction."""
+        """Prevent duplicate spouse relationships and cross-family relationships."""
         from django.core.exceptions import ValidationError
+        
+        # Prevent relationships between members of different families
+        if self.from_member and self.to_member:
+            if self.from_member.family_id != self.to_member.family_id:
+                raise ValidationError(
+                    f'Cannot create a relationship between {self.from_member.name} ({self.from_member.family.branch}) '
+                    f'and {self.to_member.name} ({self.to_member.family.branch}). '
+                    'Both members must belong to the same family.'
+                )
         
         # Only validate SPOUSE relationships to prevent bidirectional duplicates
         if (self.relation_type or '').strip().upper() == 'SPOUSE':
@@ -284,6 +293,11 @@ class Relationship(models.Model):
                     f'A spouse relationship already exists between {self.to_member.name} and {self.from_member.name}. '
                     'Relationship is bidirectional.'
                 )
+
+    def save(self, *args, **kwargs):
+        """Ensure clean() is called before saving."""
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.from_member.name} -> {self.relation_type} -> {self.to_member.name}'

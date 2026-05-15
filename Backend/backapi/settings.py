@@ -110,7 +110,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'backapi.urls'
 
-_cors_defaults = ['http://localhost:3000', 'http://127.0.0.1:3000']
+_cors_defaults = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001']
 if _domain:
     _cors_defaults.extend([
         f'https://{_domain}',
@@ -125,6 +125,8 @@ CORS_ALLOW_CREDENTIALS = True
 _csrf_defaults = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]

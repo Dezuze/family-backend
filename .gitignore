@@ -32,5 +32,11 @@ github-actions.pub
 
 # Local DB backup/export artifacts
 Backend/*.bak
+Backend/*.sql
+Backend/*.dump
+Backend/*.json
 Backend/prod_dump_*.json
 Backend/prod_full_*.dump
+
+# Local media staging directories (synced from production)
+Backend/media_from_prod/

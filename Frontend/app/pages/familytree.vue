@@ -1746,700 +1746,458 @@ const focusFromQuery = () => {
 }
 
 // --- D3 Tree Rendering Pipeline ---
-   const initGraph = () => {
-      if (!nodes.value.length || !svgRef.value || !chartContainer.value) {
-          return
-      }
-   
-      const width = chartContainer.value.clientWidth
-      const height = chartContainer.value.clientHeight
-      
-      if (width === 0 || height === 0) {
-          setTimeout(initGraph, 500)
-          return
-      }
+const initGraph = () => {
+    if (!nodes.value.length || !svgRef.value || !chartContainer.value) return
 
-      const svg = d3.select(svgRef.value) as d3.Selection<SVGSVGElement, unknown, null, undefined>
-      svg.attr("viewBox", `0 0 ${width} ${height}`)
-            const mobileTwoFingerOnly = isMobileViewport()
-      
-            const zoom = d3.zoom<SVGSVGElement, unknown>()
-                .scaleExtent([0.35, 4])
+    const width = chartContainer.value.clientWidth
+    const height = chartContainer.value.clientHeight
+    if (width === 0 || height === 0) {
+        setTimeout(initGraph, 250)
+        return
+    }
+
+    const svg = d3.select(svgRef.value) as d3.Selection<SVGSVGElement, unknown, null, undefined>
+    svg.attr('viewBox', `0 0 ${width} ${height}`)
+    svg.selectAll('*').remove()
+
+    const g = svg.append('g')
+    const mobileTwoFingerOnly = isMobileViewport()
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+        .scaleExtent([0.32, 4])
         .wheelDelta((event: any) => {
             if (!(event.ctrlKey || event.metaKey)) return 0
             const factor = event.deltaMode === 1 ? 0.04 : 0.002
-            const delta = -event.deltaY * factor
-            return Math.max(-0.22, Math.min(0.22, delta))
+            return Math.max(-0.22, Math.min(0.22, -event.deltaY * factor))
         })
         .filter((event: any) => {
-            if (event.type === 'wheel') {
-                return Boolean(event.ctrlKey || event.metaKey)
-            }
-
+            if (event.type === 'wheel') return Boolean(event.ctrlKey || event.metaKey)
             const isTouchEvent = String(event.type || '').startsWith('touch')
-            if (mobileTwoFingerOnly && isTouchEvent) {
-                if (event.type === 'touchend' || event.type === 'touchcancel') {
-                    return true
+            if (!mobileTwoFingerOnly || !isTouchEvent) return true
+            if (event.type === 'touchend' || event.type === 'touchcancel') return true
+            return Number(event.touches?.length || 0) >= 2
+        })
+        .on('zoom', (event) => {
+            g.attr('transform', event.transform)
+        })
+    svg.call(zoom)
+
+    globalZoom = zoom
+    globalSVG = svg
+
+    const isCompactMobileCard = isMobileViewport()
+    const cardWidth = isCompactMobileCard ? 128 : 164
+    const cardHeight = isCompactMobileCard ? 170 : 210
+    const siblingGap = isCompactMobileCard ? 90 : 160
+    const levelGap = isCompactMobileCard ? 240 : 290
+    const topOffset = isCompactMobileCard ? 96 : 120
+    const familyGap = isCompactMobileCard ? 180 : 280
+    const spouseGap = isCompactMobileCard ? 32 : 48
+    const cardHalfWidth = cardWidth / 2
+
+    const membersById = new Map<number, any>(nodes.value.map((node: any) => [Number(node.id), node]))
+    const visibleNodes = nodes.value.filter((node: any) => Number.isFinite(Number(node.id)))
+    const nodeIdSet = new Set<number>(visibleNodes.map((node: any) => Number(node.id)))
+
+    type GraphLink = { source: number; target: number }
+
+    const dedupeLinks = (items: Array<{ source: number; target: number; key: string }>): GraphLink[] => {
+        const map = new Map<string, GraphLink>()
+        for (const item of items) {
+            if (!Number.isFinite(item.source) || !Number.isFinite(item.target) || item.source === item.target) continue
+            if (!map.has(item.key)) {
+                map.set(item.key, { source: item.source, target: item.target })
+            }
+        }
+        return Array.from(map.values())
+    }
+
+    const parentLinks = dedupeLinks(
+        links.value
+            .filter((link: any) => link && link.type === 'parent')
+            .map((link: any) => {
+                const source = Number(link.source)
+                const target = Number(link.target)
+                return {
+                    source,
+                    target,
+                    key: `${source}->${target}`,
                 }
-                const touches = Number(event.touches?.length || 0)
-                return touches >= 2
+            })
+    )
+
+    const spouseLinks = dedupeLinks(
+        links.value
+            .filter((link: any) => link && link.type === 'spouse')
+            .map((link: any) => {
+                const source = Number(link.source)
+                const target = Number(link.target)
+                const key = source < target ? `${source}-${target}` : `${target}-${source}`
+                return { source, target, key }
+            })
+    )
+
+    const siblingLinks = dedupeLinks(
+        links.value
+            .filter((link: any) => link && link.type === 'sibling')
+            .map((link: any) => {
+                const source = Number(link.source)
+                const target = Number(link.target)
+                const key = source < target ? `${source}-${target}` : `${target}-${source}`
+                return { source, target, key }
+            })
+    )
+
+    const parentByChild = new Map<number, Set<number>>()
+    const childrenByParent = new Map<number, Set<number>>()
+    const spouseByMember = new Map<number, number>()
+    const siblingByMember = new Map<number, Set<number>>()
+
+    const addSetValue = (map: Map<number, Set<number>>, key: number, value: number) => {
+        if (!map.has(key)) map.set(key, new Set<number>())
+        map.get(key)!.add(value)
+    }
+
+    for (const link of parentLinks) {
+        if (!nodeIdSet.has(link.source) || !nodeIdSet.has(link.target)) continue
+        addSetValue(parentByChild, link.target, link.source)
+        addSetValue(childrenByParent, link.source, link.target)
+    }
+
+    for (const link of spouseLinks) {
+        if (!nodeIdSet.has(link.source) || !nodeIdSet.has(link.target)) continue
+        if (!spouseByMember.has(link.source)) spouseByMember.set(link.source, link.target)
+        if (!spouseByMember.has(link.target)) spouseByMember.set(link.target, link.source)
+    }
+
+    for (const link of siblingLinks) {
+        if (!nodeIdSet.has(link.source) || !nodeIdSet.has(link.target)) continue
+        addSetValue(siblingByMember, link.source, link.target)
+        addSetValue(siblingByMember, link.target, link.source)
+    }
+
+    const adjacency = new Map<number, Set<number>>()
+    const addUndirectedEdge = (a: number, b: number) => {
+        if (!nodeIdSet.has(a) || !nodeIdSet.has(b) || a === b) return
+        addSetValue(adjacency, a, b)
+        addSetValue(adjacency, b, a)
+    }
+
+    for (const link of parentLinks) addUndirectedEdge(link.source, link.target)
+    for (const link of spouseLinks) addUndirectedEdge(link.source, link.target)
+    for (const link of siblingLinks) addUndirectedEdge(link.source, link.target)
+
+    // Group nodes by family_id for readable layout
+    const familyGroups = new Map<number, any[]>()
+    for (const node of visibleNodes) {
+        const familyId = Number(node.family_id || node.id)
+        if (!familyGroups.has(familyId)) {
+            familyGroups.set(familyId, [])
+        }
+        familyGroups.get(familyId)!.push(node)
+    }
+    const componentGroups = Array.from(familyGroups.values()).filter((group) => group.length > 0)
+
+    const buildComponentLayout = (componentNodes: any[], startX: number) => {
+        const componentNodeIds = new Set<number>(componentNodes.map((node) => Number(node.id)))
+        const generation = new Map<number, number>()
+        const indegree = new Map<number, number>()
+        const children = new Map<number, number[]>()
+
+        for (const node of componentNodes) {
+            const id = Number(node.id)
+            generation.set(id, 0)
+            indegree.set(id, 0)
+            children.set(id, [])
+        }
+
+        const localParentLinks = parentLinks.filter((link) => componentNodeIds.has(link.source) && componentNodeIds.has(link.target))
+        for (const link of localParentLinks) {
+            children.get(link.source)?.push(link.target)
+            indegree.set(link.target, (indegree.get(link.target) || 0) + 1)
+        }
+
+        const queue = componentNodes.map((node) => Number(node.id)).filter((id) => (indegree.get(id) || 0) === 0).sort((a, b) => a - b)
+        const visited = new Set<number>()
+
+        while (queue.length) {
+            const id = queue.shift()!
+            visited.add(id)
+            for (const childId of children.get(id) || []) {
+                const nextLevel = (generation.get(id) || 0) + 1
+                generation.set(childId, Math.max(generation.get(childId) || 0, nextLevel))
+                const nextIn = (indegree.get(childId) || 0) - 1
+                indegree.set(childId, nextIn)
+                if (nextIn === 0) queue.push(childId)
+            }
+        }
+
+        for (const node of componentNodes) {
+            const id = Number(node.id)
+            if (visited.has(id)) continue
+            const parents = Array.from(parentByChild.get(id) || [])
+                .filter((parentId) => componentNodeIds.has(parentId) && visited.has(parentId))
+                .map((parentId) => generation.get(parentId) || 0)
+            if (parents.length) generation.set(id, Math.max(...parents) + 1)
+        }
+
+        for (let pass = 0; pass < 3; pass += 1) {
+            let changed = false
+            for (const link of siblingLinks) {
+                if (!componentNodeIds.has(link.source) || !componentNodeIds.has(link.target)) continue
+                const aligned = Math.max(generation.get(link.source) || 0, generation.get(link.target) || 0)
+                if ((generation.get(link.source) || 0) !== aligned) {
+                    generation.set(link.source, aligned)
+                    changed = true
+                }
+                if ((generation.get(link.target) || 0) !== aligned) {
+                    generation.set(link.target, aligned)
+                    changed = true
+                }
+            }
+            for (const link of spouseLinks) {
+                if (!componentNodeIds.has(link.source) || !componentNodeIds.has(link.target)) continue
+                const aligned = Math.max(generation.get(link.source) || 0, generation.get(link.target) || 0)
+                if ((generation.get(link.source) || 0) !== aligned) {
+                    generation.set(link.source, aligned)
+                    changed = true
+                }
+                if ((generation.get(link.target) || 0) !== aligned) {
+                    generation.set(link.target, aligned)
+                    changed = true
+                }
+            }
+            if (!changed) break
+        }
+
+        const levels = Array.from({ length: Math.max(0, ...Array.from(generation.values())) + 1 }, () => [] as number[])
+        for (const node of componentNodes) {
+            levels[generation.get(Number(node.id)) || 0].push(Number(node.id))
+        }
+
+        const coords = new Map<number, { x: number; y: number }>()
+        let familyWidth = 0
+
+        const rowModels = levels.map((levelIds, levelIndex) => {
+            const orderedIds = [...levelIds].sort((a, b) => {
+                const aFamily = Number(membersById.get(a)?.family_id || 0)
+                const bFamily = Number(membersById.get(b)?.family_id || 0)
+                if (aFamily !== bFamily) return aFamily - bFamily
+                return String(membersById.get(a)?.name || '').localeCompare(String(membersById.get(b)?.name || ''))
+            })
+            const units: number[][] = []
+            const consumed = new Set<number>()
+
+            for (const id of orderedIds) {
+                if (consumed.has(id)) continue
+                const spouseId = spouseByMember.get(id)
+                if (spouseId && componentNodeIds.has(spouseId) && generation.get(spouseId) === levelIndex && !consumed.has(spouseId)) {
+                    units.push(id < spouseId ? [id, spouseId] : [spouseId, id])
+                    consumed.add(id)
+                    consumed.add(spouseId)
+                } else {
+                    units.push([id])
+                    consumed.add(id)
+                }
             }
 
-            return true
+            const unitWidths = units.map((unit) => (unit.length === 2 ? cardWidth + spouseGap : cardWidth))
+            const rowWidth = unitWidths.reduce((sum, value) => sum + value, 0) + Math.max(0, units.length - 1) * siblingGap
+            familyWidth = Math.max(familyWidth, rowWidth)
+            return { levelIndex, units, unitWidths, rowWidth }
         })
-        .on("zoom", (event) => {
-            g.attr("transform", event.transform)
-        })
-      svg.call(zoom)
-      
-      globalZoom = zoom
-      globalSVG = svg
-   
-      svg.selectAll("*").remove()
-      const g = svg.append("g")
 
-    const rawParentLinks = links.value.filter((l: any) => l.type === 'parent')
-    const rawSiblingLinks = links.value.filter((l: any) => l.type === 'sibling')
-      const spouseLinks = links.value.filter((l: any) => l.type === 'spouse')
+        rowModels.forEach((row) => {
+            let cursor = startX + (familyWidth - row.rowWidth) / 2
+            const y = topOffset + row.levelIndex * levelGap
 
-      // Deduplicate and sanitize parent edges before generation layering.
-      const parentLinks: Array<{ source: number; target: number }> = []
-      const seenParentEdge = new Set<string>()
-      const addParentEdge = (source: number, target: number) => {
-          if (source === target) return
-          const key = `${source}->${target}`
-          if (seenParentEdge.has(key)) return
-          seenParentEdge.add(key)
-          parentLinks.push({ source, target })
-      }
-      for (const l of rawParentLinks) addParentEdge(l.source, l.target)
+            row.units.forEach((unit, index) => {
+                const unitWidth = row.unitWidths[index] ?? cardWidth
+                const center = cursor + unitWidth / 2
 
-      const parentByChild = new Map<number, Set<number>>()
-      const childrenByParent = new Map<number, Set<number>>()
-    const siblingsByMember = new Map<number, Set<number>>()
-      const spouseByMember = new Map<number, number>()
+                if (unit.length === 2) {
+                    const leftId = unit[0]
+                    const rightId = unit[1]
+                    if (leftId !== undefined) coords.set(leftId, { x: center - spouseGap / 2, y })
+                    if (rightId !== undefined) coords.set(rightId, { x: center + spouseGap / 2, y })
+                } else {
+                    const singleId = unit[0]
+                    if (singleId !== undefined) coords.set(singleId, { x: center, y })
+                }
 
-      for (const l of parentLinks) {
-          if (!parentByChild.has(l.target)) parentByChild.set(l.target, new Set<number>())
-          if (!childrenByParent.has(l.source)) childrenByParent.set(l.source, new Set<number>())
-          parentByChild.get(l.target)!.add(l.source)
-          childrenByParent.get(l.source)!.add(l.target)
-      }
-
-      for (const l of rawSiblingLinks) {
-          if (!siblingsByMember.has(l.source)) siblingsByMember.set(l.source, new Set<number>())
-          if (!siblingsByMember.has(l.target)) siblingsByMember.set(l.target, new Set<number>())
-          siblingsByMember.get(l.source)!.add(l.target)
-          siblingsByMember.get(l.target)!.add(l.source)
-      }
-
-      // Do not infer/copy parent edges through sibling relationships here.
-      // That heuristic can create visually incorrect cross-branch links.
-      // Rebuild parent maps from explicit parent edges only.
-      parentByChild.clear()
-      childrenByParent.clear()
-      for (const l of parentLinks) {
-          if (!parentByChild.has(l.target)) parentByChild.set(l.target, new Set<number>())
-          if (!childrenByParent.has(l.source)) childrenByParent.set(l.source, new Set<number>())
-          parentByChild.get(l.target)!.add(l.source)
-          childrenByParent.get(l.source)!.add(l.target)
-      }
-
-      for (const l of spouseLinks) {
-          // Prefer first explicit spouse link if duplicates exist.
-          if (!spouseByMember.has(l.source)) spouseByMember.set(l.source, l.target)
-          if (!spouseByMember.has(l.target)) spouseByMember.set(l.target, l.source)
-      }
-
-      const membersById = new Map<number, any>(nodes.value.map((n: any) => [n.id, n]))
-
-      // Render the full family set so members outside the current branch
-      // are still visible in the tree.
-      const descendants = new Set<number>(nodes.value.map((n: any) => n.id))
-      const visibleIds = new Set<number>(descendants)
-      descendants.forEach((id) => {
-          const spouseId = spouseByMember.get(id)
-          if (spouseId && membersById.has(spouseId)) visibleIds.add(spouseId)
-      })
-
-      // Include siblings of descendants in the same patriarchal branch.
-      descendants.forEach((id) => {
-          const sibs = Array.from(siblingsByMember.get(id) || []).filter((sid) => membersById.has(sid))
-          sibs.forEach((sid) => visibleIds.add(sid))
-      })
-
-      // Include co-parents of descendants so wives/mothers render even when
-      // no explicit spouse relationship row exists.
-      descendants.forEach((childId) => {
-          const parents = Array.from(parentByChild.get(childId) || []).filter((pid) => membersById.has(pid))
-          if (parents.some((pid) => descendants.has(pid))) {
-              parents.forEach((pid) => visibleIds.add(pid))
-          }
-      })
-
-      // Also keep spouses of included siblings visible.
-      Array.from(visibleIds).forEach((id) => {
-          const spouseId = spouseByMember.get(id)
-          if (spouseId && membersById.has(spouseId)) visibleIds.add(spouseId)
-      })
-
-      const pairKey = (a: number, b: number) => (a < b ? `${a}-${b}` : `${b}-${a}`)
-      const spousePairSet = new Set<string>()
-      const explicitSpouseByMember = new Map<number, Set<number>>()
-
-      // Explicit spouse links within visible subtree.
-      spouseLinks.forEach((l) => {
-          if (visibleIds.has(l.source) && visibleIds.has(l.target)) {
-              spousePairSet.add(pairKey(Number(l.source ?? 0), Number(l.target ?? 0)))
-              if (!explicitSpouseByMember.has(l.source)) explicitSpouseByMember.set(l.source, new Set<number>())
-              if (!explicitSpouseByMember.has(l.target)) explicitSpouseByMember.set(l.target, new Set<number>())
-              explicitSpouseByMember.get(l.source)!.add(l.target)
-              explicitSpouseByMember.get(l.target)!.add(l.source)
-          }
-      })
-
-      // Infer spouse only for clean co-parent cases to avoid wrong pairings.
-      descendants.forEach((childId) => {
-          const parents = Array.from(parentByChild.get(childId) || []).filter((pid) => visibleIds.has(pid))
-          if (parents.length !== 2) return
-
-          const [p1Raw, p2Raw] = parents
-          const p1 = typeof p1Raw === 'number' ? p1Raw : Number(p1Raw)
-          const p2 = typeof p2Raw === 'number' ? p2Raw : Number(p2Raw)
-          if (isNaN(p1) || isNaN(p2)) return
-          const p1Member = membersById.get(p1)
-          const p2Member = membersById.get(p2)
-          if (!p1Member || !p2Member) return
-
-          // Prefer opposite-gender co-parent inference only.
-          const p1Gender = p1Member.gender || 'O'
-          const p2Gender = p2Member.gender || 'O'
-          if (!((p1Gender === 'M' && p2Gender === 'F') || (p1Gender === 'F' && p2Gender === 'M'))) {
-              return
-          }
-
-          // If explicit spouse exists and points elsewhere, do not infer.
-          const p1Explicit = explicitSpouseByMember.get(p1)
-          if (p1Explicit && !p1Explicit.has(p2)) return
-          const p2Explicit = explicitSpouseByMember.get(p2)
-          if (p2Explicit && !p2Explicit.has(p1)) return
-
-          spousePairSet.add(pairKey(p1, p2))
-      })
-
-      const spousePairs = Array.from(spousePairSet).map((k) => {
-          const [a, b] = k.split('-').map((x) => parseInt(x, 10))
-          return { a, b }
-      })
-
-      const spouseByMemberVisible = new Map<number, number>()
-      spousePairs.forEach(({ a, b }) => {
-          const aNum = typeof a === 'number' ? a : Number(a)
-          const bNum = typeof b === 'number' ? b : Number(b)
-          if (isNaN(aNum) || isNaN(bNum)) return
-          if (!spouseByMemberVisible.has(aNum)) spouseByMemberVisible.set(aNum, bNum)
-          if (!spouseByMemberVisible.has(bNum)) spouseByMemberVisible.set(bNum, aNum)
-      })
-
-      const visibleNodes = nodes.value.filter((n: any) => visibleIds.has(n.id))
-
-    const nodeIds = visibleNodes.map((n: any) => n.id)
-      const nodeIdSet = new Set<number>(nodeIds)
-      const generation = new Map<number, number>()
-            nodeIds.forEach((id) => {
-                if (typeof id === 'number') generation.set(id, 0)
+                cursor += unitWidth + siblingGap
             })
+        })
 
-      // Kahn layering avoids runaway levels when data contains cycles.
-      const indegree = new Map<number, number>()
-      const children = new Map<number, number[]>()
-      nodeIds.forEach((id) => {
-          if (typeof id === 'number') {
-              indegree.set(id, 0)
-              children.set(id, [])
-          }
-      })
+        return {
+            coords,
+            width: Math.max(familyWidth, cardWidth * 2),
+            height: topOffset + Math.max(1, rowModels.length) * levelGap + cardHeight,
+        }
+    }
 
-      for (const l of parentLinks) {
-          if (!nodeIdSet.has(l.source) || !nodeIdSet.has(l.target)) continue
-          if (typeof l.source === 'number' && typeof l.target === 'number') {
-              children.get(l.source)?.push(l.target)
-              indegree.set(l.target, (indegree.get(l.target) || 0) + 1)
-          }
-      }
+    const componentGap = isCompactMobileCard ? 140 : 220
+    const nodeCanvasCoords = new Map<number, { x: number; y: number }>()
+    const componentLayouts = new Map<number, { coords: Map<number, { x: number; y: number }>; width: number; height: number }>()
 
-    const queue: number[] = nodeIds.filter((id) => typeof id === 'number' && (indegree.get(id) || 0) === 0)
-      queue.sort((a, b) => a - b)
-      const processed = new Set<number>()
+    let familyCursorX = 80
+    for (let componentIndex = 0; componentIndex < componentGroups.length; componentIndex += 1) {
+        const componentNodes = componentGroups[componentIndex] || []
+        const layout = buildComponentLayout(componentNodes, familyCursorX)
+        componentLayouts.set(componentIndex, layout)
+        for (const node of componentNodes) {
+            const coord = layout.coords.get(Number(node.id))
+            if (coord) nodeCanvasCoords.set(Number(node.id), coord)
+        }
+        familyCursorX += layout.width + componentGap
+    }
 
-      while (queue.length) {
-          const id = queue.shift()!
-          processed.add(id)
-          const nextChildren = children.get(id) || []
-          for (const childId of nextChildren) {
-              const nextLevel = (generation.get(id) || 0) + 1
-              if ((generation.get(childId) || 0) < nextLevel) {
-                  generation.set(childId, nextLevel)
-              }
-              const nextIn = (indegree.get(childId) || 0) - 1
-              indegree.set(childId, nextIn)
-              if (nextIn === 0) queue.push(childId)
-          }
-      }
+    globalNodeCoords = nodeCanvasCoords
 
-      // Remaining cyclic nodes are anchored near any processed parent if possible.
-    const cyclicIds = nodeIds.filter((id) => typeof id === 'number' && !processed.has(id))
-      for (const id of cyclicIds) {
-          const parentIds = Array.from(parentByChild.get(id) || [])
-          const processedParentLevels = parentIds
-              .filter((pid) => processed.has(pid))
-              .map((pid) => generation.get(pid) || 0)
-          if (processedParentLevels.length) {
-              generation.set(id, Math.max(...processedParentLevels) + 1)
-          }
-      }
+    const bounds = Array.from(nodeCanvasCoords.values()).reduce(
+        (acc, coord) => ({
+            minX: Math.min(acc.minX, coord.x),
+            maxX: Math.max(acc.maxX, coord.x),
+            minY: Math.min(acc.minY, coord.y),
+            maxY: Math.max(acc.maxY, coord.y),
+        }),
+        { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity }
+    )
 
-      // Harmonize spouse + sibling rows iteratively to avoid spouse floating above
-      // a sibling after a later sibling-alignment update.
-      for (let pass = 0; pass < 4; pass += 1) {
-          let changed = false
+    if (Number.isFinite(bounds.minX) && Number.isFinite(bounds.maxX) && Number.isFinite(bounds.minY) && Number.isFinite(bounds.maxY)) {
+        const padding = cardWidth * 2
+        const contentWidth = Math.max(1, (bounds.maxX - bounds.minX) + padding * 2)
+        const contentHeight = Math.max(1, (bounds.maxY - bounds.minY) + padding * 2)
+        const scaleX = (width * 0.92) / contentWidth
+        const scaleY = (height * 0.92) / contentHeight
+        const scale = Math.max(0.15, Math.min(0.7, scaleX, scaleY))
+        const centerX = (bounds.minX + bounds.maxX) / 2
+        const centerY = (bounds.minY + bounds.maxY) / 2
+        const fittedTransform = d3.zoomIdentity.translate(
+            width / 2 - centerX * scale,
+            height / 2 - centerY * scale,
+        ).scale(scale)
+        svg.call(zoom.transform as any, fittedTransform)
+    }
 
-          spousePairs.forEach(({ a, b }) => {
-              if (!(typeof a === 'number' && typeof b === 'number')) return
-              if (!nodeIdSet.has(a) || !nodeIdSet.has(b)) return
-              const aGen = generation.get(a) ?? 0
-              const bGen = generation.get(b) ?? 0
-              const aligned = Math.max(aGen, bGen)
-              if (aGen !== aligned) {
-                  generation.set(a, aligned)
-                  changed = true
-              }
-              if (bGen !== aligned) {
-                  generation.set(b, aligned)
-                  changed = true
-              }
-          })
+    const parentOverlayData = parentLinks
+        .filter((link) => nodeCanvasCoords.has(link.source) && nodeCanvasCoords.has(link.target))
+        .map((link) => ({
+            source: nodeCanvasCoords.get(link.source)!,
+            target: nodeCanvasCoords.get(link.target)!,
+            crossFamily: membersById.get(link.source)?.family_id !== membersById.get(link.target)?.family_id,
+        }))
 
-          rawSiblingLinks.forEach((l: any) => {
-              if (!(typeof l.source === 'number' && typeof l.target === 'number')) return
-              if (!nodeIdSet.has(l.source) || !nodeIdSet.has(l.target)) return
-              const sourceGen = generation.get(l.source) ?? 0
-              const targetGen = generation.get(l.target) ?? 0
-              const aligned = Math.max(sourceGen, targetGen)
-              if (sourceGen !== aligned) {
-                  generation.set(l.source, aligned)
-                  changed = true
-              }
-              if (targetGen !== aligned) {
-                  generation.set(l.target, aligned)
-                  changed = true
-              }
-          })
+    const spouseOverlayData = spouseLinks
+        .filter((link) => nodeCanvasCoords.has(link.source) && nodeCanvasCoords.has(link.target))
+        .map((link) => ({
+            a: nodeCanvasCoords.get(link.source)!,
+            b: nodeCanvasCoords.get(link.target)!,
+            crossFamily: membersById.get(link.source)?.family_id !== membersById.get(link.target)?.family_id,
+        }))
 
-          if (!changed) break
-      }
+    const siblingOverlayData = siblingLinks
+        .filter((link) => nodeCanvasCoords.has(link.source) && nodeCanvasCoords.has(link.target))
+        .map((link) => ({
+            a: nodeCanvasCoords.get(link.source)!,
+            b: nodeCanvasCoords.get(link.target)!,
+            crossFamily: membersById.get(link.source)?.family_id !== membersById.get(link.target)?.family_id,
+        }))
 
-      // Keep primary parent edges that move downward by a sane generation gap.
-      const visibleParentLinks = parentLinks.filter((l) => nodeIdSet.has(l.source) && nodeIdSet.has(l.target))
-      const renderParentLinks = visibleParentLinks.filter((l) => {
-          const sourceGen = generation.get(l.source) ?? 0
-          const targetGen = generation.get(l.target) ?? 0
-          const generationGap = targetGen - sourceGen
-          return (
-              generationGap >= 1 &&
-              generationGap <= 2
-          )
-      })
+    g.append('g')
+        .attr('class', 'parent-links')
+        .selectAll('path')
+        .data(parentOverlayData)
+        .join('path')
+        .attr('fill', 'none')
+        .attr('stroke', (d) => d.crossFamily ? '#b7a67b' : '#a89060')
+        .attr('stroke-width', 2.2)
+        .attr('stroke-dasharray', (d) => d.crossFamily ? '4,4' : null)
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-opacity', (d) => d.crossFamily ? 0.35 : 0.72)
+        .attr('d', (d) => {
+            const sourceY = d.source.y + (isCompactMobileCard ? 76 : 96)
+            const targetY = d.target.y - (isCompactMobileCard ? 84 : 104)
+            const bendY = sourceY + (targetY - sourceY) * 0.55
+            return `M ${d.source.x} ${sourceY} C ${d.source.x} ${bendY}, ${d.target.x} ${bendY}, ${d.target.x} ${targetY}`
+        })
 
-      // Fallback: if heuristics dropped all links for a child, keep explicit
-      // parent link(s) so legitimate families never appear disconnected.
-      const renderedChildSet = new Set<number>(renderParentLinks.map((l) => l.target))
-      visibleParentLinks.forEach((l) => {
-          if (typeof l.target !== 'number') return
-          if (renderedChildSet.has(l.target)) return
-          renderParentLinks.push(l)
-          renderedChildSet.add(l.target)
-      })
-    const maxLevel = Math.max(...Array.from(generation.values()).filter((v) => typeof v === 'number'))
-      const levels = Array.from({ length: maxLevel + 1 }, () => [] as number[])
-      nodeIds.forEach((id) => {
-          const idx = generation.get(id) ?? 0
-          if (!levels[idx]) levels[idx] = []
-          if (typeof idx === 'number') levels[idx].push(id)
-      })
+    g.append('g')
+        .attr('class', 'spouse-links')
+        .selectAll('path')
+        .data(spouseOverlayData)
+        .join('path')
+        .attr('fill', 'none')
+        .attr('stroke', (d) => d.crossFamily ? '#d1bf8d' : '#c9a96e')
+        .attr('stroke-width', 2)
+        .attr('stroke-dasharray', (d) => d.crossFamily ? '6,6' : '6,4')
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-linejoin', 'round')
+        .attr('stroke-opacity', (d) => d.crossFamily ? 0.45 : 0.8)
+        .attr('d', (d) => {
+            const leftFirst = d.a.x <= d.b.x
+            const startX = leftFirst ? d.a.x + cardHalfWidth : d.a.x - cardHalfWidth
+            const endX = leftFirst ? d.b.x - cardHalfWidth : d.b.x + cardHalfWidth
+            const startY = d.a.y - 10
+            const endY = d.b.y - 10
+            const dir = endX >= startX ? 1 : -1
+            const control = Math.max(24, Math.abs(endX - startX) * 0.28)
+            return `M ${startX} ${startY} C ${startX + dir * control} ${startY}, ${endX - dir * control} ${endY}, ${endX} ${endY}`
+        })
 
-                        const levelGap = 360
-                const siblingGap = 240
-    const spouseGap = 186
-            const topOffset = 120
-      const nodeCanvasCoords = new Map<number, { x: number; y: number }>()
-      const previousLevelX = new Map<number, number>()
+    g.append('g')
+        .attr('class', 'sibling-links')
+        .selectAll('path')
+        .data(siblingOverlayData)
+        .join('path')
+        .attr('fill', 'none')
+        .attr('stroke', (d) => d.crossFamily ? '#b8a89b' : '#9b8f7e')
+        .attr('stroke-width', 1.6)
+        .attr('stroke-dasharray', (d) => d.crossFamily ? '3,3' : '5,3')
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-linejoin', 'round')
+        .attr('stroke-opacity', 0)
+        .attr('d', (d) => {
+            const leftFirst = d.a.x <= d.b.x
+            const startX = leftFirst ? d.a.x + cardHalfWidth : d.a.x - cardHalfWidth
+            const endX = leftFirst ? d.b.x - cardHalfWidth : d.b.x + cardHalfWidth
+            const midY = d.a.y + (isCompactMobileCard ? 64 : 80)
+            const control = Math.max(16, Math.abs(endX - startX) * 0.22)
+            const dir = endX >= startX ? 1 : -1
+            return `M ${startX} ${d.a.y} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${d.b.y}`
+        })
 
-      levels.forEach((levelIds, level) => {
-          const units: number[][] = []
-          const placed = new Set<number>()
-          const sortedIds = [...levelIds].sort((a, b) => {
-              const aName = String(membersById.get(a)?.name || '')
-              const bName = String(membersById.get(b)?.name || '')
-              return aName.localeCompare(bName)
-          })
+    const nodeGroup = g.append('g')
+        .attr('class', 'nodes')
+        .selectAll('.node')
+        .data(visibleNodes)
+        .join('g')
+        .attr('class', 'node')
+        .attr('transform', (d: any) => {
+            const coord = nodeCanvasCoords.get(Number(d.id))
+            return `translate(${coord?.x || width / 2},${coord?.y || topOffset})`
+        })
 
-          for (const id of sortedIds) {
-              if (placed.has(id)) continue
-              const spouse = spouseByMemberVisible.get(id)
-              const spouseGen = spouse !== undefined ? generation.get(spouse) : undefined
-              if (spouse !== undefined && spouseGen !== undefined && spouseGen === level && !placed.has(spouse)) {
-                  const me = membersById.get(id)
-                  const partner = membersById.get(spouse)
-                  let pair: number[]
-                  if (me?.gender === 'M' && partner?.gender === 'F') {
-                      pair = [id, spouse]
-                  } else if (me?.gender === 'F' && partner?.gender === 'M') {
-                      pair = [spouse, id]
-                  } else {
-                      pair = id < spouse ? [id, spouse] : [spouse, id]
-                  }
-                  units.push(pair)
-                  placed.add(id)
-                  placed.add(spouse)
-              } else {
-                  units.push([id])
-                  placed.add(id)
-              }
-          }
+    nodeGroup.each(function(this: any, d: any) {
+        renderCard(d3.select(this), 0, d)
+    })
 
-          const fallbackStartX = width / 2 - ((Math.max(units.length, 1) - 1) * siblingGap) / 2
-          const unitMeta = units.map((unit, idx) => {
-              const parentSet = new Set<number>()
-              unit.forEach((memberId) => {
-                  const parents = Array.from(parentByChild.get(memberId) || [])
-                  parents.forEach((pid) => {
-                      if (previousLevelX.get(pid) !== undefined) parentSet.add(pid)
-                  })
-              })
-
-              let anchorParents = Array.from(parentSet)
-              if (anchorParents.length > 2) {
-                  const centerGuess = anchorParents
-                      .map((pid) => Number(previousLevelX.get(pid) ?? 0))
-                      .reduce((sum, x) => sum + x, 0) / anchorParents.length
-                  anchorParents = anchorParents
-                      .sort((a, b) => {
-                          const ax = Number(previousLevelX.get(a) ?? 0)
-                          const bx = Number(previousLevelX.get(b) ?? 0)
-                          return Math.abs(ax - centerGuess) - Math.abs(bx - centerGuess)
-                      })
-                      .slice(0, 2)
-              }
-
-              const anchorXs = anchorParents
-                  .map((pid) => previousLevelX.get(pid))
-                  .filter((x): x is number => typeof x === 'number')
-              const desiredCenter = anchorXs.length
-                  ? anchorXs.reduce((sum, x) => sum + x, 0) / anchorXs.length
-                  : fallbackStartX + idx * siblingGap
-
-              return {
-                  unit,
-                  desiredCenter,
-                  tieBreaker: Number(unit[0] ?? 0),
-                  anchorParents,
-              }
-          })
-
-          const orderedMeta = [...unitMeta].sort((a, b) => {
-              if (a.desiredCenter !== b.desiredCenter) return a.desiredCenter - b.desiredCenter
-              return a.tieBreaker - b.tieBreaker
-          })
-
-          const orderedUnits = orderedMeta.map((meta) => meta.unit ?? []) as number[][]
-          const desiredCenters = orderedMeta.map((meta) => meta.desiredCenter)
-
-          const unitHalfWidths = orderedUnits.map((unit) => (unit.length === 2 ? spouseGap / 2 : 0))
-          const centers = desiredCenters.map((center) => center)
-
-          for (let pass = 0; pass < 4; pass += 1) {
-              for (let idx = 1; idx < centers.length; idx += 1) {
-                  const prevCenter = centers[idx - 1] ?? 0
-                  const prevHalfWidth = unitHalfWidths[idx - 1] ?? 0
-                  const currHalfWidth = unitHalfWidths[idx] ?? 0
-                  const minCenter = prevCenter + prevHalfWidth + siblingGap + currHalfWidth
-                  if ((centers[idx] ?? 0) < minCenter) centers[idx] = minCenter
-              }
-
-              for (let idx = centers.length - 2; idx >= 0; idx -= 1) {
-                  const nextCenter = centers[idx + 1] ?? 0
-                  const currHalfWidth = unitHalfWidths[idx] ?? 0
-                  const nextHalfWidth = unitHalfWidths[idx + 1] ?? 0
-                  const maxCenter = nextCenter - (currHalfWidth + siblingGap + nextHalfWidth)
-                  if ((centers[idx] ?? 0) > maxCenter) centers[idx] = maxCenter
-              }
-          }
-
-          const localUnitPositions: Array<{ unit: number[]; x: number[] }> = []
-          for (let idx = 0; idx < orderedUnits.length; idx += 1) {
-              const unit = orderedUnits[idx] ?? []
-              const halfWidth = unitHalfWidths[idx] ?? 0
-              const center = centers[idx] ?? 0
-
-              if (unit.length === 2) {
-                  localUnitPositions.push({ unit, x: [center - halfWidth, center + halfWidth] })
-              } else {
-                  localUnitPositions.push({ unit, x: [center] })
-              }
-          }
-
-          const y = topOffset + level * levelGap
-
-          for (const block of localUnitPositions) {
-              block.unit.forEach((id, idx) => {
-                  const x = block.x[idx] ?? 0
-                  nodeCanvasCoords.set(id, { x, y })
-                  previousLevelX.set(id, x)
-              })
-          }
-      })
-
-      // === Bottom-Up Pass: Center parents over their children's actual spread ===
-      for (let level = levels.length - 2; level >= 0; level -= 1) {
-          const levelIds = levels[level]
-          const processed = new Set<number>()
-          
-          const levelUnits: Array<{ unit: number[]; center: number; halfWidth: number }> = []
-
-          for (const id of levelIds) {
-              if (processed.has(id)) continue
-              
-              const spouse = spouseByMemberVisible.get(id)
-              const hasSpouse = spouse !== undefined && generation.get(spouse) === level
-              const unit = hasSpouse ? [id, spouse] : [id]
-              
-              unit.forEach(u => processed.add(u))
-
-              // Collect X-coordinates of all downstream children for this parent unit
-              const childrenXs: number[] = []
-              unit.forEach(uid => {
-                  const childrenSet = childrenByParent.get(uid)
-                  if (childrenSet) {
-                      for (const cid of childrenSet) {
-                          const childPos = nodeCanvasCoords.get(cid)
-                          if (childPos) childrenXs.push(childPos.x)
-                      }
-                  }
-              })
-              
-              let currentCenter = 0
-              if (unit.length === 1) {
-                  currentCenter = nodeCanvasCoords.get(unit[0])?.x ?? 0
-              } else if (unit.length === 2 && spouse !== undefined) {
-                  const p1 = nodeCanvasCoords.get(unit[0])?.x ?? 0
-                  const p2 = nodeCanvasCoords.get(unit[1])?.x ?? 0
-                  currentCenter = (p1 + p2) / 2
-              }
-
-              // If they have children, pull the parents directly to the horizontal center of those children
-              if (childrenXs.length > 0) {
-                  currentCenter = childrenXs.reduce((sum, x) => sum + x, 0) / childrenXs.length
-              }
-
-              levelUnits.push({
-                  unit,
-                  center: currentCenter,
-                  halfWidth: unit.length === 2 ? spouseGap / 2 : 0
-              })
-          }
-
-          // Re-apply collision resolution to this level's units to fix bottom-up overlaps
-          levelUnits.sort((a, b) => a.center - b.center)
-          
-          for (let pass = 0; pass < 4; pass += 1) {
-              for (let idx = 1; idx < levelUnits.length; idx += 1) {
-                  const prev = levelUnits[idx - 1]!
-                  const curr = levelUnits[idx]!
-                  const minCenter = prev.center + prev.halfWidth + siblingGap + curr.halfWidth
-                  if (curr.center < minCenter) curr.center = minCenter
-              }
-              for (let idx = levelUnits.length - 2; idx >= 0; idx -= 1) {
-                  const next = levelUnits[idx + 1]!
-                  const curr = levelUnits[idx]!
-                  const maxCenter = next.center - (curr.halfWidth + siblingGap + next.halfWidth)
-                  if (curr.center > maxCenter) curr.center = maxCenter
-              }
-          }
-
-          // Apply finalized positions
-          for (const block of levelUnits) {
-              if (block.unit.length === 1) {
-                  const pos = nodeCanvasCoords.get(block.unit[0]!)
-                  if (pos) pos.x = block.center
-              } else if (block.unit.length === 2) {
-                  const u1 = block.unit[0]!
-                  const u2 = block.unit[1]!
-                  const pos1 = nodeCanvasCoords.get(u1)
-                  const pos2 = nodeCanvasCoords.get(u2)
-                  if (pos1 && pos2) {
-                      if (pos1.x < pos2.x) {
-                          pos1.x = block.center - spouseGap / 2
-                          pos2.x = block.center + spouseGap / 2
-                      } else {
-                          pos2.x = block.center - spouseGap / 2
-                          pos1.x = block.center + spouseGap / 2
-                      }
-                  }
-              }
-          }
-      }
-
-      globalNodeCoords = nodeCanvasCoords
-
-      const isCompactMobileCard = isMobileViewport()
-      const cardHalfWidth = isCompactMobileCard ? 64 : 82
-    const maxParentLinkHorizontalSpan = isCompactMobileCard ? siblingGap * 1.9 : siblingGap * 2.35
-
-      const parentOverlayData = Array.from(new Set(renderParentLinks.map((l) => l.target)))
-          .map((childId) => {
-
-              const child = nodeCanvasCoords.get(childId)
-              if (!child) return null
-
-              const parentLinksForChild = renderParentLinks
-                  .filter((l) => l.target === childId)
-                  .map((l) => ({
-                      sourceId: l.source,
-                      coord: nodeCanvasCoords.get(l.source),
-                  }))
-                  .filter((item) => Boolean(item.coord)) as Array<{ sourceId: number; coord: { x: number; y: number } }>
-
-              if (!parentLinksForChild.length) return null
-
-              // Always target the child's actual card position so the
-              // link drops straight down to the card center.
-              const target = child
-
-              if (!parentLinksForChild.length) return null
-
-              const anchorParentLinks = parentLinksForChild.length <= 2
-                  ? parentLinksForChild
-                  : [...parentLinksForChild]
-                      .sort((a, b) => Math.abs(a.coord.x - child.x) - Math.abs(b.coord.x - child.x))
-                      .slice(0, 2)
-
-              const sourceX = anchorParentLinks.reduce((sum, p) => sum + p.coord.x, 0) / anchorParentLinks.length
-              const sourceYBase = Math.max(...anchorParentLinks.map((p) => p.coord.y))
-
-              const anchorParentIds = anchorParentLinks.map((p) => p.sourceId)
-              let isSpouseParentUnit = false
-              if (anchorParentIds.length === 2) {
-                  const [a0, a1] = anchorParentIds
-                  isSpouseParentUnit = spousePairSet.has(pairKey(Number(a0), Number(a1)))
-              }
-
-              // Render parent links even when parents are far apart.
-              // Previously we skipped rendering when the horizontal span
-              // between parent anchor and child midpoint exceeded
-              // `maxParentLinkHorizontalSpan` for non-spouse units. That
-              // made some parent-child links appear anchored under a
-              // single parent and produced inconsistent visuals. To
-              // improve consistency, always render the parent overlay
-              // when anchor parents exist and we've selected up to two
-              // anchor parents above.
-
-              return {
-                  source: { x: sourceX, y: sourceYBase },
-                  target,
-              }
-          })
-          .filter(Boolean) as Array<{ source: { x: number; y: number }; target: { x: number; y: number } }>
-
-      g.append("g")
-          .attr("class", "parent-links")
-          .selectAll("path")
-          .data(parentOverlayData)
-          .join("path")
-          .attr("fill", "none")
-          .attr("stroke", "#a89060")
-          .attr("stroke-width", 2.5)
-          .attr("stroke-linecap", "round")
-          .attr("stroke-opacity", 0.7)
-          .attr("d", (d) => {
-              const sourceY = d.source.y + (isCompactMobileCard ? 76 : 96)
-              const targetY = d.target.y - (isCompactMobileCard ? 86 : 106)
-              const bendY = sourceY + (targetY - sourceY) * 0.55
-              return `M ${d.source.x} ${sourceY} C ${d.source.x} ${bendY}, ${d.target.x} ${bendY}, ${d.target.x} ${targetY}`
-          })
-
-      const nodeGroup = g.append("g")
-          .attr("class", "nodes")
-          .selectAll(".node")
-          .data(visibleNodes)
-          .join("g")
-          .attr("class", "node")
-          .attr("transform", (d: any) => {
-              const c = nodeCanvasCoords.get(d.id)
-              return `translate(${c?.x || width / 2},${c?.y || topOffset})`
-          })
-
-      nodeGroup.each(function(this: any, d: any) {
-          renderCard(d3.select(this), 0, d)
-      })
-
-      const spouseOverlayData = spousePairs
-          .filter(({ a, b }) => {
-              if (!(typeof a === 'number' && typeof b === 'number')) return false
-              if (!nodeIdSet.has(a) || !nodeIdSet.has(b)) return false
-              const gA = generation.get(a)
-              const gB = generation.get(b)
-              return gA !== undefined && gA === gB
-          })
-
-          .map(({ a: aId, b: bId }) => {
-              if (typeof aId !== 'number' || typeof bId !== 'number') return null
-              const a = nodeCanvasCoords.get(aId)
-              const b = nodeCanvasCoords.get(bId)
-              if (!a || !b) return null
-              return { a, b }
-          })
-          .filter(Boolean) as Array<{ a: { x: number; y: number }; b: { x: number; y: number } }>
-
-      g.append("g")
-          .attr("class", "spouse-links")
-          .selectAll("path")
-          .data(spouseOverlayData)
-          .join("path")
-          .attr("d", (d) => {
-              const yOffset = -10
-              const leftFirst = d.a.x <= d.b.x
-              const startX = leftFirst ? d.a.x + cardHalfWidth : d.a.x - cardHalfWidth
-              const endX = leftFirst ? d.b.x - cardHalfWidth : d.b.x + cardHalfWidth
-              const startY = d.a.y + yOffset
-              const endY = d.b.y + yOffset
-              const dir = endX >= startX ? 1 : -1
-              const control = Math.max(24, Math.abs(endX - startX) * 0.28)
-              return `M ${startX} ${startY} C ${startX + dir * control} ${startY}, ${endX - dir * control} ${endY}, ${endX} ${endY}`
-          })
-          .attr("fill", "none")
-          .attr("stroke", "#c9a96e")
-          .attr("stroke-width", 2)
-          .attr("stroke-dasharray", "6,4")
-          .attr("stroke-linecap", "round")
-          .attr("stroke-linejoin", "round")
-          .attr("stroke-opacity", 0.8)
-          .lower()
+}
 
       function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any) {
           if (!d) return
-          const cardWidth = isCompactMobileCard ? 128 : 164
-          const cardHeight = isCompactMobileCard ? 170 : 210
-          const cardRadius = isCompactMobileCard ? 13 : 16
-          const avatarRadius = isCompactMobileCard ? 30 : 40
-          const avatarClipRadius = isCompactMobileCard ? 27 : 36
+          const compact = isMobileViewport()
+          const cardWidth = compact ? 128 : 164
+          const cardHeight = compact ? 170 : 210
+          const cardRadius = compact ? 13 : 16
+          const avatarRadius = compact ? 30 : 40
+          const avatarClipRadius = compact ? 27 : 36
           const avatarDiameter = avatarClipRadius * 2
           const avatarCenterY = -cardHeight/4 + 2
-          const nameFontSize = isCompactMobileCard ? 11.5 : 13
-          const pillWidth = isCompactMobileCard ? 62 : 72
-          const pillHeight = isCompactMobileCard ? 20 : 22
-          const pillY = isCompactMobileCard ? 43 : 52
-          const pillFontSize = isCompactMobileCard ? 9.5 : 10.5
+          const nameFontSize = compact ? 11.5 : 13
+          const pillWidth = compact ? 62 : 72
+          const pillHeight = compact ? 20 : 22
+          const pillY = compact ? 43 : 52
+          const pillFontSize = compact ? 9.5 : 10.5
           const group = selection.append("g").attr("transform", `translate(${dx}, 0)`)
           const isUser = auth.user && d.username === auth.user.username
           const isMale = d.gender === 'M'
@@ -2562,62 +2320,6 @@ const focusFromQuery = () => {
                         .attr("font-size", `${pillFontSize}px`)
             .attr("font-weight", "700")
       }
-
-    const loggedInMember = (() => {
-        const authMemberId = resolveLoggedInMemberId()
-        if (authMemberId) {
-            return visibleNodes.find((n: any) => n.id === authMemberId) || null
-        }
-
-        const authUsername = String(auth.user?.username || '').trim().toLowerCase()
-        if (authUsername) {
-            return visibleNodes.find((n: any) => String(n.username || '').trim().toLowerCase() === authUsername) || null
-        }
-
-        return null
-    })()
-
-    const userCoords = loggedInMember ? nodeCanvasCoords.get(loggedInMember.id) : null
-    const coordsList = Array.from(nodeCanvasCoords.values())
-    const minScale = 0.35
-    const maxScale = isMobileViewport() ? 1.05 : 1.4
-      
-      if (userCoords) {
-         const scale = isMobileViewport() ? 0.72 : 1.2
-         svg.transition().duration(1500).call(
-             zoom.transform as any, 
-             d3.zoomIdentity.translate(width/2 - userCoords.x*scale, height/2 - userCoords.y*scale).scale(scale)
-         )
-      } else if (coordsList.length > 0) {
-         const xs = coordsList.map((p) => p.x)
-         const ys = coordsList.map((p) => p.y)
-         const minX = Math.min(...xs)
-         const maxX = Math.max(...xs)
-         const minY = Math.min(...ys)
-         const maxY = Math.max(...ys)
-
-         const cardPaddingX = isMobileViewport() ? 150 : 190
-         const cardPaddingY = isMobileViewport() ? 180 : 230
-         const treeWidth = Math.max(1, (maxX - minX) + cardPaddingX)
-         const treeHeight = Math.max(1, (maxY - minY) + cardPaddingY)
-         const viewportWidth = Math.max(1, width - (isMobileViewport() ? 28 : 72))
-         const viewportHeight = Math.max(1, height - (isMobileViewport() ? 50 : 90))
-         const scale = Math.max(minScale, Math.min(maxScale, Math.min(viewportWidth / treeWidth, viewportHeight / treeHeight)))
-
-         const centerX = (minX + maxX) / 2
-         const centerY = (minY + maxY) / 2
-
-         svg.transition().duration(950).call(
-             zoom.transform as any,
-             d3.zoomIdentity.translate(width / 2 - centerX * scale, height / 2 - centerY * scale).scale(scale)
-         )
-      } else {
-         svg.transition().duration(750).call(
-             zoom.transform as any, 
-             d3.zoomIdentity.translate(width/2, 50).scale(0.5)
-         )
-      }
-   }
 
 onMounted(async () => {
     window.addEventListener('resize', onViewportResize)
