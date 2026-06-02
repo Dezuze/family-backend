@@ -349,7 +349,8 @@
     },
     "errors": {
       "loadFailed": "Failed to load gallery",
-      "uploadFailed": "Upload failed"
+      "uploadFailed": "Upload failed",
+      "deleteFailed": "Delete failed"
     },
     "status": {
       "loading": "Loading...",
@@ -370,6 +371,8 @@
       "close": "Close",
       "previous": "Previous",
       "next": "Next",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this item? This cannot be undone.",
       "imageFallback": "Image"
     }
   },

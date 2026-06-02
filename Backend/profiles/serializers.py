@@ -4,9 +4,16 @@ from families.models import FamilyMember
 
 
 class GallerySerializer(serializers.ModelSerializer):
+    media_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Gallery
-        fields = ('id', 'image', 'date', 'description', 'created_at')
+        fields = ('id', 'image', 'media_url', 'media_type', 'date', 'description', 'created_at')
+
+    def get_media_url(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
 
 
 class CommunityRoleSerializer(serializers.ModelSerializer):

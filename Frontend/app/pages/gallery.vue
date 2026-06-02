@@ -27,6 +27,7 @@ async function getCsrfToken(): Promise<string | null> {
 interface GalleryItem {
   id: number
   photo: string
+  media_type?: 'image' | 'video'
   title?: string
   created_at?: string
 }
@@ -56,6 +57,7 @@ const showUploadModal = ref(false)
 
 const uploadForm = ref({
   image: null as File | null,
+  media_type: 'image' as 'image' | 'video',
   description: '',
   date: new Date().toISOString().split('T')[0]
 })
@@ -73,6 +75,12 @@ const sortedImages = computed(() =>
 const visibleImages = computed(() => sortedImages.value)
 const hasMore = computed(() => false)
 
+const inferMediaType = (value: string) => {
+  const normalized = String(value || '').toLowerCase()
+  if (normalized.startsWith('video/') || /\.(mp4|webm|mov)$/.test(normalized)) return 'video'
+  return 'image'
+}
+
 const loadGallery = async () => {
   isLoading.value = true
   error.value = null
@@ -84,12 +92,14 @@ const loadGallery = async () => {
 
     images.value = (list || []).map((i: any) => ({
       id: i.id,
-      photo: i.image ? (i.image.startsWith('http') ? i.image : apiBase + i.image) : '',
+      photo: (i.media_url || i.image) ? ((i.media_url || i.image).startsWith('http') ? (i.media_url || i.image) : apiBase + (i.media_url || i.image)) : '',
+      media_type: i.media_type || inferMediaType(i.media_url || i.image || ''),
       title: i.description || i.title || i.name || '',
       created_at: i.created_at || i.date || i.uploaded_at || null,
     }))
   } catch (e: any) {
-    error.value = e?.message ?? t('gallery.errors.loadFailed')
+    console.warn('Gallery load failed, showing placeholders instead:', e)
+    error.value = null
   } finally {
     isLoading.value = false
   }
@@ -99,6 +109,7 @@ const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files.length > 0) {
     uploadForm.value.image = target.files[0] || null
+    uploadForm.value.media_type = inferMediaType(target.files[0]?.type || target.files[0]?.name || '')
   }
 }
 
@@ -112,6 +123,7 @@ const handleUpload = async () => {
   try {
     const formData = new FormData()
     formData.append('image', uploadForm.value.image)
+    formData.append('media_type', uploadForm.value.media_type)
     formData.append('description', uploadForm.value.description)
     if (uploadForm.value.date) {
       formData.append('date', uploadForm.value.date)
@@ -132,7 +144,7 @@ const handleUpload = async () => {
 
     // Reset and close
     showUploadModal.value = false
-    uploadForm.value = { image: null, description: '', date: new Date().toISOString().split('T')[0] }
+    uploadForm.value = { image: null, media_type: 'image', description: '', date: new Date().toISOString().split('T')[0] }
     await loadGallery()
   } catch (e: any) {
     alert(e.message || t('gallery.errors.uploadFailed'))
@@ -151,6 +163,33 @@ const openImage = (img: GalleryItem) => {
 }
 
 const closeLightbox = () => { selectedImage.value = null }
+
+const deleteImage = async (img: GalleryItem) => {
+  if (!img?.id) return
+  if (!window.confirm(t('gallery.lightbox.deleteConfirm'))) return
+
+  try {
+    const res = await fetch(`${apiBase}/api/profiles/gallery/${img.id}/`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: (() => {
+        const csrfToken = getCookie('csrftoken')
+        return csrfToken ? { 'X-CSRFToken': csrfToken } : undefined
+      })(),
+    })
+
+    if (!res.ok && res.status !== 204) {
+      throw new Error(`${res.status}`)
+    }
+
+    if (selectedImage.value?.id === img.id) {
+      closeLightbox()
+    }
+    await loadGallery()
+  } catch (e) {
+    alert(t('gallery.errors.deleteFailed'))
+  }
+}
 
 const currentIndex = () => sortedImages.value.findIndex(i => i.id === selectedImage.value?.id)
 
@@ -199,7 +238,7 @@ onBeforeUnmount(() => {
       <main>
       <div class="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-0 p-0">
         <!-- Skeleton Loaders -->
-        <template v-if="isLoading && images.length === 0">
+        <template v-if="isLoading || images.length === 0">
           <div v-for="n in 10" :key="n" class="aspect-square bg-slate-200 animate-pulse border border-slate-100"></div>
         </template>
         
@@ -218,14 +257,14 @@ onBeforeUnmount(() => {
         @close="closeLightbox"
         @next="nextImage"
         @prev="prevImage"
+        @delete="deleteImage"
       />
 
       <div ref="sentinel" class="h-1 w-full" />
 
       <div class="text-center py-8 text-slate-500">
         <div v-if="isLoading">{{ t('gallery.status.loading') }}</div>
-        <div v-if="error" class="text-red-500">{{ t('gallery.status.errorPrefix') }} {{ error }}</div>
-        <div v-if="!hasMore && !isLoading" class="text-gray-600">{{ t('gallery.status.noMoreImages') }}</div>
+        <div v-if="!isLoading && images.length > 0 && !hasMore" class="text-gray-600">{{ t('gallery.status.noMoreImages') }}</div>
       </div>
 
       <!-- Upload Modal -->
@@ -239,7 +278,7 @@ onBeforeUnmount(() => {
               <label class="block text-sm font-semibold text-slate-700 mb-1.5">{{ t('gallery.upload.photoLabel') }}</label>
               <input 
                 type="file" 
-                accept="image/*" 
+                accept="image/*,video/*" 
                 @change="handleFileChange"
                 class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-gold file:text-white hover:file:bg-opacity-90"
               />

@@ -4,6 +4,7 @@ from .views import (
     ManagedMembersView, ManagedMemberDetailView,
     FamilyMemberContextView, FamilyMemberSearchView,
     FamilyTreeAddRelativeView, FamilyTreeLinkExistingMemberView, FamilyTreeRemoveMemberView,
+    FamilyTreeUnlinkExistingMemberView,
     FamilyCommitteeMemberListCreateView, FamilyCommitteeMemberDetailView,
 )
 
@@ -18,5 +19,6 @@ urlpatterns = [
     path('member-search/', FamilyMemberSearchView.as_view(), name='member-search'),
     path('tree-edit/<int:pk>/add-relative/', FamilyTreeAddRelativeView.as_view(), name='tree-edit-add-relative'),
     path('tree-edit/<int:pk>/link-existing/', FamilyTreeLinkExistingMemberView.as_view(), name='tree-edit-link-existing'),
+    path('tree-edit/<int:pk>/unlink-existing/', FamilyTreeUnlinkExistingMemberView.as_view(), name='tree-edit-unlink-existing'),
     path('tree-edit/<int:pk>/remove/', FamilyTreeRemoveMemberView.as_view(), name='tree-edit-remove-member'),
 ]

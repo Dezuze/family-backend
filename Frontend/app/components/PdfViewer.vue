@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full flex justify-center">
+  <div class="w-full h-full flex justify-center">
     <div class="pdf-frame" ref="frameRef">
         <div class="pdf-inner" ref="innerRef" @touchstart.passive="onTouchStart" @touchend.passive="onTouchEnd">
           <canvas v-for="c in canvases" :key="c.key" :ref="el => registerCanvas(el, c.index)" class="pdf-canvas" />
@@ -242,6 +242,9 @@ watch([currentPage, isTwoUp], async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
 })
+
+// Expose navigation API to parent components via template ref
+defineExpose({ nextPage, prevPage, currentPage, numPages, loading, isTwoUp })
 </script>
 
 <style scoped>
@@ -258,7 +261,8 @@ onBeforeUnmount(() => {
   border-radius: 0.75rem;
   display: flex;
   justify-content: center;
-  min-height: 400px;
+  min-height: 0;
+  height: 100%;
 }
 .pdf-inner {
   display: flex;
@@ -277,7 +281,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 @media (max-width: 767px) {
-  .pdf-frame { border-width: 6px; padding: 4px; }
-  .pdf-inner { gap: 2px; }
+  .pdf-frame { border-width: 0; padding: 0; border-radius: 0; box-shadow: none; background: transparent; }
+  .pdf-inner { gap: 0; padding: 0; }
 }
 </style>

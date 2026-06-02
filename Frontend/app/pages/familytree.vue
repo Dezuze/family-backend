@@ -525,6 +525,15 @@
                 {{ t('familyTree.editor.removeSelected') }}
             </button>
 
+            <button
+                v-if="lastLinkedRelation"
+                class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-all duration-300 hover:bg-slate-50 active:scale-95 disabled:opacity-50"
+                :disabled="editorLoading"
+                @click="undoLastLinkedRelation"
+            >
+                Undo last link
+            </button>
+
             <Transition name="fade-slide">
                 <p v-if="!allowedActions.can_manage" class="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">{{ t('familyTree.editor.permissionHint') }}</p>
             </Transition>
@@ -780,6 +789,7 @@ const quickEditForm = ref({
     is_deceased: false,
     date_of_death: '',
 })
+const lastLinkedRelation = ref<null | { anchorId: number; targetId: number; relationType: 'PARENT' | 'SPOUSE' | 'SIBLING' | 'CHILD' }>(null)
 
 const canShowGiveAccess = computed(() => {
     if (!selectedMember.value) return false
@@ -837,6 +847,8 @@ const selectedTargetAlreadyLinked = computed(() => {
     }
     return false
 })
+
+const branchPalette = ['#C9A96E', '#7A9BBD', '#C88A97', '#8BB174', '#C0825A']
 
 const duplicateRelationWarning = computed(() => {
     if (selectedTargetAlreadyLinked.value) {
@@ -1453,6 +1465,7 @@ const addRelativeFromPanel = async () => {
     editorLoading.value = true
     editorError.value = ''
     editorSuccess.value = ''
+    const linkedTarget = selectedLinkTarget.value
 
     try {
         const csrfHeaders = await withCsrfHeaders()
@@ -1519,9 +1532,17 @@ const addRelativeFromPanel = async () => {
 
         if (addRelativeMode.value === 'create') {
             resetAddRelativeForm()
+            lastLinkedRelation.value = null
         } else {
             linkSearchQuery.value = ''
             resetLinkTarget()
+            if (linkedTarget) {
+                lastLinkedRelation.value = {
+                    anchorId: anchorMemberId,
+                    targetId: linkedTarget.id,
+                    relationType: addRelationType.value,
+                }
+            }
         }
         editorSuccess.value = addRelativeMode.value === 'create'
             ? t('familyTree.editor.success.relativeAdded')
@@ -1536,6 +1557,57 @@ const addRelativeFromPanel = async () => {
         }
     } catch (err) {
         editorError.value = t('familyTree.editor.errors.addRelativeFailed')
+        console.error(err)
+    } finally {
+        editorLoading.value = false
+    }
+}
+
+const undoLastLinkedRelation = async () => {
+    if (!lastLinkedRelation.value) return
+    if (!selectedMember.value || selectedMember.value.id !== lastLinkedRelation.value.anchorId) {
+        editorError.value = 'Select the same member to undo the last link.'
+        return
+    }
+
+    editorLoading.value = true
+    editorError.value = ''
+    editorSuccess.value = ''
+
+    try {
+        const csrfHeaders = await withCsrfHeaders()
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(csrfHeaders ? (csrfHeaders as Record<string, string>) : {}),
+        }
+        const res = await fetch(`${apiBase}/api/families/tree-edit/${lastLinkedRelation.value.anchorId}/unlink-existing/`, {
+            method: 'POST',
+            headers,
+            credentials: 'include',
+            body: JSON.stringify({
+                target_member_id: lastLinkedRelation.value.targetId,
+                relation_type: lastLinkedRelation.value.relationType,
+            }),
+        })
+
+        const payload = await res.json().catch(() => ({}))
+        if (!res.ok) {
+            editorError.value = payload.error || 'Unable to undo the last link.'
+            return
+        }
+
+        lastLinkedRelation.value = null
+        editorSuccess.value = 'Last link undone.'
+        await familyStore.fetchFamily()
+        await auth.fetchProfile()
+        setTimeout(initGraph, 120)
+        const refreshed = nodes.value.find((n: any) => n.id === selectedMember.value?.id)
+        if (refreshed) {
+            selectedMember.value = refreshed as FamilyMember
+            await loadMemberContext(refreshed.id)
+        }
+    } catch (err) {
+        editorError.value = 'Unable to undo the last link.'
         console.error(err)
     } finally {
         editorLoading.value = false
@@ -1787,15 +1859,30 @@ const initGraph = () => {
     const isCompactMobileCard = isMobileViewport()
     const cardWidth = isCompactMobileCard ? 128 : 164
     const cardHeight = isCompactMobileCard ? 170 : 210
-    const siblingGap = isCompactMobileCard ? 90 : 160
+    const siblingGap = isCompactMobileCard ? 84 : 150
     const levelGap = isCompactMobileCard ? 240 : 290
     const topOffset = isCompactMobileCard ? 96 : 120
-    const familyGap = isCompactMobileCard ? 180 : 280
     const spouseGap = isCompactMobileCard ? 32 : 48
     const cardHalfWidth = cardWidth / 2
+    const spouseCenterOffset = (cardWidth + spouseGap) / 2
 
-    const membersById = new Map<number, any>(nodes.value.map((node: any) => [Number(node.id), node]))
-    const visibleNodes = nodes.value.filter((node: any) => Number.isFinite(Number(node.id)))
+    const visibleNodeMap = new Map<number, any>()
+    const duplicateNodeIds = new Set<number>()
+    for (const node of nodes.value) {
+        const id = Number((node as any)?.id)
+        if (!Number.isFinite(id)) continue
+        if (visibleNodeMap.has(id)) {
+            duplicateNodeIds.add(id)
+            continue
+        }
+        visibleNodeMap.set(id, node)
+    }
+    if (duplicateNodeIds.size && import.meta.dev) {
+        console.warn('Duplicate family tree node ids ignored:', Array.from(duplicateNodeIds))
+    }
+
+    const visibleNodes = Array.from(visibleNodeMap.values())
+    const membersById = new Map<number, any>(visibleNodes.map((node: any) => [Number(node.id), node]))
     const nodeIdSet = new Set<number>(visibleNodes.map((node: any) => Number(node.id)))
 
     type GraphLink = { source: number; target: number }
@@ -1847,21 +1934,7 @@ const initGraph = () => {
             })
     )
 
-    const parentByChild = new Map<number, Set<number>>()
-    const childrenByParent = new Map<number, Set<number>>()
     const spouseByMember = new Map<number, number>()
-    const siblingByMember = new Map<number, Set<number>>()
-
-    const addSetValue = (map: Map<number, Set<number>>, key: number, value: number) => {
-        if (!map.has(key)) map.set(key, new Set<number>())
-        map.get(key)!.add(value)
-    }
-
-    for (const link of parentLinks) {
-        if (!nodeIdSet.has(link.source) || !nodeIdSet.has(link.target)) continue
-        addSetValue(parentByChild, link.target, link.source)
-        addSetValue(childrenByParent, link.source, link.target)
-    }
 
     for (const link of spouseLinks) {
         if (!nodeIdSet.has(link.source) || !nodeIdSet.has(link.target)) continue
@@ -1869,175 +1942,195 @@ const initGraph = () => {
         if (!spouseByMember.has(link.target)) spouseByMember.set(link.target, link.source)
     }
 
-    for (const link of siblingLinks) {
-        if (!nodeIdSet.has(link.source) || !nodeIdSet.has(link.target)) continue
-        addSetValue(siblingByMember, link.source, link.target)
-        addSetValue(siblingByMember, link.target, link.source)
-    }
+    const activeSpouseLinks = spouseLinks.filter(
+        (link) => spouseByMember.get(link.source) === link.target && spouseByMember.get(link.target) === link.source
+    )
 
-    const adjacency = new Map<number, Set<number>>()
-    const addUndirectedEdge = (a: number, b: number) => {
+    const componentAdjacency = new Map<number, Set<number>>()
+    const addComponentEdge = (a: number, b: number) => {
         if (!nodeIdSet.has(a) || !nodeIdSet.has(b) || a === b) return
-        addSetValue(adjacency, a, b)
-        addSetValue(adjacency, b, a)
+        if (!componentAdjacency.has(a)) componentAdjacency.set(a, new Set<number>())
+        if (!componentAdjacency.has(b)) componentAdjacency.set(b, new Set<number>())
+        componentAdjacency.get(a)!.add(b)
+        componentAdjacency.get(b)!.add(a)
     }
 
-    for (const link of parentLinks) addUndirectedEdge(link.source, link.target)
-    for (const link of spouseLinks) addUndirectedEdge(link.source, link.target)
-    for (const link of siblingLinks) addUndirectedEdge(link.source, link.target)
+    for (const link of parentLinks) addComponentEdge(link.source, link.target)
+    for (const link of activeSpouseLinks) addComponentEdge(link.source, link.target)
+    for (const link of siblingLinks) addComponentEdge(link.source, link.target)
 
-    // Group nodes by family_id for readable layout
-    const familyGroups = new Map<number, any[]>()
+    const componentGroups: any[][] = []
+    const visitedComponentNodes = new Set<number>()
     for (const node of visibleNodes) {
-        const familyId = Number(node.family_id || node.id)
-        if (!familyGroups.has(familyId)) {
-            familyGroups.set(familyId, [])
-        }
-        familyGroups.get(familyId)!.push(node)
-    }
-    const componentGroups = Array.from(familyGroups.values()).filter((group) => group.length > 0)
+        const startId = Number(node.id)
+        if (visitedComponentNodes.has(startId)) continue
 
-    const buildComponentLayout = (componentNodes: any[], startX: number) => {
-        const componentNodeIds = new Set<number>(componentNodes.map((node) => Number(node.id)))
-        const generation = new Map<number, number>()
-        const indegree = new Map<number, number>()
-        const children = new Map<number, number[]>()
-
-        for (const node of componentNodes) {
-            const id = Number(node.id)
-            generation.set(id, 0)
-            indegree.set(id, 0)
-            children.set(id, [])
-        }
-
-        const localParentLinks = parentLinks.filter((link) => componentNodeIds.has(link.source) && componentNodeIds.has(link.target))
-        for (const link of localParentLinks) {
-            children.get(link.source)?.push(link.target)
-            indegree.set(link.target, (indegree.get(link.target) || 0) + 1)
-        }
-
-        const queue = componentNodes.map((node) => Number(node.id)).filter((id) => (indegree.get(id) || 0) === 0).sort((a, b) => a - b)
-        const visited = new Set<number>()
+        const componentIds: number[] = []
+        const queue = [startId]
+        visitedComponentNodes.add(startId)
 
         while (queue.length) {
             const id = queue.shift()!
-            visited.add(id)
-            for (const childId of children.get(id) || []) {
-                const nextLevel = (generation.get(id) || 0) + 1
-                generation.set(childId, Math.max(generation.get(childId) || 0, nextLevel))
-                const nextIn = (indegree.get(childId) || 0) - 1
-                indegree.set(childId, nextIn)
-                if (nextIn === 0) queue.push(childId)
+            componentIds.push(id)
+            for (const nextId of componentAdjacency.get(id) || []) {
+                if (visitedComponentNodes.has(nextId)) continue
+                visitedComponentNodes.add(nextId)
+                queue.push(nextId)
             }
         }
 
-        for (const node of componentNodes) {
-            const id = Number(node.id)
-            if (visited.has(id)) continue
-            const parents = Array.from(parentByChild.get(id) || [])
-                .filter((parentId) => componentNodeIds.has(parentId) && visited.has(parentId))
-                .map((parentId) => generation.get(parentId) || 0)
-            if (parents.length) generation.set(id, Math.max(...parents) + 1)
-        }
+        componentGroups.push(
+            componentIds
+                .map((id) => membersById.get(id))
+                .filter(Boolean)
+                .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))),
+        )
+    }
+    componentGroups.sort((a, b) => {
+        const aFamily = Math.min(...a.map((node) => Number(node.family_id || node.id)))
+        const bFamily = Math.min(...b.map((node) => Number(node.family_id || node.id)))
+        return aFamily - bFamily || String(a[0]?.name || '').localeCompare(String(b[0]?.name || ''))
+    })
 
-        for (let pass = 0; pass < 3; pass += 1) {
-            let changed = false
-            for (const link of siblingLinks) {
-                if (!componentNodeIds.has(link.source) || !componentNodeIds.has(link.target)) continue
-                const aligned = Math.max(generation.get(link.source) || 0, generation.get(link.target) || 0)
-                if ((generation.get(link.source) || 0) !== aligned) {
-                    generation.set(link.source, aligned)
-                    changed = true
-                }
-                if ((generation.get(link.target) || 0) !== aligned) {
-                    generation.set(link.target, aligned)
-                    changed = true
-                }
+    type LayoutUnit = {
+        key: string
+        memberIds: number[]
+        children: LayoutUnit[]
+    }
+
+    const buildComponentLayout = (componentNodes: any[], startX: number) => {
+        const componentNodeIds = new Set<number>(componentNodes.map((node) => Number(node.id)))
+        const unitByKey = new Map<string, LayoutUnit>()
+        const unitKeyByMember = new Map<number, string>()
+
+        const orderedComponentIds = componentNodes
+            .map((node) => Number(node.id))
+            .filter((id) => Number.isFinite(id))
+            .sort((a, b) => a - b)
+
+        const getUnitKey = (id: number) => {
+            const spouseId = spouseByMember.get(id)
+            if (spouseId && componentNodeIds.has(spouseId)) {
+                const first = Math.min(id, spouseId)
+                const second = Math.max(id, spouseId)
+                return `${first}+${second}`
             }
-            for (const link of spouseLinks) {
-                if (!componentNodeIds.has(link.source) || !componentNodeIds.has(link.target)) continue
-                const aligned = Math.max(generation.get(link.source) || 0, generation.get(link.target) || 0)
-                if ((generation.get(link.source) || 0) !== aligned) {
-                    generation.set(link.source, aligned)
-                    changed = true
-                }
-                if ((generation.get(link.target) || 0) !== aligned) {
-                    generation.set(link.target, aligned)
-                    changed = true
-                }
+            return String(id)
+        }
+
+        for (const id of orderedComponentIds) {
+            const key = getUnitKey(id)
+            if (!unitByKey.has(key)) {
+                const memberIds = key.split('+').map(Number).filter((memberId) => componentNodeIds.has(memberId))
+                unitByKey.set(key, { key, memberIds, children: [] })
             }
-            if (!changed) break
+            unitKeyByMember.set(id, key)
         }
 
-        const levels = Array.from({ length: Math.max(0, ...Array.from(generation.values())) + 1 }, () => [] as number[])
-        for (const node of componentNodes) {
-            levels[generation.get(Number(node.id)) || 0].push(Number(node.id))
+        const childKeysByUnit = new Map<string, Set<string>>()
+        const parentKeysByUnit = new Map<string, Set<string>>()
+        const addUnitEdge = (parentKey: string, childKey: string) => {
+            if (!unitByKey.has(parentKey) || !unitByKey.has(childKey) || parentKey === childKey) return
+            if (!childKeysByUnit.has(parentKey)) childKeysByUnit.set(parentKey, new Set<string>())
+            if (!parentKeysByUnit.has(childKey)) parentKeysByUnit.set(childKey, new Set<string>())
+            childKeysByUnit.get(parentKey)!.add(childKey)
+            parentKeysByUnit.get(childKey)!.add(parentKey)
         }
 
+        for (const link of parentLinks) {
+            if (!componentNodeIds.has(link.source) || !componentNodeIds.has(link.target)) continue
+            const parentKey = unitKeyByMember.get(link.source)
+            const childKey = unitKeyByMember.get(link.target)
+            if (parentKey && childKey) addUnitEdge(parentKey, childKey)
+        }
+
+        const nameForUnit = (unit: LayoutUnit) => {
+            return unit.memberIds
+                .map((id) => String(membersById.get(id)?.name || ''))
+                .join(' ')
+        }
+
+        const unitSort = (a: LayoutUnit, b: LayoutUnit) => {
+            const aName = nameForUnit(a)
+            const bName = nameForUnit(b)
+            return aName.localeCompare(bName) || a.key.localeCompare(b.key)
+        }
+
+        const sortedUnits = Array.from(unitByKey.values()).sort(unitSort)
+        const roots = sortedUnits.filter((unit) => !parentKeysByUnit.has(unit.key) || parentKeysByUnit.get(unit.key)!.size === 0)
+        if (!roots.length && sortedUnits.length) roots.push(sortedUnits[0]!)
+
+        const attached = new Set<string>()
+        const cloneAsTree = (unit: LayoutUnit, path = new Set<string>()): LayoutUnit => {
+            attached.add(unit.key)
+            const nextPath = new Set(path)
+            nextPath.add(unit.key)
+            const childUnits: LayoutUnit[] = []
+            for (const key of Array.from(childKeysByUnit.get(unit.key) || [])) {
+                const child = unitByKey.get(key)
+                if (!child || nextPath.has(child.key) || attached.has(child.key)) continue
+                childUnits.push(child)
+            }
+            childUnits.sort(unitSort)
+
+            return {
+                key: unit.key,
+                memberIds: unit.memberIds,
+                children: childUnits.map((child) => cloneAsTree(child, nextPath)),
+            }
+        }
+
+        const forestRoots = roots.map((root) => cloneAsTree(root))
+        for (const unit of sortedUnits) {
+            if (!attached.has(unit.key)) forestRoots.push(cloneAsTree(unit))
+        }
+
+        const hierarchy = d3.hierarchy<LayoutUnit>(
+            { key: 'component-root', memberIds: [], children: forestRoots },
+            (unit) => unit.children,
+        )
+
+        const treeLayout = d3.tree<LayoutUnit>()
+            .nodeSize([cardWidth + siblingGap * 0.82, levelGap])
+            .separation((a, b) => {
+                const aWidth = a.data.memberIds.length > 1 ? 1.35 : 1
+                const bWidth = b.data.memberIds.length > 1 ? 1.35 : 1
+                return (a.parent === b.parent ? 0.95 : 1.15) * Math.max(aWidth, bWidth)
+            })
+
+        const laidOut = treeLayout(hierarchy)
+        const realNodes = laidOut.descendants().filter((node) => node.depth > 0)
         const coords = new Map<number, { x: number; y: number }>()
-        let familyWidth = 0
+        const minTreeX = Math.min(0, ...realNodes.map((node) => node.x))
+        const maxTreeX = Math.max(0, ...realNodes.map((node) => node.x))
+        const xOffset = startX - minTreeX + cardWidth
 
-        const rowModels = levels.map((levelIds, levelIndex) => {
-            const orderedIds = [...levelIds].sort((a, b) => {
-                const aFamily = Number(membersById.get(a)?.family_id || 0)
-                const bFamily = Number(membersById.get(b)?.family_id || 0)
-                if (aFamily !== bFamily) return aFamily - bFamily
-                return String(membersById.get(a)?.name || '').localeCompare(String(membersById.get(b)?.name || ''))
-            })
-            const units: number[][] = []
-            const consumed = new Set<number>()
-
-            for (const id of orderedIds) {
-                if (consumed.has(id)) continue
-                const spouseId = spouseByMember.get(id)
-                if (spouseId && componentNodeIds.has(spouseId) && generation.get(spouseId) === levelIndex && !consumed.has(spouseId)) {
-                    units.push(id < spouseId ? [id, spouseId] : [spouseId, id])
-                    consumed.add(id)
-                    consumed.add(spouseId)
-                } else {
-                    units.push([id])
-                    consumed.add(id)
-                }
+        for (const treeNode of realNodes) {
+            const x = xOffset + treeNode.x
+            const y = topOffset + (treeNode.depth - 1) * levelGap
+            const members = treeNode.data.memberIds
+            if (members.length > 1) {
+                const leftId = members[0]
+                const rightId = members[1]
+                if (leftId !== undefined) coords.set(leftId, { x: x - spouseCenterOffset, y })
+                if (rightId !== undefined) coords.set(rightId, { x: x + spouseCenterOffset, y })
+            } else {
+                const singleId = members[0]
+                if (singleId !== undefined) coords.set(singleId, { x, y })
             }
-
-            const unitWidths = units.map((unit) => (unit.length === 2 ? cardWidth + spouseGap : cardWidth))
-            const rowWidth = unitWidths.reduce((sum, value) => sum + value, 0) + Math.max(0, units.length - 1) * siblingGap
-            familyWidth = Math.max(familyWidth, rowWidth)
-            return { levelIndex, units, unitWidths, rowWidth }
-        })
-
-        rowModels.forEach((row) => {
-            let cursor = startX + (familyWidth - row.rowWidth) / 2
-            const y = topOffset + row.levelIndex * levelGap
-
-            row.units.forEach((unit, index) => {
-                const unitWidth = row.unitWidths[index] ?? cardWidth
-                const center = cursor + unitWidth / 2
-
-                if (unit.length === 2) {
-                    const leftId = unit[0]
-                    const rightId = unit[1]
-                    if (leftId !== undefined) coords.set(leftId, { x: center - spouseGap / 2, y })
-                    if (rightId !== undefined) coords.set(rightId, { x: center + spouseGap / 2, y })
-                } else {
-                    const singleId = unit[0]
-                    if (singleId !== undefined) coords.set(singleId, { x: center, y })
-                }
-
-                cursor += unitWidth + siblingGap
-            })
-        })
+        }
 
         return {
             coords,
-            width: Math.max(familyWidth, cardWidth * 2),
-            height: topOffset + Math.max(1, rowModels.length) * levelGap + cardHeight,
+            width: Math.max(maxTreeX - minTreeX + cardWidth * 2, cardWidth * 2),
+            height: topOffset + Math.max(1, laidOut.height) * levelGap + cardHeight,
         }
     }
 
     const componentGap = isCompactMobileCard ? 140 : 220
     const nodeCanvasCoords = new Map<number, { x: number; y: number }>()
     const componentLayouts = new Map<number, { coords: Map<number, { x: number; y: number }>; width: number; height: number }>()
+    const componentIndexByNodeId = new Map<number, number>()
 
     let familyCursorX = 80
     for (let componentIndex = 0; componentIndex < componentGroups.length; componentIndex += 1) {
@@ -2047,6 +2140,7 @@ const initGraph = () => {
         for (const node of componentNodes) {
             const coord = layout.coords.get(Number(node.id))
             if (coord) nodeCanvasCoords.set(Number(node.id), coord)
+            if (coord) componentIndexByNodeId.set(Number(node.id), componentIndex)
         }
         familyCursorX += layout.width + componentGap
     }
@@ -2079,20 +2173,69 @@ const initGraph = () => {
         svg.call(zoom.transform as any, fittedTransform)
     }
 
-    const parentOverlayData = parentLinks
-        .filter((link) => nodeCanvasCoords.has(link.source) && nodeCanvasCoords.has(link.target))
-        .map((link) => ({
-            source: nodeCanvasCoords.get(link.source)!,
-            target: nodeCanvasCoords.get(link.target)!,
-            crossFamily: membersById.get(link.source)?.family_id !== membersById.get(link.target)?.family_id,
-        }))
+    type ParentOverlayLink = {
+        source: { x: number; y: number }
+        target: { x: number; y: number }
+        childId: number
+        parentIds: number[]
+        crossFamily: boolean
+        branchColor?: string
+    }
 
-    const spouseOverlayData = spouseLinks
+    const parentLinksByChild = new Map<number, GraphLink[]>()
+    for (const link of parentLinks) {
+        if (!nodeCanvasCoords.has(link.source) || !nodeCanvasCoords.has(link.target)) continue
+        if (!parentLinksByChild.has(link.target)) parentLinksByChild.set(link.target, [])
+        parentLinksByChild.get(link.target)!.push(link)
+    }
+
+    const parentOverlayData: ParentOverlayLink[] = []
+    for (const [childId, childParentLinks] of parentLinksByChild.entries()) {
+        const pending = [...childParentLinks].sort((a, b) => a.source - b.source)
+
+        while (pending.length) {
+            const link = pending.shift()!
+            const spouseIndex = pending.findIndex((candidate) => spouseByMember.get(link.source) === candidate.source)
+            const target = nodeCanvasCoords.get(childId)!
+
+            if (spouseIndex >= 0) {
+                const spouseLink = pending.splice(spouseIndex, 1)[0]!
+                const firstParent = nodeCanvasCoords.get(link.source)!
+                const secondParent = nodeCanvasCoords.get(spouseLink.source)!
+                parentOverlayData.push({
+                    source: {
+                        x: (firstParent.x + secondParent.x) / 2,
+                        y: (firstParent.y + secondParent.y) / 2,
+                    },
+                    target,
+                    childId,
+                    parentIds: [link.source, spouseLink.source],
+                    crossFamily:
+                        membersById.get(link.source)?.family_id !== membersById.get(childId)?.family_id ||
+                        membersById.get(spouseLink.source)?.family_id !== membersById.get(childId)?.family_id,
+                    branchColor: branchPalette[(componentIndexByNodeId.get(childId) || 0) % branchPalette.length],
+                })
+                continue
+            }
+
+            parentOverlayData.push({
+                source: nodeCanvasCoords.get(link.source)!,
+                target,
+                childId,
+                parentIds: [link.source],
+                crossFamily: membersById.get(link.source)?.family_id !== membersById.get(childId)?.family_id,
+                branchColor: branchPalette[(componentIndexByNodeId.get(childId) || 0) % branchPalette.length],
+            })
+        }
+    }
+
+    const spouseOverlayData = activeSpouseLinks
         .filter((link) => nodeCanvasCoords.has(link.source) && nodeCanvasCoords.has(link.target))
         .map((link) => ({
             a: nodeCanvasCoords.get(link.source)!,
             b: nodeCanvasCoords.get(link.target)!,
             crossFamily: membersById.get(link.source)?.family_id !== membersById.get(link.target)?.family_id,
+            branchColor: branchPalette[(componentIndexByNodeId.get(link.source) || 0) % branchPalette.length],
         }))
 
     const siblingOverlayData = siblingLinks
@@ -2101,6 +2244,7 @@ const initGraph = () => {
             a: nodeCanvasCoords.get(link.source)!,
             b: nodeCanvasCoords.get(link.target)!,
             crossFamily: membersById.get(link.source)?.family_id !== membersById.get(link.target)?.family_id,
+            branchColor: branchPalette[(componentIndexByNodeId.get(link.source) || 0) % branchPalette.length],
         }))
 
     g.append('g')
@@ -2109,16 +2253,18 @@ const initGraph = () => {
         .data(parentOverlayData)
         .join('path')
         .attr('fill', 'none')
-        .attr('stroke', (d) => d.crossFamily ? '#b7a67b' : '#a89060')
+        .attr('stroke', (d: any) => d.crossFamily ? '#b7a67b' : d.branchColor || '#a89060')
         .attr('stroke-width', 2.2)
         .attr('stroke-dasharray', (d) => d.crossFamily ? '4,4' : null)
         .attr('stroke-linecap', 'round')
         .attr('stroke-opacity', (d) => d.crossFamily ? 0.35 : 0.72)
+        .attr('data-child-id', (d) => d.childId)
+        .attr('data-parent-ids', (d) => d.parentIds.join(','))
         .attr('d', (d) => {
             const sourceY = d.source.y + (isCompactMobileCard ? 76 : 96)
             const targetY = d.target.y - (isCompactMobileCard ? 84 : 104)
-            const bendY = sourceY + (targetY - sourceY) * 0.55
-            return `M ${d.source.x} ${sourceY} C ${d.source.x} ${bendY}, ${d.target.x} ${bendY}, ${d.target.x} ${targetY}`
+            const midY = sourceY + (targetY - sourceY) * 0.5
+            return `M ${d.source.x} ${sourceY} L ${d.source.x} ${midY} L ${d.target.x} ${midY} L ${d.target.x} ${targetY}`
         })
 
     g.append('g')
@@ -2127,7 +2273,7 @@ const initGraph = () => {
         .data(spouseOverlayData)
         .join('path')
         .attr('fill', 'none')
-        .attr('stroke', (d) => d.crossFamily ? '#d1bf8d' : '#c9a96e')
+        .attr('stroke', (d: any) => d.crossFamily ? '#d1bf8d' : d.branchColor || '#c9a96e')
         .attr('stroke-width', 2)
         .attr('stroke-dasharray', (d) => d.crossFamily ? '6,6' : '6,4')
         .attr('stroke-linecap', 'round')
@@ -2139,9 +2285,8 @@ const initGraph = () => {
             const endX = leftFirst ? d.b.x - cardHalfWidth : d.b.x + cardHalfWidth
             const startY = d.a.y - 10
             const endY = d.b.y - 10
-            const dir = endX >= startX ? 1 : -1
-            const control = Math.max(24, Math.abs(endX - startX) * 0.28)
-            return `M ${startX} ${startY} C ${startX + dir * control} ${startY}, ${endX - dir * control} ${endY}, ${endX} ${endY}`
+            const midX = startX + (endX - startX) * 0.5
+            return `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`
         })
 
     g.append('g')
@@ -2150,7 +2295,7 @@ const initGraph = () => {
         .data(siblingOverlayData)
         .join('path')
         .attr('fill', 'none')
-        .attr('stroke', (d) => d.crossFamily ? '#b8a89b' : '#9b8f7e')
+        .attr('stroke', (d: any) => d.crossFamily ? '#b8a89b' : d.branchColor || '#9b8f7e')
         .attr('stroke-width', 1.6)
         .attr('stroke-dasharray', (d) => d.crossFamily ? '3,3' : '5,3')
         .attr('stroke-linecap', 'round')
@@ -2160,10 +2305,8 @@ const initGraph = () => {
             const leftFirst = d.a.x <= d.b.x
             const startX = leftFirst ? d.a.x + cardHalfWidth : d.a.x - cardHalfWidth
             const endX = leftFirst ? d.b.x - cardHalfWidth : d.b.x + cardHalfWidth
-            const midY = d.a.y + (isCompactMobileCard ? 64 : 80)
-            const control = Math.max(16, Math.abs(endX - startX) * 0.22)
-            const dir = endX >= startX ? 1 : -1
-            return `M ${startX} ${d.a.y} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${d.b.y}`
+            const midX = startX + (endX - startX) * 0.5
+            return `M ${startX} ${d.a.y} L ${midX} ${d.a.y} L ${midX} ${d.b.y} L ${endX} ${d.b.y}`
         })
 
     const nodeGroup = g.append('g')
@@ -2172,18 +2315,20 @@ const initGraph = () => {
         .data(visibleNodes)
         .join('g')
         .attr('class', 'node')
+        .attr('data-member-id', (d: any) => Number(d.id))
         .attr('transform', (d: any) => {
             const coord = nodeCanvasCoords.get(Number(d.id))
             return `translate(${coord?.x || width / 2},${coord?.y || topOffset})`
         })
 
     nodeGroup.each(function(this: any, d: any) {
-        renderCard(d3.select(this), 0, d)
+        const branchIndex = componentIndexByNodeId.get(Number(d.id)) || 0
+        renderCard(d3.select(this), 0, d, branchPalette[branchIndex % branchPalette.length])
     })
 
 }
 
-      function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any) {
+      function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any, branchColor?: string) {
           if (!d) return
           const compact = isMobileViewport()
           const cardWidth = compact ? 128 : 164
@@ -2208,7 +2353,7 @@ const initGraph = () => {
           // Color scheme based on gender
           const cardFill = isUser ? '#F9EFC8' : (isMale ? '#EEF4FB' : isFemale ? '#FCEFF3' : '#EEF2F7')
           const cardStroke = isUser ? '#C9A96E' : (isMale ? '#90A7C7' : isFemale ? '#D5A1AF' : '#A6B0BE')
-          const accentColor = isUser ? '#A08050' : (isMale ? '#4A6B8A' : isFemale ? '#9C4F63' : '#596577')
+          const accentColor = branchColor || (isUser ? '#A08050' : (isMale ? '#4A6B8A' : isFemale ? '#9C4F63' : '#596577'))
           const avatarBg = isUser ? '#EED89D' : (isMale ? '#DCE6F0' : isFemale ? '#F5DDE1' : '#E2E8F0')
           const avatarRing = isUser ? '#B9914E' : (isMale ? '#7A9BBD' : isFemale ? '#C88A97' : '#93A1B5')
           
@@ -2376,6 +2521,9 @@ watch(locale, () => {
 watch(
     () => selectedMember.value?.id,
     (memberId) => {
+        if (lastLinkedRelation.value && memberId !== lastLinkedRelation.value.anchorId) {
+            lastLinkedRelation.value = null
+        }
         linkSearchQuery.value = ''
         resetLinkTarget()
         if (!memberId) return

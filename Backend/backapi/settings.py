@@ -79,7 +79,7 @@ INSTALLED_APPS = [
     'easy_thumbnails',
     'image_cropping',
     'accounts',
-    'families',
+    'families.apps.FamiliesConfig',
     'news',
     'profiles',
 ]
@@ -196,6 +196,28 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': str(BASE_DIR / 'db.sqlite3'),
+        }
+    }
+
+REDIS_URL = os.environ.get('REDIS_URL', '').strip()
+FAMILY_TREE_CACHE_TIMEOUT = int(os.environ.get('FAMILY_TREE_CACHE_TIMEOUT', 60 * 60 * 24 * 30))
+
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+            'KEY_PREFIX': os.environ.get('CACHE_KEY_PREFIX', 'family_site'),
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'family-site-dev',
         }
     }
 

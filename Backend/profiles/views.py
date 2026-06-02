@@ -1,9 +1,11 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework import status
 from .models import Gallery, CommunityRole
 from .serializers import GallerySerializer, CommunityRoleSerializer
 from rest_framework.views import APIView
+from pathlib import Path
 
 
 class CommunityRoleManageFlagView(APIView):
@@ -42,6 +44,35 @@ class GalleryListCreateView(ListCreateAPIView):
 	queryset = Gallery.objects.all().order_by('-created_at')
 	serializer_class = GallerySerializer
 	permission_classes = [AllowAny]
+
+	def perform_create(self, serializer):
+		upload = self.request.FILES.get('image')
+		requested_type = str(self.request.data.get('media_type') or '').strip().lower()
+		inferred = requested_type
+		if not inferred:
+			content_type = str(getattr(upload, 'content_type', '') or '').lower()
+			name = str(getattr(upload, 'name', '') or '').lower()
+			ext = Path(name).suffix
+			if content_type.startswith('video/') or ext in {'.mp4', '.webm', '.mov'}:
+				inferred = 'video'
+			else:
+				inferred = 'image'
+		if inferred not in {'image', 'video'}:
+			inferred = 'image'
+		serializer.save(media_type=inferred)
+
+
+class GalleryDetailView(RetrieveUpdateDestroyAPIView):
+	queryset = Gallery.objects.all()
+	serializer_class = GallerySerializer
+	permission_classes = [AllowAny]
+
+	def destroy(self, request, *args, **kwargs):
+		instance = self.get_object()
+		if instance.image:
+			instance.image.delete(save=False)
+		self.perform_destroy(instance)
+		return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 

@@ -911,6 +911,40 @@ class TreeEditEndpointsTests(TestCase):
             ).exists()
         )
 
+    def test_unlink_existing_parent_success(self):
+        father = FamilyMember.objects.create(
+            family=self.family,
+            name="Undo Father",
+            relation="Father",
+            gender="M",
+            created_by=self.other_user,
+        )
+        self.guardian_member.parents.add(father)
+        Relationship.objects.create(
+            from_member=self.guardian_member,
+            to_member=father,
+            relation_type='PARENT',
+        )
+
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/unlink-existing/',
+            {
+                "target_member_id": father.id,
+                "relation_type": "PARENT",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(
+            Relationship.objects.filter(
+                from_member=self.guardian_member,
+                to_member=father,
+                relation_type='PARENT',
+            ).exists()
+        )
+        self.assertFalse(self.guardian_member.parents.filter(id=father.id).exists())
+
     def test_link_existing_rejects_second_spouse(self):
         spouse = FamilyMember.objects.create(
             family=self.family,

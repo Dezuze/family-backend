@@ -37,6 +37,10 @@ Backend/*.dump
 Backend/*.json
 Backend/prod_dump_*.json
 Backend/prod_full_*.dump
+Backend/db_from_vps.sqlite3
+
+# Local diff/report output
+diff_reports/
 
 # Local media staging directories (synced from production)
 Backend/media_from_prod/

@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import Footer from '~/components/Footer.vue';
-import Navbar from '~/components/Navbar.vue';
+import { computed } from 'vue'
+import { useRoute } from '#imports'
+import Footer from '~/components/Footer.vue'
+import Navbar from '~/components/Navbar.vue'
 
+const route = useRoute()
+const hideFooter = computed(() => ['/familytree', '/history'].includes(route.path))
 </script>
 
 <template>
-    <div>
-        <Navbar  />
-          <slot />
-        <Footer />
-    </div>
+  <div>
+    <Navbar />
+    <slot />
+    <Footer v-if="!hideFooter" />
+  </div>
 </template>

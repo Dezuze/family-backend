@@ -27,6 +27,7 @@ from rest_framework import generics
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from datetime import date
+from .cache import get_cached_tree_payload, set_cached_tree_payload
 from .relationship_engine import BASE_RELATIONS, RelationshipEngine
 
 
@@ -350,6 +351,10 @@ class FamilyTreeView(APIView):
 
     def get(self, request):
         viewer_member = getattr(request.user, 'member', None) if getattr(request.user, 'is_authenticated', False) else None
+        root_id = getattr(viewer_member, 'id', None)
+        cached_payload = get_cached_tree_payload(root_id)
+        if cached_payload is not None:
+            return Response(cached_payload)
 
         members_qs = FamilyMember.objects.all().prefetch_related('parents')
         member_ids = list(members_qs.values_list('id', flat=True))
@@ -360,16 +365,16 @@ class FamilyTreeView(APIView):
 
         members = members_qs
         engine = RelationshipEngine(members=members, relationships=relationships)
-        payload = engine.build_payload(root_id=getattr(viewer_member, 'id', None))
+        payload = engine.build_payload(root_id=root_id)
+        response_payload = {
+            "nodes": payload.nodes,
+            "edges": payload.edges,
+            "computed_relations": payload.computed_relations,
+            "generation_depth": payload.generation_depth,
+        }
+        set_cached_tree_payload(root_id, response_payload)
 
-        return Response(
-            {
-                "nodes": payload.nodes,
-                "edges": payload.edges,
-                "computed_relations": payload.computed_relations,
-                "generation_depth": payload.generation_depth,
-            }
-        )
+        return Response(response_payload)
 
 
 
@@ -599,6 +604,43 @@ def _apply_relation_link(anchor_member, target_member, relation, anniversary_dat
             _safe_create_base_relationship(target_member, parent, 'PARENT')
 
 
+def _unlink_relation_link(anchor_member, target_member, relation):
+    if relation == 'PARENT':
+        anchor_member.parents.remove(target_member)
+        Relationship.objects.filter(
+            from_member=anchor_member,
+            to_member=target_member,
+            relation_type='PARENT',
+        ).delete()
+    elif relation == 'CHILD':
+        target_member.parents.remove(anchor_member)
+        Relationship.objects.filter(
+            from_member=anchor_member,
+            to_member=target_member,
+            relation_type='CHILD',
+        ).delete()
+    elif relation == 'SPOUSE':
+        Relationship.objects.filter(
+            Q(from_member=anchor_member, to_member=target_member) |
+            Q(from_member=target_member, to_member=anchor_member),
+            relation_type='SPOUSE',
+        ).delete()
+    elif relation == 'SIBLING':
+        linked_parents = list(anchor_member.parents.all())
+        Relationship.objects.filter(
+            Q(from_member=anchor_member, to_member=target_member) |
+            Q(from_member=target_member, to_member=anchor_member),
+            relation_type='SIBLING',
+        ).delete()
+        for parent in linked_parents:
+            target_member.parents.remove(parent)
+            Relationship.objects.filter(
+                from_member=target_member,
+                to_member=parent,
+                relation_type='PARENT',
+            ).delete()
+
+
 class FamilyMemberContextView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -811,6 +853,42 @@ class FamilyTreeLinkExistingMemberView(APIView):
                 "anchor_member_id": member.id,
                 "relation_type": relation,
                 "linked_existing": True,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class FamilyTreeUnlinkExistingMemberView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        member = get_object_or_404(FamilyMember.objects.prefetch_related('parents', 'children'), pk=pk)
+        if not _can_manage_member(request.user, member):
+            return Response({"error": "You do not have permission to edit this member."}, status=403)
+
+        data = request.data
+        relation = _normalize_user_relation_or_error(data.get('relation_type') or data.get('relation'))
+        if relation not in BASE_RELATIONS:
+            return Response({"error": "Unsupported relation type."}, status=400)
+
+        target_member_id = data.get('target_member_id')
+        try:
+            target_member_id = int(target_member_id)
+        except (TypeError, ValueError):
+            return Response({"error": "Valid target_member_id is required."}, status=400)
+
+        target_member = get_object_or_404(FamilyMember, pk=target_member_id)
+        if target_member.id == member.id:
+            return Response({"error": "Cannot unlink a member from itself."}, status=400)
+
+        _unlink_relation_link(member, target_member, relation)
+
+        return Response(
+            {
+                "member": FamilyMemberSerializer(target_member, context={'request': request}).data,
+                "anchor_member_id": member.id,
+                "relation_type": relation,
+                "unlinked_existing": True,
             },
             status=status.HTTP_200_OK,
         )

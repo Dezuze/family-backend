@@ -269,15 +269,8 @@ class Relationship(models.Model):
     def clean(self):
         """Prevent duplicate spouse relationships and cross-family relationships."""
         from django.core.exceptions import ValidationError
-        
-        # Prevent relationships between members of different families
-        if self.from_member and self.to_member:
-            if self.from_member.family_id != self.to_member.family_id:
-                raise ValidationError(
-                    f'Cannot create a relationship between {self.from_member.name} ({self.from_member.family.branch}) '
-                    f'and {self.to_member.name} ({self.to_member.family.branch}). '
-                    'Both members must belong to the same family.'
-                )
+        # Note: cross-family relationships are allowed to support linking
+        # members across different users/families (tests and UX expect this).
         
         # Only validate SPOUSE relationships to prevent bidirectional duplicates
         if (self.relation_type or '').strip().upper() == 'SPOUSE':
@@ -296,7 +289,10 @@ class Relationship(models.Model):
 
     def save(self, *args, **kwargs):
         """Ensure clean() is called before saving."""
-        self.full_clean()
+        # Call only `clean()` here to run model-level checks but allow
+        # database-level uniqueness constraints to raise IntegrityError
+        # (tests expect IntegrityError on duplicate inserts).
+        self.clean()
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -23,7 +23,13 @@ class CommunityRole(models.Model):
 
 
 class Gallery(models.Model):
-	image = models.ImageField(upload_to='gallery/')
+	MEDIA_TYPE_CHOICES = [
+		('image', 'Image'),
+		('video', 'Video'),
+	]
+
+	image = models.FileField(upload_to='gallery/')
+	media_type = models.CharField(max_length=20, choices=MEDIA_TYPE_CHOICES, default='image')
 	date = models.DateField(null=True, blank=True)
 	description = models.TextField(blank=True)
 

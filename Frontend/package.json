@@ -8,7 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "test": "vitest run"
+    "test": "vitest run --exclude tests/visual/**",
+    "test:visual": "playwright test -c playwright.config.mjs"
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.9.0",
@@ -40,6 +41,7 @@
   "devDependencies": {
     "@types/d3": "^7.4.3",
     "@types/node": "^25.0.8",
+    "@playwright/test": "^1.56.1",
     "@vitest/ui": "^4.0.18",
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^20.5.3",

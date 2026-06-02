@@ -56,6 +56,15 @@ services:
       - internal
     restart: always
 
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    restart: always
+
   backend:
     image: ghcr.io/${OWNER_LC:-dezuze}/family-backend:latest
     env_file: ../../.env
@@ -65,6 +74,7 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/1
       DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,${DOMAIN},www.${DOMAIN},api.${DOMAIN},www.api.${DOMAIN},backend"
       CORS_ALLOWED_ORIGINS: "https://${DOMAIN},https://www.${DOMAIN},https://api.${DOMAIN},https://www.api.${DOMAIN}"
       CSRF_TRUSTED_ORIGINS: "https://${DOMAIN},https://www.${DOMAIN},https://api.${DOMAIN},https://www.api.${DOMAIN}"
@@ -97,6 +107,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     restart: always
 
   frontend:
@@ -134,3 +146,4 @@ networks:
 volumes:
   postgres_data:
   static_volume:
+  redis_data:
