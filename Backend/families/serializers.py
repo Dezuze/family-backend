@@ -23,7 +23,7 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
             'date_of_birth', 'date_of_death', 'wedding_anniversary', 'blood_group', 'is_deceased', 'is_independent', 'has_account',
             'phone_no', 'email_id', 'photo',
             'profile_pic', 'bio', 'occupation', 'education', 'address_if_different', 
-            'place_of_work', 'church_parish', 'parents', 'created_by', 'relationships'
+            'place_of_work', 'church_parish', 'parents', 'created_by', 'relationships', 'generation'
         ]
         extra_kwargs = {
             'parents': {'required': False},
@@ -31,6 +31,7 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
             'date_of_birth': {'required': False, 'allow_null': True},
             'date_of_death': {'required': False, 'allow_null': True},
             'member_id': {'required': False, 'allow_null': True, 'allow_blank': True},
+            'generation': {'required': False, 'allow_null': True},
         }
 
     def get_profile_pic(self, obj):
@@ -60,7 +61,7 @@ class FamilyTreeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FamilyMember
-        fields = ['id', 'member_id', 'name', 'name_ml', 'role', 'is_committee', 'photo', 'parents', 'children']
+        fields = ['id', 'member_id', 'name', 'name_ml', 'role', 'is_committee', 'photo', 'parents', 'children', 'generation']
         depth = 1 
 
 

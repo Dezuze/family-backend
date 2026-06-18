@@ -41,6 +41,7 @@ class RelationshipEngine:
         self._ingest_relationships()
         self._ingest_parent_links_from_members()
         self._infer_siblings_from_shared_parents()
+        self._infer_spouses_from_coparents()
 
     @staticmethod
     def canonicalize_input(label: str) -> str | None:
@@ -295,6 +296,7 @@ class RelationshipEngine:
                     "address": member.address_if_different,
                     "location": member.address_if_different,
                     "place_of_work": member.place_of_work,
+                    "generation": member.generation,
                 }
             )
 

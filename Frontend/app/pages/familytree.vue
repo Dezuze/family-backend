@@ -152,6 +152,15 @@
           >
               -
           </button>
+          <button
+              type="button"
+              class="pointer-events-auto h-10 w-10 rounded-xl border border-slate-200 bg-white/95 text-lg font-black text-slate-700 shadow-lg backdrop-blur active:scale-95"
+              @click="toggleHorizontalCompression"
+              aria-label="Toggle horizontal compression"
+              title="Compress horizontally"
+          >
+              ↔
+          </button>
       </div>
             <svg ref="svgRef" class="w-full h-full relative z-1 touch-pan-y md:touch-none"></svg>
     </div>
@@ -200,7 +209,7 @@
      <MemberDetailsModal 
                     v-if="selectedMember && !editMode" 
                 :member="selectedMemberForModal" 
-          :canEdit="editMode && allowedActions.can_manage"
+          :canEdit="canEditSelected"
         @edit="openQuickEditForSelected"
         @close="selectedMember = null" 
      />
@@ -217,46 +226,119 @@
             </div>
 
             <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2">
-                <input v-model="quickEditForm.first_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="First name" />
-                <input v-model="quickEditForm.last_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Last name" />
-                <input v-model="quickEditForm.member_id" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Member ID" />
-                <div class="md:col-span-2 flex gap-2">
-                    <input v-model="quickEditForm.name_ml" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Malayalam name" />
-                    <button
-                        type="button"
-                        class="shrink-0 rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold hover:bg-brand-gold/10 disabled:opacity-50"
-                        :disabled="nameLookupLoadingQuick"
-                        @click="lookupMalayalamNameForQuickEdit"
-                    >
-                        {{ nameLookupLoadingQuick ? 'Searching...' : 'Malayalam' }}
-                    </button>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">First name</label>
+                    <input v-model="quickEditForm.first_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="First name" />
                 </div>
-                <input v-model="quickEditForm.nickname" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Nickname" />
-                <select v-model="quickEditForm.gender" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                    <option value="M">Male</option>
-                    <option value="F">Female</option>
-                    <option value="O">Other</option>
-                </select>
-                <input v-model="quickEditForm.date_of_birth" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                <input v-model="quickEditForm.age" type="number" min="0" max="150" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Age" />
-                <input v-model="quickEditForm.blood_group" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Blood group" />
-                <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
-                <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
-                <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
-                <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
-                <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
-                <div class="mt-2" v-if="selectedMemberHasSpouse">
-                    <label class="text-xs font-semibold text-slate-600 mb-1">Wedding anniversary</label>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Last name</label>
+                    <input v-model="quickEditForm.last_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Last name" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Member ID</label>
+                    <input v-model="quickEditForm.member_id" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Member ID" />
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Malayalam name</label>
+                    <div class="flex gap-2">
+                        <input v-model="quickEditForm.name_ml" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Malayalam name" />
+                        <button
+                            type="button"
+                            class="shrink-0 rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold hover:bg-brand-gold/10 disabled:opacity-50"
+                            :disabled="nameLookupLoadingQuick"
+                            @click="lookupMalayalamNameForQuickEdit"
+                        >
+                            {{ nameLookupLoadingQuick ? 'Searching...' : 'Malayalam' }}
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Nickname</label>
+                    <input v-model="quickEditForm.nickname" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Nickname" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Gender</label>
+                    <select v-model="quickEditForm.gender" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Generation</label>
+                    <select v-model="quickEditForm.generation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                        <option :value="null">Auto</option>
+                        <option :value="0">I</option>
+                        <option :value="1">II</option>
+                        <option :value="2">III</option>
+                        <option :value="3">IV</option>
+                        <option :value="4">V</option>
+                        <option :value="5">VI</option>
+                        <option :value="6">VII</option>
+                        <option :value="7">VIII</option>
+                        <option :value="8">IX</option>
+                        <option :value="9">X</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of birth</label>
+                    <input v-model="quickEditForm.date_of_birth" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Age</label>
+                    <input v-model="quickEditForm.age" type="number" min="0" max="150" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Age" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Blood group</label>
+                    <input v-model="quickEditForm.blood_group" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Blood group" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Occupation</label>
+                    <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Education</label>
+                    <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Parish</label>
+                    <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</label>
+                    <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</label>
+                    <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
+                </div>
+                <div class="md:col-span-2 flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Wedding anniversary</label>
                     <input v-model="quickEditForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
                 </div>
-                <textarea v-model="quickEditForm.address" rows="2" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address"></textarea>
-                <textarea v-model="quickEditForm.bio" rows="2" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Bio"></textarea>
-                <label class="md:col-span-2 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                    <input v-model="quickEditForm.is_deceased" type="checkbox" class="accent-brand-gold" />
-                    Is deceased
-                </label>
-                <input v-if="quickEditForm.is_deceased" v-model="quickEditForm.date_of_death" type="date" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                <input type="file" accept="image/*" class="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2 text-sm" @change="onQuickEditAvatarChange" />
+                <div class="md:col-span-2 flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</label>
+                    <textarea v-model="quickEditForm.address" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address"></textarea>
+                </div>
+                <div class="md:col-span-2 flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Bio</label>
+                    <textarea v-model="quickEditForm.bio" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Bio"></textarea>
+                </div>
+                <div class="md:col-span-2 flex flex-col gap-1 rounded-xl border border-slate-200 px-3 py-2">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Is deceased</div>
+                    <label class="flex items-center gap-2 text-sm text-slate-700">
+                        <input v-model="quickEditForm.is_deceased" type="checkbox" class="accent-brand-gold" />
+                        Yes
+                    </label>
+                </div>
+                <div v-if="quickEditForm.is_deceased" class="md:col-span-2 flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of death</label>
+                    <input v-model="quickEditForm.date_of_death" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </div>
+                <div class="md:col-span-2 flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Profile picture</label>
+                    <input type="file" accept="image/*" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" @change="onQuickEditAvatarChange" />
+                </div>
             </div>
 
             <p v-if="quickEditError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{{ quickEditError }}</p>
@@ -314,14 +396,37 @@
 
         <div v-if="selectedMember" class="space-y-4">
             <div class="rounded-2xl border border-slate-200 bg-linear-to-br from-white to-slate-50 p-3 shadow-sm">
-                <div class="text-base font-black text-slate-900">{{ selectedMember.name }}</div>
-                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ selectedMember.relation || selectedMember.role || t('familyTree.labels.member') }}</div>
+                <div class="space-y-2">
+                    <div class="text-base font-black text-slate-900">
+                        {{ householdTitle }}
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        {{ selectedMember.relation || selectedMember.role || t('familyTree.labels.member') }}
+                    </div>
+                    <div v-if="selectedMemberHouseholdMembers.length > 1" class="grid gap-2 sm:grid-cols-2">
+                        <button
+                            v-for="person in selectedMemberHouseholdMembers"
+                            :key="person.id"
+                            type="button"
+                            @click="selectHouseholdMember(person)"
+                            :class="['rounded-xl border p-3 text-left transition duration-200', person.id === selectedMember.id ? 'border-brand-gold bg-brand-gold/10 shadow-inner' : 'border-slate-200 bg-white hover:border-brand-gold/40 hover:bg-slate-50']"
+                        >
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="text-sm font-black text-slate-900">{{ person.name }}</div>
+                                <span v-if="person.id === selectedMember.id" class="rounded-full bg-brand-gold/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-gold">Selected</span>
+                            </div>
+                            <div class="mt-2 text-[11px] text-slate-500">
+                                {{ person.member_id || person.id || t('memberDetailsModal.labels.notAvailable') }}
+                            </div>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <button
                 class="w-full rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="!allowedActions.can_manage"
-                :class="allowedActions.can_manage ? 'border-brand-gold/40 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/15' : 'border-slate-200 text-slate-400'"
+                :disabled="!canEditSelected"
+                :class="canEditSelected ? 'border-brand-gold/40 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/15' : 'border-slate-200 text-slate-400'"
                 @click="openQuickEditForSelected"
             >
                 Edit Profile
@@ -788,6 +893,7 @@ const quickEditForm = ref({
     bio: '',
     is_deceased: false,
     date_of_death: '',
+    generation: null as number | null,
 })
 const lastLinkedRelation = ref<null | { anchorId: number; targetId: number; relationType: 'PARENT' | 'SPOUSE' | 'SIBLING' | 'CHILD' }>(null)
 
@@ -806,6 +912,41 @@ const selectedMemberHasSpouse = computed(() => {
     if (!memberId) return false
     return links.value.some((l: any) => l.type === 'spouse' && (l.source === memberId || l.target === memberId))
 })
+
+const selectedMemberHouseholdMembers = computed(() => {
+    const member = selectedMember.value as any
+    if (!member) return [] as any[]
+    const byId = new Map((nodes.value || []).map((n: any) => [n.id, n]))
+    const memberId = member.id
+    const spouseLink = (links.value || []).find(
+        (l: any) => l.type === 'spouse' && (l.source === memberId || l.target === memberId)
+    )
+    const spouseId = spouseLink ? (spouseLink.source === memberId ? spouseLink.target : spouseLink.source) : null
+    const spouse = spouseId ? byId.get(spouseId) : null
+    const household = [member, spouse].filter(Boolean)
+    if (household.length < 2) return household
+    const primary = member.gender === 'F' && spouse?.gender === 'M' ? spouse : member
+    const partner = primary === member ? spouse : member
+    return partner ? [primary, partner].filter(Boolean) : household
+})
+
+const householdTitle = computed(() => {
+    if (!selectedMember.value) return ''
+    const members = selectedMemberHouseholdMembers.value
+    if (members.length > 1) {
+        return members.map((person: any) => person.name).join(' & ')
+    }
+    return selectedMember.value.name
+})
+
+const canEditSelected = computed(() => {
+    return editMode.value && selectedMember.value !== null && (allowedActions.value.can_manage || contextOwnership.value.is_self)
+})
+
+const selectHouseholdMember = async (member: any) => {
+    selectedMember.value = member
+    await loadMemberContext(member.id)
+}
 
 const selectedMemberParents = computed(() => {
     const memberId = selectedMember.value?.id
@@ -1058,14 +1199,16 @@ const selectedMemberForModal = computed(() => {
     if (!selectedMember.value) return null
 
     const member = selectedMember.value as any
-    const memberId = member.id
     const byId = new Map((nodes.value || []).map((n: any) => [n.id, n]))
-
+    const memberId = member.id
     const spouseLink = (links.value || []).find(
         (l: any) => l.type === 'spouse' && (l.source === memberId || l.target === memberId)
     )
     const spouseId = spouseLink ? (spouseLink.source === memberId ? spouseLink.target : spouseLink.source) : null
     const spouse = spouseId ? byId.get(spouseId) : null
+    const householdMembers = selectedMemberHouseholdMembers.value
+    const primaryMember = householdMembers[0] || member
+    const partnerMember = householdMembers[1] || spouse || null
 
     const children = (links.value || [])
         .filter((l: any) => l.type === 'parent' && l.source === memberId)
@@ -1074,8 +1217,20 @@ const selectedMemberForModal = computed(() => {
         .map((c: any) => ({ name: c.name, age: c.age }))
 
     return {
-        ...member,
-        spouse: spouse?.name || member.spouse || null,
+        ...primaryMember,
+        displayName: primaryMember?.name || member.name,
+        member_id: primaryMember?.member_id || primaryMember?.id,
+        spouse: partnerMember?.name || member.spouse || null,
+        partner: partnerMember
+            ? {
+                ...partnerMember,
+                spouse: primaryMember?.name || member.name,
+            }
+            : null,
+        householdMembers: householdMembers.map((person: any) => ({
+            ...person,
+            spouse: person.id === primaryMember?.id ? partnerMember?.name || null : primaryMember?.name || null,
+        })),
         children,
     }
 })
@@ -1087,6 +1242,30 @@ const selectedMemberForModal = computed(() => {
 let globalZoom: any = null        // D3 zoom behavior for programmatic pan/zoom
 let globalSVG: any = null         // D3 selection of the <svg> element
 let globalNodeCoords = new Map<number, { x: number; y: number }>()
+
+// Horizontal compression state (1 = normal, <1 = compressed)
+const horizontalScale = ref(1)
+
+const applyHorizontalCompression = (scale = 1, duration = 300) => {
+    horizontalScale.value = scale
+    if (!svgRef.value) return
+    try {
+        const el = svgRef.value as any
+        el.style.transformOrigin = 'center top'
+        el.style.transition = `transform ${duration}ms cubic-bezier(.2,.9,.2,1)`
+        el.style.transform = scale && scale !== 1 ? `scaleX(${scale})` : ''
+        window.setTimeout(() => {
+            if (el) el.style.transition = ''
+        }, duration + 20)
+    } catch (e) {
+        // ignore in SSR or unexpected environments
+    }
+}
+
+const toggleHorizontalCompression = () => {
+    const next = horizontalScale.value === 1 ? 0.78 : 1
+    applyHorizontalCompression(next, 340)
+}
 
 const resolveImage = (path: string | null) => {
     if (!path) return null
@@ -1201,7 +1380,7 @@ const focusOnMember = (targetMember: any, options?: { select?: boolean }) => {
 const openMember = (m: FamilyMember) => { selectedMember.value = m }
 
 const openQuickEditForSelected = () => {
-    if (!selectedMember.value || !editMode.value || !allowedActions.value.can_manage) return
+    if (!selectedMember.value || !editMode.value || !canEditSelected.value) return
     const member = selectedMember.value as any
     const parts = String(member.name || '').trim().split(' ').filter(Boolean)
     quickEditMemberId.value = member.id
@@ -1226,6 +1405,7 @@ const openQuickEditForSelected = () => {
         bio: member.bio || '',
         is_deceased: Boolean(member.is_deceased),
         date_of_death: member.date_of_death || '',
+        generation: member.generation !== undefined ? member.generation : null,
     }
     quickEditError.value = ''
     quickEditSuccess.value = ''
@@ -1246,7 +1426,10 @@ const saveQuickEditMember = async () => {
 
     try {
         const csrfHeaders = await withCsrfHeaders()
-        const headers = csrfHeaders ? (csrfHeaders as Record<string, string>) : undefined
+        const headers = {
+            Accept: 'application/json',
+            ...(csrfHeaders as Record<string, string> || {}),
+        }
         const fd = new FormData()
         const fullName = `${quickEditForm.value.first_name} ${quickEditForm.value.last_name}`.trim()
 
@@ -1277,6 +1460,12 @@ const saveQuickEditMember = async () => {
         fd.append('is_deceased', quickEditForm.value.is_deceased ? 'true' : 'false')
         fd.append('date_of_death', quickEditForm.value.is_deceased ? (quickEditForm.value.date_of_death || '') : '')
         if (quickEditAvatar.value) fd.append('profile_pic', quickEditAvatar.value)
+        fd.append(
+            'generation',
+            quickEditForm.value.generation === null || quickEditForm.value.generation === undefined
+                ? ''
+                : String(quickEditForm.value.generation)
+        )
 
         let endpoint = `${apiBase}/api/families/managed/${quickEditMemberId.value}/`
         let method: 'PUT' | 'POST' = 'PUT'
@@ -1382,7 +1571,16 @@ const loadMemberContext = async (memberId: number) => {
         }
         const data = await res.json()
         contextOwnership.value = data.ownership_status || contextOwnership.value
-        allowedActions.value = data.allowed_actions || allowedActions.value
+        const allowed = data.allowed_actions || allowedActions.value
+        if (data.ownership_status?.is_self) {
+            allowed.can_manage = true
+            allowed.can_add_parent = true
+            allowed.can_add_spouse = true
+            allowed.can_add_sibling = true
+            allowed.can_add_child = true
+            allowed.can_remove = true
+        }
+        allowedActions.value = allowed
     } catch (err) {
         console.error('Failed to load member context', err)
     }
@@ -2090,32 +2288,41 @@ const initGraph = () => {
             (unit) => unit.children,
         )
 
+        const nodeSpacingX = cardWidth + siblingGap * 0.92
         const treeLayout = d3.tree<LayoutUnit>()
-            .nodeSize([cardWidth + siblingGap * 0.82, levelGap])
+            .nodeSize([nodeSpacingX, levelGap])
             .separation((a, b) => {
-                const aWidth = a.data.memberIds.length > 1 ? 1.35 : 1
-                const bWidth = b.data.memberIds.length > 1 ? 1.35 : 1
-                return (a.parent === b.parent ? 0.95 : 1.15) * Math.max(aWidth, bWidth)
+                const aWidth = a.data.memberIds.length > 1 ? 1.25 : 1
+                const bWidth = b.data.memberIds.length > 1 ? 1.25 : 1
+                const siblingMultiplier = a.parent === b.parent ? 1.05 : 1.35
+                return siblingMultiplier * Math.max(aWidth, bWidth)
             })
 
         const laidOut = treeLayout(hierarchy)
         const realNodes = laidOut.descendants().filter((node) => node.depth > 0)
         const coords = new Map<number, { x: number; y: number }>()
+        // Map member id -> member object for quick lookup of generation override
+        const memberById = new Map<number, any>((nodes.value || []).map((n: any) => [n.id, n]))
         const minTreeX = Math.min(0, ...realNodes.map((node) => node.x))
         const maxTreeX = Math.max(0, ...realNodes.map((node) => node.x))
         const xOffset = startX - minTreeX + cardWidth
 
         for (const treeNode of realNodes) {
             const x = xOffset + treeNode.x
-            const y = topOffset + (treeNode.depth - 1) * levelGap
             const members = treeNode.data.memberIds
             if (members.length > 1) {
                 const leftId = members[0]
                 const rightId = members[1]
-                if (leftId !== undefined) coords.set(leftId, { x: x - spouseCenterOffset, y })
-                if (rightId !== undefined) coords.set(rightId, { x: x + spouseCenterOffset, y })
+                const leftGen = leftId !== undefined ? memberById.get(leftId)?.generation : null
+                const rightGen = rightId !== undefined ? memberById.get(rightId)?.generation : null
+                const leftY = topOffset + ((leftGen !== null && leftGen !== undefined) ? leftGen : (treeNode.depth - 1)) * levelGap
+                const rightY = topOffset + ((rightGen !== null && rightGen !== undefined) ? rightGen : (treeNode.depth - 1)) * levelGap
+                if (leftId !== undefined) coords.set(leftId, { x: x - spouseCenterOffset, y: leftY })
+                if (rightId !== undefined) coords.set(rightId, { x: x + spouseCenterOffset, y: rightY })
             } else {
                 const singleId = members[0]
+                const gen = singleId !== undefined ? memberById.get(singleId)?.generation : null
+                const y = topOffset + ((gen !== null && gen !== undefined) ? gen : (treeNode.depth - 1)) * levelGap
                 if (singleId !== undefined) coords.set(singleId, { x, y })
             }
         }
@@ -2127,7 +2334,7 @@ const initGraph = () => {
         }
     }
 
-    const componentGap = isCompactMobileCard ? 140 : 220
+    const componentGap = isCompactMobileCard ? 120 : 180
     const nodeCanvasCoords = new Map<number, { x: number; y: number }>()
     const componentLayouts = new Map<number, { coords: Map<number, { x: number; y: number }>; width: number; height: number }>()
     const componentIndexByNodeId = new Map<number, number>()
@@ -2182,6 +2389,65 @@ const initGraph = () => {
         branchColor?: string
     }
 
+    const renderedNodes = (() => {
+        const rendered: Array<{ key: string; members: any[]; primary: any; partner: any | null; x: number; y: number; branchIndex: number }> = []
+        const seen = new Set<string>()
+
+        for (const node of visibleNodes) {
+            const id = Number(node.id)
+            if (seen.has(String(id))) continue
+            const spouseId = spouseByMember.get(id)
+            const spouse = spouseId !== undefined ? membersById.get(spouseId) : null
+            const hasCouple = Boolean(spouse && spouseId !== undefined && nodeIdSet.has(spouseId) && !seen.has(String(spouseId)))
+
+            if (hasCouple) {
+                const primary = node.gender === 'F' && spouse.gender === 'M' ? spouse : node
+                const partner = primary === node ? spouse : node
+                const pairIds = [Number(primary.id), Number(partner.id)].sort((a, b) => a - b)
+                const key = `couple-${pairIds[0]}-${pairIds[1]}`
+                seen.add(String(primary.id))
+                seen.add(String(partner.id))
+                const primaryCoord = nodeCanvasCoords.get(Number(primary.id))
+                const partnerCoord = nodeCanvasCoords.get(Number(partner.id))
+                rendered.push({
+                    key,
+                    members: [primary, partner],
+                    primary,
+                    partner,
+                    x: ((primaryCoord?.x || 0) + (partnerCoord?.x || 0)) / 2,
+                    y: ((primaryCoord?.y || 0) + (partnerCoord?.y || 0)) / 2,
+                    branchIndex: componentIndexByNodeId.get(Number(primary.id)) || componentIndexByNodeId.get(Number(partner.id)) || 0,
+                })
+                continue
+            }
+
+            seen.add(String(id))
+            const coord = nodeCanvasCoords.get(id)
+            rendered.push({
+                key: `single-${id}`,
+                members: [node],
+                primary: node,
+                partner: null,
+                x: coord?.x || width / 2,
+                y: coord?.y || topOffset,
+                branchIndex: componentIndexByNodeId.get(id) || 0,
+            })
+        }
+
+        return rendered
+    })()
+
+    const renderedNodeCoords = new Map<number, { x: number; y: number }>()
+    for (const node of renderedNodes) {
+        for (const member of node.members) {
+            const memberId = Number(member?.id)
+            if (!Number.isFinite(memberId)) continue
+            renderedNodeCoords.set(memberId, { x: node.x, y: node.y })
+        }
+    }
+
+    const getRenderCoord = (id: number) => renderedNodeCoords.get(id) || nodeCanvasCoords.get(id)
+
     const parentLinksByChild = new Map<number, GraphLink[]>()
     for (const link of parentLinks) {
         if (!nodeCanvasCoords.has(link.source) || !nodeCanvasCoords.has(link.target)) continue
@@ -2196,12 +2462,12 @@ const initGraph = () => {
         while (pending.length) {
             const link = pending.shift()!
             const spouseIndex = pending.findIndex((candidate) => spouseByMember.get(link.source) === candidate.source)
-            const target = nodeCanvasCoords.get(childId)!
+            const target = getRenderCoord(childId)!
 
             if (spouseIndex >= 0) {
                 const spouseLink = pending.splice(spouseIndex, 1)[0]!
-                const firstParent = nodeCanvasCoords.get(link.source)!
-                const secondParent = nodeCanvasCoords.get(spouseLink.source)!
+                const firstParent = getRenderCoord(link.source)!
+                const secondParent = getRenderCoord(spouseLink.source)!
                 parentOverlayData.push({
                     source: {
                         x: (firstParent.x + secondParent.x) / 2,
@@ -2219,7 +2485,7 @@ const initGraph = () => {
             }
 
             parentOverlayData.push({
-                source: nodeCanvasCoords.get(link.source)!,
+                source: getRenderCoord(link.source)!,
                 target,
                 childId,
                 parentIds: [link.source],
@@ -2229,20 +2495,37 @@ const initGraph = () => {
         }
     }
 
+    // Group parent links by rounded horizontal endpoints to separate overlapping connectors
+    const parentGroups = new Map<string, ParentOverlayLink[]>()
+    for (const item of parentOverlayData) {
+        const key = `${Math.round(item.source.x)}:${Math.round(item.target.x)}`
+        if (!parentGroups.has(key)) parentGroups.set(key, [])
+        parentGroups.get(key)!.push(item)
+    }
+
+    // Assign deterministic groupIndex and groupSize to each item
+    for (const group of parentGroups.values()) {
+        const size = group.length
+        for (let i = 0; i < group.length; i++) {
+            ;(group[i] as any)._groupIndex = i
+            ;(group[i] as any)._groupSize = size
+        }
+    }
+
     const spouseOverlayData = activeSpouseLinks
-        .filter((link) => nodeCanvasCoords.has(link.source) && nodeCanvasCoords.has(link.target))
+        .filter((link) => getRenderCoord(link.source) && getRenderCoord(link.target))
         .map((link) => ({
-            a: nodeCanvasCoords.get(link.source)!,
-            b: nodeCanvasCoords.get(link.target)!,
+            a: getRenderCoord(link.source)!,
+            b: getRenderCoord(link.target)!,
             crossFamily: membersById.get(link.source)?.family_id !== membersById.get(link.target)?.family_id,
             branchColor: branchPalette[(componentIndexByNodeId.get(link.source) || 0) % branchPalette.length],
         }))
 
     const siblingOverlayData = siblingLinks
-        .filter((link) => nodeCanvasCoords.has(link.source) && nodeCanvasCoords.has(link.target))
+        .filter((link) => getRenderCoord(link.source) && getRenderCoord(link.target))
         .map((link) => ({
-            a: nodeCanvasCoords.get(link.source)!,
-            b: nodeCanvasCoords.get(link.target)!,
+            a: getRenderCoord(link.source)!,
+            b: getRenderCoord(link.target)!,
             crossFamily: membersById.get(link.source)?.family_id !== membersById.get(link.target)?.family_id,
             branchColor: branchPalette[(componentIndexByNodeId.get(link.source) || 0) % branchPalette.length],
         }))
@@ -2253,18 +2536,24 @@ const initGraph = () => {
         .data(parentOverlayData)
         .join('path')
         .attr('fill', 'none')
-        .attr('stroke', (d: any) => d.crossFamily ? '#b7a67b' : d.branchColor || '#a89060')
-        .attr('stroke-width', 2.2)
+        .attr('stroke', (d: any) => d.crossFamily ? '#7f6640' : d.branchColor || '#6f5a36')
+        .attr('stroke-width', 2.4)
         .attr('stroke-dasharray', (d) => d.crossFamily ? '4,4' : null)
         .attr('stroke-linecap', 'round')
-        .attr('stroke-opacity', (d) => d.crossFamily ? 0.35 : 0.72)
+        .attr('stroke-opacity', (d) => d.crossFamily ? 0.6 : 1)
         .attr('data-child-id', (d) => d.childId)
         .attr('data-parent-ids', (d) => d.parentIds.join(','))
-        .attr('d', (d) => {
+        .attr('d', (d: any) => {
             const sourceY = d.source.y + (isCompactMobileCard ? 76 : 96)
             const targetY = d.target.y - (isCompactMobileCard ? 84 : 104)
-            const midY = sourceY + (targetY - sourceY) * 0.5
-            return `M ${d.source.x} ${sourceY} L ${d.source.x} ${midY} L ${d.target.x} ${midY} L ${d.target.x} ${targetY}`
+            const spread = isCompactMobileCard ? 8 : 14
+            const groupSize = Number(d._groupSize || 1)
+            const groupIndex = Number(d._groupIndex || 0)
+            const centerIndex = (groupSize - 1) / 2
+            const offsetIndex = groupSize > 1 ? (groupIndex - centerIndex) : ((Number(d.childId) % 7) - 3)
+            const midYBase = sourceY + (targetY - sourceY) * 0.5
+            const midY = midYBase + offsetIndex * (spread * 0.4)
+            return `M ${d.source.x} ${sourceY} C ${d.source.x} ${midY} ${d.target.x} ${midY} ${d.target.x} ${targetY}`
         })
 
     g.append('g')
@@ -2273,12 +2562,12 @@ const initGraph = () => {
         .data(spouseOverlayData)
         .join('path')
         .attr('fill', 'none')
-        .attr('stroke', (d: any) => d.crossFamily ? '#d1bf8d' : d.branchColor || '#c9a96e')
-        .attr('stroke-width', 2)
+        .attr('stroke', (d: any) => d.crossFamily ? '#b08f48' : d.branchColor || '#a07b44')
+        .attr('stroke-width', 2.4)
         .attr('stroke-dasharray', (d) => d.crossFamily ? '6,6' : '6,4')
         .attr('stroke-linecap', 'round')
         .attr('stroke-linejoin', 'round')
-        .attr('stroke-opacity', (d) => d.crossFamily ? 0.45 : 0.8)
+        .attr('stroke-opacity', (d) => d.crossFamily ? 0.6 : 1)
         .attr('d', (d) => {
             const leftFirst = d.a.x <= d.b.x
             const startX = leftFirst ? d.a.x + cardHalfWidth : d.a.x - cardHalfWidth
@@ -2286,44 +2575,26 @@ const initGraph = () => {
             const startY = d.a.y - 10
             const endY = d.b.y - 10
             const midX = startX + (endX - startX) * 0.5
-            return `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`
+            const dx = Math.min(60, Math.abs(endX - startX) * 0.35)
+            const sign = leftFirst ? 1 : -1
+            const c1x = midX - dx * sign
+            const c2x = midX + dx * sign
+            return `M ${startX} ${startY} C ${c1x} ${startY} ${c2x} ${endY} ${endX} ${endY}`
         })
 
-    g.append('g')
-        .attr('class', 'sibling-links')
-        .selectAll('path')
-        .data(siblingOverlayData)
-        .join('path')
-        .attr('fill', 'none')
-        .attr('stroke', (d: any) => d.crossFamily ? '#b8a89b' : d.branchColor || '#9b8f7e')
-        .attr('stroke-width', 1.6)
-        .attr('stroke-dasharray', (d) => d.crossFamily ? '3,3' : '5,3')
-        .attr('stroke-linecap', 'round')
-        .attr('stroke-linejoin', 'round')
-        .attr('stroke-opacity', 0)
-        .attr('d', (d) => {
-            const leftFirst = d.a.x <= d.b.x
-            const startX = leftFirst ? d.a.x + cardHalfWidth : d.a.x - cardHalfWidth
-            const endX = leftFirst ? d.b.x - cardHalfWidth : d.b.x + cardHalfWidth
-            const midX = startX + (endX - startX) * 0.5
-            return `M ${startX} ${d.a.y} L ${midX} ${d.a.y} L ${midX} ${d.b.y} L ${endX} ${d.b.y}`
-        })
+    // sibling-links rendering disabled per request (no visible sibling connector lines)
 
     const nodeGroup = g.append('g')
         .attr('class', 'nodes')
         .selectAll('.node')
-        .data(visibleNodes)
+        .data(renderedNodes)
         .join('g')
         .attr('class', 'node')
-        .attr('data-member-id', (d: any) => Number(d.id))
-        .attr('transform', (d: any) => {
-            const coord = nodeCanvasCoords.get(Number(d.id))
-            return `translate(${coord?.x || width / 2},${coord?.y || topOffset})`
-        })
+        .attr('data-member-ids', (d: any) => d.members.map((m: any) => Number(m.id)).join(','))
+        .attr('transform', (d: any) => `translate(${d.x},${d.y})`)
 
     nodeGroup.each(function(this: any, d: any) {
-        const branchIndex = componentIndexByNodeId.get(Number(d.id)) || 0
-        renderCard(d3.select(this), 0, d, branchPalette[branchIndex % branchPalette.length])
+        renderCard(d3.select(this), 0, d, branchPalette[d.branchIndex % branchPalette.length])
     })
 
 }
@@ -2331,139 +2602,176 @@ const initGraph = () => {
       function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any, branchColor?: string) {
           if (!d) return
           const compact = isMobileViewport()
+          const members = Array.isArray(d.members) && d.members.length ? d.members.filter(Boolean) : [d.primary || d]
+          const primary = d.primary || members[0] || d
+          const partner = d.partner || members[1] || null
+          const isCouple = Boolean(partner)
           const cardWidth = compact ? 128 : 164
-          const cardHeight = compact ? 170 : 210
+          const cardHeight = compact ? (isCouple ? 188 : 170) : (isCouple ? 224 : 210)
           const cardRadius = compact ? 13 : 16
           const avatarRadius = compact ? 30 : 40
           const avatarClipRadius = compact ? 27 : 36
           const avatarDiameter = avatarClipRadius * 2
-          const avatarCenterY = -cardHeight/4 + 2
+          const avatarCenterY = isCouple ? (compact ? -56 : -66) : -cardHeight/4 + 2
           const nameFontSize = compact ? 11.5 : 13
+          const coupleNameFontSize = compact ? 10.8 : 12.2
           const pillWidth = compact ? 62 : 72
           const pillHeight = compact ? 20 : 22
-          const pillY = compact ? 43 : 52
+          const pillY = isCouple ? (compact ? 55 : 68) : (compact ? 43 : 52)
           const pillFontSize = compact ? 9.5 : 10.5
           const group = selection.append("g").attr("transform", `translate(${dx}, 0)`)
-          const isUser = auth.user && d.username === auth.user.username
-          const isMale = d.gender === 'M'
-          const isFemale = d.gender === 'F'
-          const genderSymbol = isMale ? 'M' : (isFemale ? 'F' : 'O')
-          const fullName = getDisplayName(d)
-          
-          // Color scheme based on gender
+          const isUser = auth.user && (primary.username === auth.user.username || partner?.username === auth.user.username)
+          const isMale = primary.gender === 'M'
+          const isFemale = primary.gender === 'F'
+          const genderSymbol = isCouple ? '2' : (isMale ? 'M' : (isFemale ? 'F' : 'O'))
+          const primaryName = getDisplayName(primary)
+          const partnerName = partner ? getDisplayName(partner) : ''
+          const displayMemberId = partner
+            ? `${primary.member_id || primary.id} / ${partner.member_id || partner.id}`
+            : `${primary.member_id || primary.id}`
+
           const cardFill = isUser ? '#F9EFC8' : (isMale ? '#EEF4FB' : isFemale ? '#FCEFF3' : '#EEF2F7')
           const cardStroke = isUser ? '#C9A96E' : (isMale ? '#90A7C7' : isFemale ? '#D5A1AF' : '#A6B0BE')
           const accentColor = branchColor || (isUser ? '#A08050' : (isMale ? '#4A6B8A' : isFemale ? '#9C4F63' : '#596577'))
           const avatarBg = isUser ? '#EED89D' : (isMale ? '#DCE6F0' : isFemale ? '#F5DDE1' : '#E2E8F0')
           const avatarRing = isUser ? '#B9914E' : (isMale ? '#7A9BBD' : isFemale ? '#C88A97' : '#93A1B5')
-          
-          const clipId = `clip-${d.id}-${Math.random().toString(36).substr(2, 9)}`
-          const gradId = `grad-${d.id}-${Math.random().toString(36).substr(2, 9)}`
 
-                    // Card shadow layer
+          const clipId = `clip-${members.map((member: any) => Number(member.id)).join('-')}`
+          const gradId = `grad-${members.map((member: any) => Number(member.id)).join('-')}`
+          const avatarSource = primary.photo || partner?.photo || null
+
           group.append("rect")
-                        .attr("x", -cardWidth/2 + 4).attr("y", -cardHeight/2 + 8)
-                        .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
-                        .attr("fill", "rgba(15,23,42,0.04)")
-            .attr("filter", d.is_deceased ? "grayscale(100%)" : "")
-                        .style("filter", `drop-shadow(0 10px 22px ${isMale ? 'rgba(74,107,138,0.20)' : isFemale ? 'rgba(156,79,99,0.20)' : 'rgba(89,101,119,0.18)'})`)
+              .attr("x", -cardWidth/2 + 4).attr("y", -cardHeight/2 + 8)
+              .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
+              .attr("fill", "rgba(15,23,42,0.04)")
+              .attr("filter", primary.is_deceased || partner?.is_deceased ? "grayscale(100%)" : "")
+              .style("filter", `drop-shadow(0 10px 22px ${isMale ? 'rgba(74,107,138,0.20)' : isFemale ? 'rgba(156,79,99,0.20)' : 'rgba(89,101,119,0.18)'})`)
 
-          // Main card rect with rounded corners
           group.append("rect")
-            .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
-                        .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
-            .attr("fill", cardFill)
-            .attr("stroke", cardStroke)
-            .attr("stroke-width", isUser ? 3 : 1.8)
-            .attr("filter", d.is_deceased ? "grayscale(100%)" : "")
-            .style("cursor", "pointer")
-            .on("click", () => openMember(d))
+              .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
+              .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
+              .attr("fill", cardFill)
+              .attr("stroke", cardStroke)
+              .attr("stroke-width", isUser ? 3 : 1.8)
+              .attr("filter", primary.is_deceased || partner?.is_deceased ? "grayscale(100%)" : "")
+              .style("cursor", "pointer")
+              .on("click", () => openMember(primary))
 
-          // Colored accent bar at top
           const defs = group.append("defs")
           const grad = defs.append("linearGradient").attr("id", gradId)
-            .attr("x1", "0%").attr("y1", "0%").attr("x2", "100%").attr("y2", "0%")
+              .attr("x1", "0%").attr("y1", "0%").attr("x2", "100%").attr("y2", "0%")
           grad.append("stop").attr("offset", "0%").attr("stop-color", accentColor).attr("stop-opacity", 0.8)
           grad.append("stop").attr("offset", "100%").attr("stop-color", accentColor).attr("stop-opacity", 0.3)
 
-                    group.append("rect")
-            .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
-                        .attr("width", cardWidth).attr("height", 8).attr("rx", 0)
-            .attr("fill", `url(#${gradId})`)
-            .attr("clip-path", `inset(0 round ${cardRadius}px ${cardRadius}px 0 0)`)
+          group.append("rect")
+              .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
+              .attr("width", cardWidth).attr("height", 8).attr("rx", 0)
+              .attr("fill", `url(#${gradId})`)
+              .attr("clip-path", `inset(0 round ${cardRadius}px ${cardRadius}px 0 0)`)
 
-                    if (d.is_deceased) {
-                        const badgeR = 8
-                        const badgeCx = cardWidth / 2 - 14
-                        const badgeCy = -cardHeight / 2 + 18
+          if (primary.is_deceased || partner?.is_deceased) {
+              const badgeR = 8
+              const badgeCx = cardWidth / 2 - 14
+              const badgeCy = -cardHeight / 2 + 18
 
-                        group.append("circle")
-                            .attr("cx", badgeCx)
-                            .attr("cy", badgeCy)
-                            .attr("r", badgeR)
-                            .attr("fill", "#475569")
-                            .attr("fill-opacity", 0.92)
+              group.append("circle")
+                  .attr("cx", badgeCx)
+                  .attr("cy", badgeCy)
+                  .attr("r", badgeR)
+                  .attr("fill", "#475569")
+                  .attr("fill-opacity", 0.92)
 
-                        group.append("text")
-                            .text("†")
-                            .attr("x", badgeCx)
-                            .attr("y", badgeCy + 3)
-                            .attr("text-anchor", "middle")
-                            .attr("fill", "#F8FAFC")
-                            .attr("font-size", "11px")
-                            .attr("font-weight", "800")
-                            .style("pointer-events", "none")
+              group.append("text")
+                  .text("†")
+                  .attr("x", badgeCx)
+                  .attr("y", badgeCy + 3)
+                  .attr("text-anchor", "middle")
+                  .attr("fill", "#F8FAFC")
+                  .attr("font-size", "11px")
+                  .attr("font-weight", "800")
+                  .style("pointer-events", "none")
 
-                        group.append("title").text(String(t('memberDetailsModal.labels.deceased')))
-                    }
+              group.append("title").text(String(t('memberDetailsModal.labels.deceased')))
+          }
 
-          // Avatar ring
           group.append("circle")
-                        .attr("cx", 0).attr("cy", avatarCenterY)
-                        .attr("r", avatarRadius)
-            .attr("fill", avatarBg)
-            .attr("stroke", avatarRing)
-            .attr("stroke-width", 2.5)
+              .attr("cx", 0).attr("cy", avatarCenterY)
+              .attr("r", avatarRadius)
+              .attr("fill", avatarBg)
+              .attr("stroke", avatarRing)
+              .attr("stroke-width", 2.5)
 
-          // Define ClipPath for photo
           defs.append("clipPath")
-            .attr("id", clipId)
-            .append("circle")
-            .attr("cx", 0)
-                        .attr("cy", avatarCenterY)
-                        .attr("r", avatarClipRadius)
+              .attr("id", clipId)
+              .append("circle")
+              .attr("cx", 0)
+              .attr("cy", avatarCenterY)
+              .attr("r", avatarClipRadius)
 
           group.append("image")
-                        .attr("href", resolveImage(d.photo || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
-                                                .attr("x", -avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
-            .attr("preserveAspectRatio", "xMidYMid slice")
-            .attr("clip-path", `url(#${clipId})`)
-            .style("pointer-events", "none")
+              .attr("href", resolveImage(avatarSource || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(primaryName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
+              .attr("x", -avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
+              .attr("preserveAspectRatio", "xMidYMid slice")
+              .attr("clip-path", `url(#${clipId})`)
+              .style("pointer-events", "none")
 
-          // Name
-          group.append("text")
-                        .text(fullName)
-                        .attr("x", 0).attr("y", 26)
-            .attr("text-anchor", "middle")
-            .attr("fill", accentColor)
-            .attr("font-weight", "800")
-                                                .attr("font-size", `${nameFontSize}px`)
-            .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
-            .style("pointer-events", "none")
-          
-          // Gender & Age pill
-          group.append("rect")
-            .attr("x", -pillWidth/2).attr("y", pillY - pillHeight/2)
-            .attr("width", pillWidth).attr("height", pillHeight).attr("rx", 10)
-                        .attr("fill", isMale ? 'rgba(74,107,138,0.11)' : isFemale ? 'rgba(156,79,99,0.11)' : 'rgba(89,101,119,0.11)')
+          if (isCouple) {
+            group.append("text")
+                .text(primaryName)
+                .attr("x", 0).attr("y", compact ? 24 : 30)
+                .attr("text-anchor", "middle")
+                .attr("fill", accentColor)
+                .attr("font-weight", "800")
+                .attr("font-size", `${coupleNameFontSize}px`)
+                .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
+                .style("pointer-events", "none")
 
-          group.append("text")
-                        .text(t('familyTree.labels.agePill', { symbol: genderSymbol, age: getDisplayAge(d) }))
-                        .attr("x", 0).attr("y", pillY + 4)
-            .attr("text-anchor", "middle")
-            .attr("fill", accentColor)
-                        .attr("font-size", `${pillFontSize}px`)
-            .attr("font-weight", "700")
+            group.append("text")
+                .text(partnerName)
+                .attr("x", 0).attr("y", compact ? 40 : 48)
+                .attr("text-anchor", "middle")
+                .attr("fill", accentColor)
+                .attr("font-weight", "700")
+                .attr("font-size", `${coupleNameFontSize}px`)
+                .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
+                .style("pointer-events", "none")
+
+            group.append("rect")
+              .attr("x", -Math.min(82, cardWidth * 0.62)).attr("y", pillY - pillHeight/2)
+              .attr("width", Math.min(164, cardWidth * 1.24)).attr("height", pillHeight).attr("rx", 10)
+              .attr("fill", 'rgba(89,101,119,0.11)')
+
+            group.append("text")
+                .text(`ID ${displayMemberId}`)
+                .attr("x", 0).attr("y", pillY + 4)
+                .attr("text-anchor", "middle")
+                .attr("fill", accentColor)
+                .attr("font-size", `${pillFontSize}px`)
+                .attr("font-weight", "700")
+          } else {
+            group.append("text")
+                .text(primaryName)
+                .attr("x", 0).attr("y", 26)
+                .attr("text-anchor", "middle")
+                .attr("fill", accentColor)
+                .attr("font-weight", "800")
+                .attr("font-size", `${nameFontSize}px`)
+                .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
+                .style("pointer-events", "none")
+
+            group.append("rect")
+              .attr("x", -pillWidth/2).attr("y", pillY - pillHeight/2)
+              .attr("width", pillWidth).attr("height", pillHeight).attr("rx", 10)
+              .attr("fill", isMale ? 'rgba(74,107,138,0.11)' : isFemale ? 'rgba(156,79,99,0.11)' : 'rgba(89,101,119,0.11)')
+
+            group.append("text")
+                .text(t('familyTree.labels.agePill', { symbol: genderSymbol, age: getDisplayAge(primary) }))
+                .attr("x", 0).attr("y", pillY + 4)
+                .attr("text-anchor", "middle")
+                .attr("fill", accentColor)
+                .attr("font-size", `${pillFontSize}px`)
+                .attr("font-weight", "700")
+          }
       }
 
 onMounted(async () => {

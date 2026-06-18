@@ -37,4 +37,5 @@ export interface FamilyMember {
   family_id?: number
   parent?: any // FK object or ID
   username?: string // for tree focus
+  generation?: number
 }

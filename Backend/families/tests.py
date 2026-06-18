@@ -140,6 +140,34 @@ class UserProfileViewTests(TestCase):
         }, format='multipart')
         self.assertEqual(res.status_code, 200)
 
+    def test_update_own_profile_generation(self):
+        self.client.force_authenticate(user=self.user)
+        res = self.client.post('/api/families/profile/', {
+            "first_name": "Updated",
+            "last_name": "Name",
+            "gender": "M",
+            "generation": "2",
+        }, format='multipart')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['generation'], 2)
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.generation, 2)
+
+    def test_update_own_profile_clear_generation(self):
+        self.member.generation = 3
+        self.member.save()
+        self.client.force_authenticate(user=self.user)
+        res = self.client.post('/api/families/profile/', {
+            "first_name": "Updated",
+            "last_name": "Name",
+            "gender": "M",
+            "generation": "",
+        }, format='multipart')
+        self.assertEqual(res.status_code, 200)
+        self.assertIsNone(res.data['generation'])
+        self.member.refresh_from_db()
+        self.assertIsNone(self.member.generation)
+
     def test_profile_without_dob(self):
         """Saving profile without DOB should not error."""
         self.client.force_authenticate(user=self.user)
@@ -236,6 +264,24 @@ class ManagedMembersViewTests(TestCase):
             "gender": "F"
         }, format='multipart')
         self.assertEqual(res.status_code, 200)
+
+    def test_edit_managed_member_clear_generation(self):
+        managed = FamilyMember.objects.create(
+            family=self.family, name="Edit Me", relation="Son",
+            created_by=self.guardian, is_independent=False, generation=2
+        )
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.put(f'/api/families/managed/{managed.id}/', {
+            "first_name": "Edited",
+            "last_name": "Name",
+            "relation": "Daughter",
+            "gender": "F",
+            "generation": "",
+        }, format='multipart')
+        self.assertEqual(res.status_code, 200)
+        self.assertIsNone(res.data['generation'])
+        managed.refresh_from_db()
+        self.assertIsNone(managed.generation)
 
     def test_cannot_edit_independent_member(self):
         managed = FamilyMember.objects.create(
@@ -443,6 +489,7 @@ class FamilyTreeViewTests(TestCase):
         me = next((n for n in res.data['nodes'] if n['id'] == self.member.id), None)
         self.assertIsNotNone(me)
         self.assertEqual(me.get('name_ml'), "ട്രി യൂസർ")
+        self.assertIn('generation', me)
 
     def test_tree_unauthenticated(self):
         res = self.client.get('/api/families/tree/')

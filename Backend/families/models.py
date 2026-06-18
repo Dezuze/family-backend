@@ -88,6 +88,9 @@ class FamilyMember(models.Model):
     # Member ID in format "III 2" (Roman numeral generation + number)
     # For spouses: "III 2W" (original ID + W suffix)
     member_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    # Optional user-controlled generation number. When set, the frontend
+    # will align members sharing the same generation on the same horizontal level.
+    generation = models.IntegerField(blank=True, null=True)
     
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

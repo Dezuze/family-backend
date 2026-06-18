@@ -20,6 +20,10 @@ dist/
 # Virtualenv
 venv/
 **/venv/
+.venv/
+
+# Backup directory
+Backup/
 
 # Deployment Keys
 github-actions

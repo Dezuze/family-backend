@@ -246,6 +246,15 @@ class UserProfileView(APIView):
                 member.date_of_death = death_input
             elif not member.is_deceased:
                 member.date_of_death = None
+            if 'generation' in data:
+                generation_input = data.get('generation')
+                if generation_input in [None, '', 'null']:
+                    member.generation = None
+                else:
+                    try:
+                        member.generation = int(generation_input)
+                    except (TypeError, ValueError):
+                        return Response({"error": "Invalid generation value."}, status=400)
 
             computed_age = _calculate_age(
                 member.date_of_birth,
@@ -1121,6 +1130,15 @@ class ManagedMemberDetailView(APIView):
             if 'nickname' in data: member.nickname = data['nickname']
             if 'name_ml' in data: member.name_ml = (data.get('name_ml') or '').strip() or None
             if 'church_parish' in data: member.church_parish = data['church_parish']
+            if 'generation' in data:
+                generation_input = data.get('generation')
+                if generation_input in [None, '', 'null']:
+                    member.generation = None
+                else:
+                    try:
+                        member.generation = int(generation_input)
+                    except (TypeError, ValueError):
+                        return Response({"error": "Invalid generation value."}, status=400)
             if 'committee_role' in data:
                 try:
                     member.committee_role = _normalize_committee_role_or_error(data.get('committee_role'))
