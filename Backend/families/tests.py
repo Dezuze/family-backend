@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 import datetime
 from families.models import Family, FamilyMember, Relationship
+from families.serializers import FamilyMemberSerializer
 from profiles.models import CommunityRole
 
 User = get_user_model()
@@ -181,6 +182,45 @@ class UserProfileViewTests(TestCase):
     def test_unauthenticated_profile(self):
         res = self.client.get('/api/families/profile/')
         self.assertIn(res.status_code, [401, 403])
+
+    def test_update_own_profile_wedding_anniversary(self):
+        self.client.force_authenticate(user=self.user)
+        res = self.client.post('/api/families/profile/', {
+            "first_name": "Updated",
+            "last_name": "Name",
+            "gender": "M",
+            "wedding_anniversary": "2015-05-25",
+        }, format='multipart')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['wedding_anniversary'], "2015-05-25")
+        self.member.refresh_from_db()
+        self.assertEqual(str(self.member.wedding_anniversary), "2015-05-25")
+
+    def test_serializer_exposes_frontend_fields_for_quick_edit(self):
+        self.member.committee_role = 'Youth Coordinator'
+        self.member.address_if_different = 'Main Street'
+        self.member.save(update_fields=['committee_role', 'address_if_different'])
+
+        serializer = FamilyMemberSerializer(self.member, context={'request': None})
+        payload = serializer.data
+
+        self.assertEqual(payload['committee_role'], 'Youth Coordinator')
+        self.assertEqual(payload['address'], 'Main Street')
+
+    def test_update_own_profile_clear_wedding_anniversary(self):
+        self.member.wedding_anniversary = datetime.date(2015, 5, 25)
+        self.member.save()
+        self.client.force_authenticate(user=self.user)
+        res = self.client.post('/api/families/profile/', {
+            "first_name": "Updated",
+            "last_name": "Name",
+            "gender": "M",
+            "wedding_anniversary": "",
+        }, format='multipart')
+        self.assertEqual(res.status_code, 200)
+        self.assertIsNone(res.data['wedding_anniversary'])
+        self.member.refresh_from_db()
+        self.assertIsNone(self.member.wedding_anniversary)
 
 
 class ManagedMembersViewTests(TestCase):
@@ -656,6 +696,17 @@ class PermissionsTests(TestCase):
         res = client.put(f'/api/families/managed/{self.managed.id}/', {
             "first_name": "Blocked"
         }, format='multipart')
+        self.assertEqual(res.status_code, 403)
+
+    def test_guardian_can_read_independent_without_account(self):
+        self.managed.is_independent = True
+        self.managed.save()
+        client = APIClient()
+        client.force_authenticate(user=self.guardian)
+        
+        # This will call _can_manage_member.
+        # Since is_independent is True, it should return 403 Forbidden, NOT 500 Internal Server Error.
+        res = client.get(f'/api/families/managed/{self.managed.id}/')
         self.assertEqual(res.status_code, 403)
 
 

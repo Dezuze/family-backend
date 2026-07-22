@@ -269,8 +269,14 @@ const refreshData = async (loadMore = false) => {
             // Fix: If backend doesn't send { results: [] }, it's a flat list.
             // If it's a flat list, we load it once and stop.
             const isPaginated = data.results !== undefined
-            const newItems = isPaginated ? data.results : data
+            let newItems = isPaginated ? data.results : data
             
+            newItems = newItems.map((item: any) => ({
+                ...item,
+                type: item.post_type || item.type,
+                author_name: item.creator_name || item.author_name
+            }))
+
             if (newItems.length === 0 || !isPaginated) {
                 hasMore.value = false
             }

@@ -1,23 +1,12 @@
 <template>
-    <div class="min-h-screen text-slate-800 font-sans pt-32 relative overflow-x-hidden" style="background: linear-gradient(135deg, #faf8f5 0%, #f0ede6 30%, #e8e4db 60%, #f5f2ec 100%);">
+    <div class="h-screen w-screen text-slate-800 font-sans pt-20 relative overflow-hidden flex flex-col" style="background: linear-gradient(135deg, #faf8f5 0%, #f0ede6 30%, #e8e4db 60%, #f5f2ec 100%);">
     
     <!-- Subtle decorative background pattern -->
     <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23A08050&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
     
-    <!-- Standardized Premium Header -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 relative z-20 pointer-events-auto">
-        <div class="text-center space-y-4">
-            <h1 class="text-4xl md:text-5xl font-serif font-bold text-slate-900 leading-tight">
-                {{ t('familyTree.header.title') }}
-            </h1>
-            <div class="h-1.5 w-24 bg-brand-gold mx-auto rounded-full"></div>
-            <p class="text-lg text-slate-500 max-w-xl mx-auto font-medium">
-                {{ t('familyTree.header.description') }}
-            </p>
-        </div>
-
-        <!-- Unified Controls Area -->
-        <div class="mt-10 flex flex-col md:flex-row items-center justify-between gap-6 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-slate-200 shadow-xl relative z-30 pointer-events-auto">
+    <!-- Floating Unified Controls Area -->
+    <div class="w-full px-4 sm:px-6 lg:px-8 shrink-0 z-[100] mt-4 mb-2 pointer-events-none">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 bg-white/90 backdrop-blur-xl p-3 px-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white pointer-events-auto">
             <!-- View Mode Toggle -->
             <div class="bg-slate-100 rounded-xl p-1 flex border border-slate-200 shadow-inner relative z-40 pointer-events-auto">
                 <button 
@@ -67,21 +56,19 @@
                     </Transition>
                 </div>
 
-                <!-- Directory Specific Layout Controls -->
-                <div v-if="viewMode === 'grid'" class="flex items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
-                    <div class="flex items-center gap-2">
-                        <label>{{ t('familyTree.labels.layout') }}</label>
-                        <select v-model="layout" class="bg-transparent border-none focus:ring-0 text-slate-800 cursor-pointer">
-                            <option value="grid">{{ t('familyTree.labels.grid') }}</option>
-                            <option value="list">{{ t('familyTree.labels.list') }}</option>
-                            <option value="compact">{{ t('familyTree.labels.compact') }}</option>
-                        </select>
-                    </div>
-                    
-                    <div v-if="layout === 'grid' || layout === 'compact'" class="hidden lg:flex items-center gap-2">
-                        <label>{{ t('familyTree.labels.size') }}</label>
-                        <input type="range" min="160" max="420" v-model.number="minWidth" class="w-20 accent-brand-gold cursor-pointer" />
-                    </div>
+                <!-- Directory Filter Controls -->
+                <div v-if="viewMode === 'grid'" class="flex flex-wrap items-center gap-3 text-sm bg-white/50 backdrop-blur-sm p-3 rounded-2xl border border-slate-200/60 shadow-sm mt-2">
+                    <input type="text" v-model="filterLocation" placeholder="Filter by Location..." class="w-full sm:w-48 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-slate-700 placeholder-slate-400 shadow-sm" />
+                    <input type="text" v-model="filterOccupation" placeholder="Filter by Occupation..." class="w-full sm:w-48 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-slate-700 placeholder-slate-400 shadow-sm" />
+                    <select v-model="filterGender" class="w-full sm:w-36 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-slate-700 shadow-sm">
+                        <option value="">Any Gender</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                    </select>
+                    <select v-model="filterBloodGroup" class="w-full sm:w-40 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-gold/50 text-slate-700 shadow-sm">
+                        <option value="">Any Blood Grp</option>
+                        <option v-for="bg in uniqueBloodGroups" :key="bg" :value="bg">{{ bg }}</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -90,7 +77,7 @@
     <!-- Visual View -->
     <div
         v-show="viewMode === 'visual'"
-        :class="['w-full h-[calc(100vh-100px)] cursor-move touch-pan-y md:touch-none relative transition-all duration-300', editMode ? 'md:pr-[430px]' : '']"
+        :class="['w-full flex-1 relative cursor-move touch-pan-y md:touch-none transition-all duration-300', editMode ? 'md:pr-[430px]' : '']"
         :style="isMobileView ? { touchAction: 'pan-y pinch-zoom' } : {}"
         ref="chartContainer"
     >
@@ -166,9 +153,9 @@
     </div>
 
      <!-- Grid View -->
-     <div v-if="viewMode === 'grid'" class="max-w-7xl mx-auto px-4 pb-20 overflow-y-auto h-[calc(100vh-280px)]">
+     <div v-if="viewMode === 'grid'" class="max-w-7xl mx-auto px-4 pb-20 pt-6 overflow-y-auto flex-1 w-full">
 
-         <div :class="containerClass" :style="containerStyle">
+         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <!-- Skeleton Grid -->
             <template v-if="loading">
                <div v-for="n in 8" :key="n" class="bg-white rounded-xl h-48 animate-pulse border border-slate-200">
@@ -190,10 +177,7 @@
                   @click="openMember(member)"
                   class="cursor-pointer"
                >
-                  <MemberCard 
-                    :member="member" 
-                    :variant="cardVariant"
-                  />
+                  <MemberCard :member="member" :partner="getPartnerForMember(member)" />
                </div>
             </template>
          </div>
@@ -295,6 +279,10 @@
                 <div class="flex flex-col gap-1">
                     <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Occupation</label>
                     <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Place of Work</label>
+                    <input v-model="quickEditForm.place_of_work" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Place of work" />
                 </div>
                 <div class="flex flex-col gap-1">
                     <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Education</label>
@@ -495,12 +483,14 @@
                     </div>
                     <input v-if="addRelativeUseDob" v-model="addRelativeForm.date_of_birth" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
                     <input v-else v-model="addRelativeForm.age" type="number" min="0" max="150" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.managedModal.enterAge')" />
+                    <input v-model="addRelativeForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" placeholder="Wedding anniversary" />
                     <select v-model="addRelativeForm.blood_group" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
                         <option value="">{{ t('onboarding.placeholders.selectBloodGroup') }}</option>
                         <option value="Unknown">{{ t('onboarding.bloodGroup.unknown') }}</option>
                         <option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
                     </select>
                     <input v-model="addRelativeForm.occupation" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.occupation')" />
+                    <input v-model="addRelativeForm.place_of_work" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" placeholder="Place of work" />
                     <input v-model="addRelativeForm.education" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.education')" />
                     <input v-model="addRelativeForm.phone_no" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.phoneNumber')" />
                     <input v-model="addRelativeForm.email_id" type="email" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.email')" />
@@ -683,8 +673,7 @@
                     </div>
                 </Teleport>
             </ClientOnly>
-
-  </div>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -798,9 +787,16 @@ const adjustMobileZoom = (direction: 'in' | 'out') => {
 }
 
 // Directory UI state
-const layout = ref<'grid'|'list'|'compact'>('grid')
-const minWidth = ref(250)
 const searchQuery = ref('')
+const filterLocation = ref('')
+const filterOccupation = ref('')
+const filterGender = ref('')
+const filterBloodGroup = ref('')
+
+const uniqueBloodGroups = computed(() => {
+    const groups = new Set((nodes.value || []).map((n: any) => n.blood_group).filter(Boolean))
+    return Array.from(groups).sort()
+})
 const searchResults = ref<FamilyMember[]>([])
 const communityRoles = ref<Array<{ id: number; name: string; priority: number }>>([])
 
@@ -815,8 +811,10 @@ const addRelativeForm = ref({
     gender: 'M' as 'M' | 'F' | 'O',
     age: '',
     date_of_birth: '',
+    wedding_anniversary: '',
     blood_group: '',
     occupation: '',
+    place_of_work: '',
     education: '',
     committee_role: '',
     phone_no: '',
@@ -827,9 +825,10 @@ const addRelativeForm = ref({
     is_deceased: false,
     date_of_death: '',
 })
-const addRelativeUseDob = ref(true)
+
 const addRelativeAvatar = ref<File | null>(null)
 const addRelativeAvatarPreview = ref<string | null>(null)
+const addRelativeUseDob = ref(true)
 const showAddRelativeCropper = ref(false)
 const addRelativeTempImage = ref<string | null>(null)
 const addRelativeCropperRef = ref<any>(null)
@@ -883,6 +882,7 @@ const quickEditForm = ref({
     date_of_birth: '',
     blood_group: '',
     occupation: '',
+    place_of_work: '',
     education: '',
     committee_role: '',
     phone_no: '',
@@ -1037,8 +1037,10 @@ const resetAddRelativeForm = () => {
         gender: 'M',
         age: '',
         date_of_birth: '',
+        wedding_anniversary: '',
         blood_group: '',
         occupation: '',
+        place_of_work: '',
         education: '',
         committee_role: '',
         phone_no: '',
@@ -1174,6 +1176,8 @@ const performSearch = () => {
 }
 
 // Dynamic layout helpers
+const layout = ref('default')
+const minWidth = ref(250)
 const cardVariant = computed(() => layout.value === 'compact' ? 'compact' : (layout.value === 'list' ? 'list' : 'default'))
 const containerClass = computed(() => {
   if (layout.value === 'list') return 'flex flex-col gap-3'
@@ -1188,12 +1192,48 @@ const containerStyle = computed(() => {
 
 const sortedMembers = computed(() => {
    let list = [...nodes.value].sort((a,b) => a.name.localeCompare(b.name))
+   
    if (searchQuery.value) {
        const q = searchQuery.value.toLowerCase()
-       return list.filter(m => m.name.toLowerCase().includes(q))
+       list = list.filter(m => m.name.toLowerCase().includes(q) || (m.nickname || '').toLowerCase().includes(q))
    }
+   
+   if (filterLocation.value) {
+       const l = filterLocation.value.toLowerCase()
+       list = list.filter(m => 
+           (m.address || '').toLowerCase().includes(l) || 
+           (m.location || '').toLowerCase().includes(l) || 
+           (m.place_of_work || '').toLowerCase().includes(l) || 
+           (m.church_parish || '').toLowerCase().includes(l)
+       )
+   }
+   
+   if (filterOccupation.value) {
+       const o = filterOccupation.value.toLowerCase()
+       list = list.filter(m => (m.occupation || '').toLowerCase().includes(o))
+   }
+   
+   if (filterGender.value) {
+       list = list.filter(m => m.gender === filterGender.value)
+   }
+   
+   if (filterBloodGroup.value) {
+       list = list.filter(m => m.blood_group === filterBloodGroup.value)
+   }
+   
    return list
 })
+
+const getPartnerForMember = (member: any) => {
+    if (!links.value || !nodes.value || !member) return null
+    const memberId = Number(member.id)
+    const spouseLink = links.value.find(
+        (l: any) => l.type === 'spouse' && (Number(l.source) === memberId || Number(l.target) === memberId)
+    )
+    if (!spouseLink) return null
+    const spouseId = Number(spouseLink.source) === memberId ? Number(spouseLink.target) : Number(spouseLink.source)
+    return nodes.value.find((n: any) => Number(n.id) === spouseId) || null
+}
 
 const selectedMemberForModal = computed(() => {
     if (!selectedMember.value) return null
@@ -1395,6 +1435,7 @@ const openQuickEditForSelected = () => {
         date_of_birth: member.date_of_birth || '',
         blood_group: member.blood_group || '',
         occupation: member.occupation || '',
+        place_of_work: member.place_of_work || '',
         education: member.education || '',
         committee_role: member.committee_role || '',
         phone_no: member.phone_no || '',
@@ -1440,19 +1481,18 @@ const saveQuickEditMember = async () => {
         if (!quickEditForm.value.first_name && !quickEditForm.value.last_name && fullName) fd.append('name', fullName)
         fd.append('nickname', quickEditForm.value.nickname || '')
         fd.append('gender', quickEditForm.value.gender || 'O')
-        if (quickEditForm.value.date_of_birth) {
-            fd.append('date_of_birth', quickEditForm.value.date_of_birth)
-        }
+        fd.append('date_of_birth', quickEditForm.value.date_of_birth || '')
         if (quickEditForm.value.age) {
             fd.append('age', quickEditForm.value.age)
         }
         fd.append('blood_group', quickEditForm.value.blood_group || '')
         fd.append('occupation', quickEditForm.value.occupation || '')
+        fd.append('place_of_work', quickEditForm.value.place_of_work || '')
         fd.append('education', quickEditForm.value.education || '')
         fd.append('committee_role', quickEditForm.value.committee_role || '')
         fd.append('phone_no', quickEditForm.value.phone_no || '')
         fd.append('email_id', quickEditForm.value.email_id || '')
-        if (quickEditForm.value.wedding_anniversary) fd.append('wedding_anniversary', quickEditForm.value.wedding_anniversary)
+        fd.append('wedding_anniversary', quickEditForm.value.wedding_anniversary || '')
         
         fd.append('church_parish', quickEditForm.value.church_parish || '')
         fd.append('address', quickEditForm.value.address || '')
@@ -1701,7 +1741,9 @@ const addRelativeFromPanel = async () => {
             if (!addRelativeUseDob.value && addRelativeForm.value.age) formData.append('age', addRelativeForm.value.age)
             if (addRelativeForm.value.blood_group) formData.append('blood_group', addRelativeForm.value.blood_group)
             if (addRelativeForm.value.occupation) formData.append('occupation', addRelativeForm.value.occupation)
+            if (addRelativeForm.value.place_of_work) formData.append('place_of_work', addRelativeForm.value.place_of_work)
             if (addRelativeForm.value.education) formData.append('education', addRelativeForm.value.education)
+            if (addRelativeForm.value.wedding_anniversary) formData.append('wedding_anniversary', addRelativeForm.value.wedding_anniversary)
             if (addRelativeForm.value.committee_role) formData.append('committee_role', addRelativeForm.value.committee_role)
             if (addRelativeForm.value.phone_no) formData.append('phone_no', addRelativeForm.value.phone_no)
             if (addRelativeForm.value.email_id) formData.append('email_id', addRelativeForm.value.email_id)
@@ -2057,8 +2099,8 @@ const initGraph = () => {
     const isCompactMobileCard = isMobileViewport()
     const cardWidth = isCompactMobileCard ? 128 : 164
     const cardHeight = isCompactMobileCard ? 170 : 210
-    const siblingGap = isCompactMobileCard ? 84 : 150
-    const levelGap = isCompactMobileCard ? 240 : 290
+    const siblingGap = isCompactMobileCard ? 50 : 80
+    const levelGap = isCompactMobileCard ? 210 : 250
     const topOffset = isCompactMobileCard ? 96 : 120
     const spouseGap = isCompactMobileCard ? 32 : 48
     const cardHalfWidth = cardWidth / 2
@@ -2630,99 +2672,149 @@ const initGraph = () => {
             ? `${primary.member_id || primary.id} / ${partner.member_id || partner.id}`
             : `${primary.member_id || primary.id}`
 
-          const cardFill = isUser ? '#F9EFC8' : (isMale ? '#EEF4FB' : isFemale ? '#FCEFF3' : '#EEF2F7')
-          const cardStroke = isUser ? '#C9A96E' : (isMale ? '#90A7C7' : isFemale ? '#D5A1AF' : '#A6B0BE')
+          const cardFill = isUser ? '#FDFBF7' : '#FFFFFF'
+          const cardStroke = isUser ? '#E2C881' : 'rgba(15,23,42,0.08)'
           const accentColor = branchColor || (isUser ? '#A08050' : (isMale ? '#4A6B8A' : isFemale ? '#9C4F63' : '#596577'))
-          const avatarBg = isUser ? '#EED89D' : (isMale ? '#DCE6F0' : isFemale ? '#F5DDE1' : '#E2E8F0')
-          const avatarRing = isUser ? '#B9914E' : (isMale ? '#7A9BBD' : isFemale ? '#C88A97' : '#93A1B5')
+          const avatarBg = isUser ? '#F5E6B3' : (isMale ? '#E6F0FA' : isFemale ? '#FAE6EB' : '#F1F5F9')
+          const avatarRing = '#FFFFFF' // Clean white ring for avatars
 
           const clipId = `clip-${members.map((member: any) => Number(member.id)).join('-')}`
           const gradId = `grad-${members.map((member: any) => Number(member.id)).join('-')}`
           const avatarSource = primary.photo || partner?.photo || null
 
+          // Outer shadow for the card
           group.append("rect")
-              .attr("x", -cardWidth/2 + 4).attr("y", -cardHeight/2 + 8)
+              .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
               .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
-              .attr("fill", "rgba(15,23,42,0.04)")
-              .attr("filter", primary.is_deceased || partner?.is_deceased ? "grayscale(100%)" : "")
-              .style("filter", `drop-shadow(0 10px 22px ${isMale ? 'rgba(74,107,138,0.20)' : isFemale ? 'rgba(156,79,99,0.20)' : 'rgba(89,101,119,0.18)'})`)
+              .attr("fill", "rgba(0,0,0,0)")
+              .style("filter", "drop-shadow(0 15px 35px rgba(15,23,42,0.06)) drop-shadow(0 5px 15px rgba(15,23,42,0.03))")
 
+          // Main Card Background
           group.append("rect")
               .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
               .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
               .attr("fill", cardFill)
               .attr("stroke", cardStroke)
-              .attr("stroke-width", isUser ? 3 : 1.8)
-              .attr("filter", primary.is_deceased || partner?.is_deceased ? "grayscale(100%)" : "")
+              .attr("stroke-width", isUser ? 2 : 1)
+              .attr("filter", primary.is_deceased || partner?.is_deceased ? "grayscale(100%) opacity(90%)" : "")
               .style("cursor", "pointer")
               .on("click", () => openMember(primary))
 
           const defs = group.append("defs")
-          const grad = defs.append("linearGradient").attr("id", gradId)
-              .attr("x1", "0%").attr("y1", "0%").attr("x2", "100%").attr("y2", "0%")
-          grad.append("stop").attr("offset", "0%").attr("stop-color", accentColor).attr("stop-opacity", 0.8)
-          grad.append("stop").attr("offset", "100%").attr("stop-color", accentColor).attr("stop-opacity", 0.3)
+          
+          // Subtle glow behind avatar
+          const glowId = `glow-${members.map((member: any) => Number(member.id)).join('-')}`
+          const glowFilter = defs.append("filter").attr("id", glowId).attr("x", "-20%").attr("y", "-20%").attr("width", "140%").attr("height", "140%")
+          glowFilter.append("feGaussianBlur").attr("stdDeviation", "8").attr("result", "blur")
+          glowFilter.append("feComposite").attr("in", "SourceGraphic").attr("in2", "blur").attr("operator", "over")
 
-          group.append("rect")
-              .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
-              .attr("width", cardWidth).attr("height", 8).attr("rx", 0)
-              .attr("fill", `url(#${gradId})`)
-              .attr("clip-path", `inset(0 round ${cardRadius}px ${cardRadius}px 0 0)`)
-
+          // Deceased Badge (Sleek Dark Tag)
           if (primary.is_deceased || partner?.is_deceased) {
-              const badgeR = 8
+              const badgeR = 9
               const badgeCx = cardWidth / 2 - 14
-              const badgeCy = -cardHeight / 2 + 18
+              const badgeCy = -cardHeight / 2 + 14
 
               group.append("circle")
                   .attr("cx", badgeCx)
                   .attr("cy", badgeCy)
                   .attr("r", badgeR)
-                  .attr("fill", "#475569")
-                  .attr("fill-opacity", 0.92)
+                  .attr("fill", "#0f172a")
+                  .style("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.15))")
 
               group.append("text")
                   .text("†")
                   .attr("x", badgeCx)
-                  .attr("y", badgeCy + 3)
+                  .attr("y", badgeCy + 4)
                   .attr("text-anchor", "middle")
                   .attr("fill", "#F8FAFC")
-                  .attr("font-size", "11px")
+                  .attr("font-size", "13px")
                   .attr("font-weight", "800")
                   .style("pointer-events", "none")
 
               group.append("title").text(String(t('memberDetailsModal.labels.deceased')))
           }
 
-          group.append("circle")
-              .attr("cx", 0).attr("cy", avatarCenterY)
-              .attr("r", avatarRadius)
-              .attr("fill", avatarBg)
-              .attr("stroke", avatarRing)
-              .attr("stroke-width", 2.5)
+          // Avatar Base & Ring
+          if (isCouple) {
+              const shift = avatarRadius * 0.45;
+              // Partner (underneath, shifted right)
+              group.append("circle")
+                  .attr("cx", shift).attr("cy", avatarCenterY)
+                  .attr("r", avatarRadius)
+                  .attr("fill", avatarBg)
+                  .attr("stroke", avatarRing)
+                  .attr("stroke-width", 3.5)
+                  .style("filter", "drop-shadow(0 6px 12px rgba(15,23,42,0.08))")
 
-          defs.append("clipPath")
-              .attr("id", clipId)
-              .append("circle")
-              .attr("cx", 0)
-              .attr("cy", avatarCenterY)
-              .attr("r", avatarClipRadius)
+              defs.append("clipPath")
+                  .attr("id", clipId + '-partner')
+                  .append("circle")
+                  .attr("cx", shift)
+                  .attr("cy", avatarCenterY)
+                  .attr("r", avatarClipRadius)
 
-          group.append("image")
-              .attr("href", resolveImage(avatarSource || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(primaryName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
-              .attr("x", -avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
-              .attr("preserveAspectRatio", "xMidYMid slice")
-              .attr("clip-path", `url(#${clipId})`)
-              .style("pointer-events", "none")
+              group.append("image")
+                  .attr("href", resolveImage(partner?.photo || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerName)}&background=e2e8f0&color=475569&bold=true`)
+                  .attr("x", shift - avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
+                  .attr("preserveAspectRatio", "xMidYMid slice")
+                  .attr("clip-path", `url(#${clipId}-partner)`)
+                  .style("pointer-events", "none")
 
+              // Primary (on top, shifted left)
+              group.append("circle")
+                  .attr("cx", -shift).attr("cy", avatarCenterY)
+                  .attr("r", avatarRadius)
+                  .attr("fill", avatarBg)
+                  .attr("stroke", avatarRing)
+                  .attr("stroke-width", 3.5)
+                  .style("filter", "drop-shadow(0 6px 12px rgba(15,23,42,0.08))")
+
+              defs.append("clipPath")
+                  .attr("id", clipId + '-primary')
+                  .append("circle")
+                  .attr("cx", -shift)
+                  .attr("cy", avatarCenterY)
+                  .attr("r", avatarClipRadius)
+
+              group.append("image")
+                  .attr("href", resolveImage(primary.photo || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(primaryName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
+                  .attr("x", -shift - avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
+                  .attr("preserveAspectRatio", "xMidYMid slice")
+                  .attr("clip-path", `url(#${clipId}-primary)`)
+                  .style("pointer-events", "none")
+          } else {
+              group.append("circle")
+                  .attr("cx", 0).attr("cy", avatarCenterY)
+                  .attr("r", avatarRadius)
+                  .attr("fill", avatarBg)
+                  .attr("stroke", avatarRing)
+                  .attr("stroke-width", 3.5)
+                  .style("filter", "drop-shadow(0 6px 12px rgba(15,23,42,0.08))")
+
+              defs.append("clipPath")
+                  .attr("id", clipId)
+                  .append("circle")
+                  .attr("cx", 0)
+                  .attr("cy", avatarCenterY)
+                  .attr("r", avatarClipRadius)
+
+              group.append("image")
+                  .attr("href", resolveImage(avatarSource || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(primaryName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
+                  .attr("x", -avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
+                  .attr("preserveAspectRatio", "xMidYMid slice")
+                  .attr("clip-path", `url(#${clipId})`)
+                  .style("pointer-events", "none")
+          }
+
+          // Names & Pills
           if (isCouple) {
             group.append("text")
                 .text(primaryName)
                 .attr("x", 0).attr("y", compact ? 24 : 30)
                 .attr("text-anchor", "middle")
-                .attr("fill", accentColor)
+                .attr("fill", "#0f172a") // Slate-900
                 .attr("font-weight", "800")
-                .attr("font-size", `${coupleNameFontSize}px`)
+                .attr("font-size", `${coupleNameFontSize + 0.5}px`)
                 .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
                 .style("pointer-events", "none")
 
@@ -2730,47 +2822,53 @@ const initGraph = () => {
                 .text(partnerName)
                 .attr("x", 0).attr("y", compact ? 40 : 48)
                 .attr("text-anchor", "middle")
-                .attr("fill", accentColor)
-                .attr("font-weight", "700")
-                .attr("font-size", `${coupleNameFontSize}px`)
+                .attr("fill", "#334155") // Slate-700
+                .attr("font-weight", "600")
+                .attr("font-size", `${coupleNameFontSize - 0.5}px`)
                 .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
                 .style("pointer-events", "none")
 
+            // Minimalist capsule for ID
             group.append("rect")
               .attr("x", -Math.min(82, cardWidth * 0.62)).attr("y", pillY - pillHeight/2)
-              .attr("width", Math.min(164, cardWidth * 1.24)).attr("height", pillHeight).attr("rx", 10)
-              .attr("fill", 'rgba(89,101,119,0.11)')
+              .attr("width", Math.min(164, cardWidth * 1.24)).attr("height", pillHeight).attr("rx", pillHeight/2)
+              .attr("fill", 'rgba(241,245,249,0.7)') // slate-100/70
+              .attr("stroke", 'rgba(226,232,240,0.8)') // slate-200/80
 
             group.append("text")
                 .text(`ID ${displayMemberId}`)
-                .attr("x", 0).attr("y", pillY + 4)
+                .attr("x", 0).attr("y", pillY + 3.5)
                 .attr("text-anchor", "middle")
-                .attr("fill", accentColor)
+                .attr("fill", "#64748b") // slate-500
                 .attr("font-size", `${pillFontSize}px`)
                 .attr("font-weight", "700")
+                .attr("letter-spacing", "0.5px")
           } else {
             group.append("text")
                 .text(primaryName)
                 .attr("x", 0).attr("y", 26)
                 .attr("text-anchor", "middle")
-                .attr("fill", accentColor)
+                .attr("fill", "#0f172a") // Slate-900
                 .attr("font-weight", "800")
-                .attr("font-size", `${nameFontSize}px`)
+                .attr("font-size", `${nameFontSize + 0.5}px`)
                 .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
                 .style("pointer-events", "none")
 
+            // Minimalist capsule for Age/Gender
             group.append("rect")
               .attr("x", -pillWidth/2).attr("y", pillY - pillHeight/2)
-              .attr("width", pillWidth).attr("height", pillHeight).attr("rx", 10)
-              .attr("fill", isMale ? 'rgba(74,107,138,0.11)' : isFemale ? 'rgba(156,79,99,0.11)' : 'rgba(89,101,119,0.11)')
+              .attr("width", pillWidth).attr("height", pillHeight).attr("rx", pillHeight/2)
+              .attr("fill", 'rgba(241,245,249,0.7)')
+              .attr("stroke", 'rgba(226,232,240,0.8)')
 
             group.append("text")
                 .text(t('familyTree.labels.agePill', { symbol: genderSymbol, age: getDisplayAge(primary) }))
-                .attr("x", 0).attr("y", pillY + 4)
+                .attr("x", 0).attr("y", pillY + 3.5)
                 .attr("text-anchor", "middle")
-                .attr("fill", accentColor)
+                .attr("fill", "#64748b") // slate-500
                 .attr("font-size", `${pillFontSize}px`)
                 .attr("font-weight", "700")
+                .attr("letter-spacing", "0.5px")
           }
       }
 

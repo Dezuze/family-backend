@@ -5,6 +5,8 @@ export interface FamilyMember {
   name_ml?: string
   first_name?: string
   last_name?: string
+  nickname?: string
+  location?: string
   photo?: string // from FamilyTreeView
   profile_pic?: string // from FamilyMemberSerializer
   age?: number

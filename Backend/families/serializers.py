@@ -15,6 +15,10 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
     profile_pic = serializers.SerializerMethodField()
     has_account = serializers.SerializerMethodField()
     relationships = RelationshipSerializer(source='relationships_from', many=True, read_only=True)
+    # Frontend expects `committee_role` and an `address` / `location` key.
+    committee_role = serializers.CharField(read_only=True)
+    address = serializers.CharField(source='address_if_different', read_only=True, allow_null=True)
+    location = serializers.CharField(source='address_if_different', read_only=True, allow_null=True)
 
     class Meta:
         model = FamilyMember
@@ -23,7 +27,7 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
             'date_of_birth', 'date_of_death', 'wedding_anniversary', 'blood_group', 'is_deceased', 'is_independent', 'has_account',
             'phone_no', 'email_id', 'photo',
             'profile_pic', 'bio', 'occupation', 'education', 'address_if_different', 
-            'place_of_work', 'church_parish', 'parents', 'created_by', 'relationships', 'generation'
+            'address', 'location', 'committee_role', 'place_of_work', 'church_parish', 'parents', 'created_by', 'relationships', 'generation'
         ]
         extra_kwargs = {
             'parents': {'required': False},

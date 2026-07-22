@@ -246,6 +246,11 @@ class UserProfileView(APIView):
                 member.date_of_death = death_input
             elif not member.is_deceased:
                 member.date_of_death = None
+            if 'wedding_anniversary' in data:
+                anniv_input = data.get('wedding_anniversary') or None
+                if anniv_input and not _parse_iso_date(anniv_input):
+                    return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+                member.wedding_anniversary = anniv_input
             if 'generation' in data:
                 generation_input = data.get('generation')
                 if generation_input in [None, '', 'null']:
@@ -532,7 +537,7 @@ def _can_manage_member(user, member):
 
     managed_branch_ids = _managed_branch_ids(user)
     if member.id in managed_branch_ids:
-        if member.is_independent and member.user_account != user:
+        if member.is_independent and getattr(member, 'user_account', None) != user:
             return False
         return True
 

@@ -47,6 +47,21 @@
                             </div>
                         </div>
 
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="group">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Malayalam Name</label>
+                                 <input v-model="form.name_ml" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="മലയാളം പേര്">
+                            </div>
+                            <div class="group">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Member ID</label>
+                                <input v-model="form.member_id" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Optional">
+                            </div>
+                            <div class="group">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Generation</label>
+                                <input v-model="form.generation" type="number" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="e.g. 5">
+                            </div>
+                        </div>
+
                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.nickname') }}</label>
@@ -69,14 +84,19 @@
                                 <input v-model="form.date_of_birth" type="date" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all cursor-text">
                             </div>
                             <div class="group">
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.bloodGroup') }}</label>
-                                <div class="relative">
-                                     <select v-model="form.blood_group" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all appearance-none cursor-pointer">
-                                         <option value="" disabled>{{ t('onboarding.placeholders.selectBloodGroup') }}</option><option value="Unknown">{{ t('onboarding.bloodGroup.unknown') }}</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
-                                     </select>
-                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Wedding Anniversary</label>
+                                <input v-model="form.wedding_anniversary" type="date" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all cursor-text">
+                            </div>
+                        </div>
+
+                        <div class="group">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.bloodGroup') }}</label>
+                            <div class="relative">
+                                 <select v-model="form.blood_group" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all appearance-none cursor-pointer">
+                                     <option value="" disabled>{{ t('onboarding.placeholders.selectBloodGroup') }}</option><option value="Unknown">{{ t('onboarding.bloodGroup.unknown') }}</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                 </select>
+                                <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
                             </div>
                         </div>
@@ -430,14 +450,26 @@
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.nickname') }}</label>
-                            <input v-model="managedForm.nickname" type="text" :placeholder="t('onboarding.placeholders.nickname')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Malayalam Name</label>
+                                <input v-model="managedForm.name_ml" type="text" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold" placeholder="മലയാളം പേര്">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.nickname') }}</label>
+                                <input v-model="managedForm.nickname" type="text" :placeholder="t('onboarding.placeholders.nickname')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                            </div>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Member ID</label>
-                            <input v-model="managedForm.member_id" type="text" placeholder="Optional member id" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Member ID</label>
+                                <input v-model="managedForm.member_id" type="text" placeholder="Optional member id" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Generation</label>
+                                <input v-model="managedForm.generation" type="number" placeholder="e.g. 5" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -480,19 +512,53 @@
                                 <input v-if="managedUseDob" v-model="managedForm.date_of_birth" type="date" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                                 <input v-else v-model.number="managedForm.age" type="number" min="0" max="150" :placeholder="t('onboarding.managedModal.enterAge')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
-                             <div>
-                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.fields.bloodGroup') }}</label>
-                                <select v-model="managedForm.blood_group" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
-                                    <option value="" disabled>{{ t('onboarding.placeholders.selectBloodGroup') }}</option><option value="Unknown">{{ t('onboarding.bloodGroup.unknown') }}</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
-                                </select>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Wedding Anniversary</label>
+                                <input v-model="managedForm.wedding_anniversary" type="date" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.fields.bloodGroup') }}</label>
+                                <select v-model="managedForm.blood_group" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                                    <option value="" disabled>{{ t('onboarding.placeholders.selectBloodGroup') }}</option><option value="Unknown">{{ t('onboarding.bloodGroup.unknown') }}</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.occupationSchool') }}</label>
                                 <input v-model="managedForm.occupation" type="text" :placeholder="t('onboarding.managedModal.occupationSchool')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Education</label>
+                                <input v-model="managedForm.education" type="text" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Place of Work</label>
+                                <input v-model="managedForm.place_of_work" type="text" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Email</label>
+                                <input v-model="managedForm.email_id" type="email" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Phone Number</label>
+                                <input v-model="managedForm.phone_no" type="tel" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Address</label>
+                            <textarea v-model="managedForm.address" rows="2" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all resize-none text-lg font-bold"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-6">
                             <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.churchParish') }}</label>
                                 <input v-model="managedForm.church_parish" type="text" :placeholder="t('onboarding.managedModal.churchParish')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
@@ -840,9 +906,13 @@ const communityRoles = ref([])
 const form = ref({
     first_name: '',
     last_name: '',
+    name_ml: '',
+    member_id: '',
+    generation: '',
     nickname: '',
     gender: '',
     date_of_birth: '',
+    wedding_anniversary: '',
     bio: '',
     blood_group: '',
     occupation: '',
@@ -865,16 +935,24 @@ const editingManagedId = ref(null)
 const managedForm = ref({
     first_name: '',
     last_name: '',
+    name_ml: '',
     nickname: '',
     member_id: '',
+    generation: '',
     gender: '',
     relation: '',
     age: '',
     date_of_birth: '',
+    wedding_anniversary: '',
     blood_group: '',
     occupation: '',
+    education: '',
     committee_role: '',
     church_parish: '',
+    place_of_work: '',
+    email_id: '',
+    phone_no: '',
+    address: '',
     bio: '',
     is_deceased: false,
     date_of_death: '',
@@ -905,15 +983,23 @@ const openManagedEditor = (m) => {
     managedForm.value = {
         first_name: f,
         last_name: l,
+        name_ml: m.name_ml || '',
         nickname: m.nickname || '',
         member_id: m.member_id || '',
+        generation: m.generation || '',
         gender: m.gender || '',
         relation: m.relation || '',
         date_of_birth: m.date_of_birth || '',
+        wedding_anniversary: m.wedding_anniversary || '',
         blood_group: m.blood_group || '',
         occupation: m.occupation || '',
+        education: m.education || '',
         committee_role: m.committee_role || '',
         church_parish: m.church_parish || '',
+        place_of_work: m.place_of_work || '',
+        email_id: m.email_id || '',
+        phone_no: m.phone_no || '',
+        address: m.address || '',
         bio: m.bio || '',
         is_deceased: m.is_deceased || false,
         date_of_death: m.date_of_death || '',
@@ -1230,8 +1316,12 @@ onMounted(async () => {
         }
 
         form.value.nickname = u.nickname || ''
+        form.value.name_ml = u.name_ml || ''
+        form.value.member_id = u.member_id || ''
+        form.value.generation = u.generation || ''
         form.value.gender = u.gender || ''
         form.value.date_of_birth = u.date_of_birth || ''
+        form.value.wedding_anniversary = u.wedding_anniversary || ''
         form.value.bio = u.bio || ''
         form.value.blood_group = u.blood_group || ''
         form.value.occupation = u.occupation || ''
