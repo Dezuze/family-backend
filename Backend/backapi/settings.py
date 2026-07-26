@@ -51,8 +51,11 @@ if _domain:
         f'www.api.{_domain}',
     ])
 
-ALLOWED_HOSTS = _unique(_csv_env('DJANGO_ALLOWED_HOSTS', ','.join(_host_defaults)))
-if 'test' in sys.argv:
+if DEBUG and not os.environ.get('DJANGO_ALLOWED_HOSTS'):
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = _unique(_csv_env('DJANGO_ALLOWED_HOSTS', ','.join(_host_defaults)))
+if 'test' in sys.argv and 'testserver' not in ALLOWED_HOSTS and '*' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('testserver')
 
 # SSL/HTTPS & Cookies
@@ -120,7 +123,7 @@ if _domain:
     ])
 
 CORS_ALLOWED_ORIGINS = _unique(_csv_env('CORS_ALLOWED_ORIGINS', ','.join(_cors_defaults)))
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOW_CREDENTIALS = True
 _csrf_defaults = [
     'http://localhost:3000',
@@ -130,6 +133,11 @@ _csrf_defaults = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
+if DEBUG:
+    _csrf_defaults.extend([
+        'http://*',
+        'https://*',
+    ])
 if _domain:
     _csrf_defaults.extend([
         f'https://{_domain}',
