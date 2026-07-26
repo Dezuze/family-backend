@@ -279,21 +279,21 @@ const rolePriority: Record<string, number> = {
     'Committee Member': 99
 }
 
-const getPriority = (role?: string) => {
+const getPriority = (role?: string): number => {
     if (!role) return 100
   const cleanRole = role.trim()
   const exact = rolePriority[cleanRole]
-  if (exact) return exact
+  if (exact !== undefined) return exact
 
   const lowered = cleanRole.toLowerCase()
-  if (lowered.includes('working president')) return rolePriority['Working President']
-  if (lowered.includes('vice president') || lowered.includes('vice-president')) return rolePriority['Vice President']
-  if (lowered.includes('joint secretary') || lowered.includes('joint-secretary')) return rolePriority['Joint Secretary']
-  if (lowered.includes('secretary')) return rolePriority['Secretary']
-  if (lowered.includes('treasurer')) return rolePriority['Treasurer']
-  if (lowered.includes('auditor')) return rolePriority['Auditor']
-  if (lowered.includes('president')) return rolePriority['President']
-  if (lowered.includes('committee member')) return rolePriority['Committee Member']
+  if (lowered.includes('working president')) return rolePriority['Working President'] ?? 3
+  if (lowered.includes('vice president') || lowered.includes('vice-president')) return rolePriority['Vice President'] ?? 3
+  if (lowered.includes('joint secretary') || lowered.includes('joint-secretary')) return rolePriority['Joint Secretary'] ?? 5
+  if (lowered.includes('secretary')) return rolePriority['Secretary'] ?? 4
+  if (lowered.includes('treasurer')) return rolePriority['Treasurer'] ?? 6
+  if (lowered.includes('auditor')) return rolePriority['Auditor'] ?? 7
+  if (lowered.includes('president')) return rolePriority['President'] ?? 2
+  if (lowered.includes('committee member')) return rolePriority['Committee Member'] ?? 99
   return 100
 }
 
