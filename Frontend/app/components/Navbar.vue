@@ -207,9 +207,9 @@ onUnmounted(() => {
           <template v-else>
             <!-- Animated hamburger / close icon -->
             <div class="flex flex-col justify-center items-center w-6 h-6 gap-1.5">
-              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300 ease-out" :class="mobileOpen ? 'rotate-45 translate-y-1' : ''"></span>
+              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300 ease-out" :class="mobileOpen ? 'rotate-45 translate-y-2' : ''"></span>
               <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300 ease-out" :class="mobileOpen ? 'opacity-0' : ''"></span>
-              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300 ease-out" :class="mobileOpen ? '-rotate-45 -translate-y-1' : ''"></span>
+              <span class="block h-0.5 w-5 bg-slate-700 rounded-full transition-all duration-300 ease-out" :class="mobileOpen ? '-rotate-45 -translate-y-2' : ''"></span>
             </div>
           </template>
         </button>
@@ -219,7 +219,7 @@ onUnmounted(() => {
     <Transition name="fade-backdrop">
       <div
         v-if="mobileOpen"
-        class="lg:hidden fixed inset-0 z-30"
+        class="lg:hidden fixed top-0 left-0 w-screen h-[100dvh] z-30"
         @click="mobileOpen = false"
       />
     </Transition>

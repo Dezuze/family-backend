@@ -2781,29 +2781,6 @@ function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any, b
         .on("click", () => openMember(primary))
 
     const defs = group.append("defs")
-    
-    if (primary.is_deceased || partner?.is_deceased) {
-        const badgeR = 9
-        const badgeCx = cardWidth / 2 - 14
-        const badgeCy = -cardHeight / 2 + 14
-
-        group.append("circle")
-            .attr("cx", badgeCx)
-            .attr("cy", badgeCy)
-            .attr("r", badgeR)
-            .attr("fill", "#0f172a")
-            .style("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.15))")
-
-        group.append("text")
-            .text("†")
-            .attr("x", badgeCx)
-            .attr("y", badgeCy + 4)
-            .attr("text-anchor", "middle")
-            .attr("fill", "#F8FAFC")
-            .attr("font-size", "13px")
-            .attr("font-weight", "800")
-            .style("pointer-events", "none")
-    }
 
     if (isCouple) {
         const shift = avatarRadius * 0.75;
@@ -2893,9 +2870,10 @@ function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any, b
           .attr("font-size", `${coupleNameFontSize - 0.5}px`)
           .style("pointer-events", "none")
 
+      const couplePillWidth = cardWidth - 20;
       group.append("rect")
-        .attr("x", -Math.min(82, cardWidth * 0.62)).attr("y", pillY - pillHeight/2)
-        .attr("width", Math.min(164, cardWidth * 1.24)).attr("height", pillHeight).attr("rx", pillHeight/2)
+        .attr("x", -couplePillWidth / 2).attr("y", pillY - pillHeight/2)
+        .attr("width", couplePillWidth).attr("height", pillHeight).attr("rx", pillHeight/2)
         .attr("fill", 'rgba(241,245,249,0.7)')
         .attr("stroke", 'rgba(226,232,240,0.8)')
 
@@ -2929,6 +2907,29 @@ function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any, b
           .attr("fill", "#64748b")
           .attr("font-size", `${pillFontSize}px`)
           .attr("font-weight", "700")
+    }
+
+    if (primary.is_deceased || partner?.is_deceased) {
+        const badgeR = 9
+        const badgeCx = cardWidth / 2 - 14
+        const badgeCy = -cardHeight / 2 + 14
+
+        group.append("circle")
+            .attr("cx", badgeCx)
+            .attr("cy", badgeCy)
+            .attr("r", badgeR)
+            .attr("fill", "#0f172a")
+            .style("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.15))")
+
+        group.append("text")
+            .text("†")
+            .attr("x", badgeCx)
+            .attr("y", badgeCy + 4)
+            .attr("text-anchor", "middle")
+            .attr("fill", "#F8FAFC")
+            .attr("font-size", "13px")
+            .attr("font-weight", "800")
+            .style("pointer-events", "none")
     }
 }
 
