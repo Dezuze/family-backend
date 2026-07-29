@@ -67,6 +67,10 @@
               <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-brand-gold/70 transition-colors">Malayalam Name</span>
               <p class="font-semibold text-slate-800 mt-1 ">{{ husband.name_ml }}</p>
             </div>
+            <div v-if="husband.family_name" class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md hover:border-brand-gold/30 transition-all duration-300 group">
+              <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-brand-gold/70 transition-colors">Family / House Name</span>
+              <p class="font-semibold text-slate-800 mt-1 ">{{ husband.family_name }}</p>
+            </div>
             <div v-if="husband.generation !== null && husband.generation !== undefined && husband.generation !== ''" class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md hover:border-brand-gold/30 transition-all duration-300 group">
               <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-brand-gold/70 transition-colors">Generation</span>
               <p class="font-semibold text-slate-800 mt-1 ">{{ husband.generation }}</p>
@@ -140,6 +144,10 @@
             <div v-if="wife.name_ml" class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md hover:border-brand-gold/30 transition-all duration-300 group">
               <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-brand-gold/70 transition-colors">Malayalam Name</span>
               <p class="font-semibold text-slate-800 mt-1 ">{{ wife.name_ml }}</p>
+            </div>
+            <div v-if="wife.family_name" class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md hover:border-brand-gold/30 transition-all duration-300 group">
+              <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-brand-gold/70 transition-colors">Family / House Name</span>
+              <p class="font-semibold text-slate-800 mt-1 ">{{ wife.family_name }}</p>
             </div>
             <div v-if="wife.generation !== null && wife.generation !== undefined && wife.generation !== ''" class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md hover:border-brand-gold/30 transition-all duration-300 group">
               <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-brand-gold/70 transition-colors">Generation</span>
@@ -295,6 +303,10 @@
             <div v-if="member.name_ml" class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md hover:border-brand-gold/30 transition-all duration-300 group">
               <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-brand-gold/70 transition-colors">Malayalam Name</span>
               <p class="font-semibold text-slate-800 mt-1 ">{{ member.name_ml }}</p>
+            </div>
+            <div v-if="member.family_name" class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md hover:border-brand-gold/30 transition-all duration-300 group">
+              <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-brand-gold/70 transition-colors">Family / House Name</span>
+              <p class="font-semibold text-slate-800 mt-1 ">{{ member.family_name }}</p>
             </div>
             <div v-if="member.generation !== null && member.generation !== undefined && member.generation !== ''" class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md hover:border-brand-gold/30 transition-all duration-300 group">
               <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-brand-gold/70 transition-colors">Generation</span>

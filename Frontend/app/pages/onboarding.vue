@@ -53,6 +53,10 @@
                                  <input v-model="form.name_ml" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="മലയാളം പേര്">
                             </div>
                             <div class="group">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Family / House Name</label>
+                                 <input v-model="form.family_name" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Family / House Name">
+                            </div>
+                            <div class="group">
                                 <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">Member ID</label>
                                 <input v-model="form.member_id" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all placeholder:text-slate-400" placeholder="Optional">
                             </div>
@@ -454,6 +458,10 @@
                             <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Malayalam Name</label>
                                 <input v-model="managedForm.name_ml" type="text" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold" placeholder="മലയാളം പേര്">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">Family / House Name</label>
+                                <input v-model="managedForm.family_name" type="text" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold" placeholder="Family / House Name (optional)">
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.nickname') }}</label>
@@ -907,6 +915,7 @@ const form = ref({
     first_name: '',
     last_name: '',
     name_ml: '',
+    family_name: '',
     member_id: '',
     generation: '',
     nickname: '',
@@ -936,6 +945,7 @@ const managedForm = ref({
     first_name: '',
     last_name: '',
     name_ml: '',
+    family_name: '',
     nickname: '',
     member_id: '',
     generation: '',
@@ -984,6 +994,7 @@ const openManagedEditor = (m) => {
         first_name: f,
         last_name: l,
         name_ml: m.name_ml || '',
+        family_name: m.family_name || '',
         nickname: m.nickname || '',
         member_id: m.member_id || '',
         generation: m.generation || '',
@@ -1317,6 +1328,7 @@ onMounted(async () => {
 
         form.value.nickname = u.nickname || ''
         form.value.name_ml = u.name_ml || ''
+        form.value.family_name = u.family_name || ''
         form.value.member_id = u.member_id || ''
         form.value.generation = u.generation || ''
         form.value.gender = u.gender || ''

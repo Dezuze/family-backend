@@ -3,6 +3,7 @@ export interface FamilyMember {
   member_id?: string
   name: string // Full name property
   name_ml?: string
+  family_name?: string
   first_name?: string
   last_name?: string
   nickname?: string

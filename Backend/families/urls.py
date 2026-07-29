@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    UserProfileView, FamilyTreeView,
+    UserProfileView, FamilyTreeView, FamilyTreeOverviewView,
     ManagedMembersView, ManagedMemberDetailView,
     FamilyMemberContextView, FamilyMemberSearchView,
     FamilyTreeAddRelativeView, FamilyTreeLinkExistingMemberView, FamilyTreeRemoveMemberView,
@@ -10,6 +10,7 @@ from .views import (
 
 urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='user-profile'),
+    path('tree/overview/', FamilyTreeOverviewView.as_view(), name='family-tree-overview'),
     path('tree/', FamilyTreeView.as_view(), name='family-tree'),
     path('committee-members/', FamilyCommitteeMemberListCreateView.as_view(), name='committee-member-list'),
     path('committee-members/<int:pk>/', FamilyCommitteeMemberDetailView.as_view(), name='committee-member-detail'),

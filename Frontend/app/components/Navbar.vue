@@ -53,10 +53,11 @@ const links = [
   { name: 'Gallery', to: '/gallery' },
   { name: 'Family History', to: '/history' },
   { name: 'Committee Members', to: '/committee' },
+  { name: 'Donations', to: '/donations' },
   { name: 'Contact', to: '/contact' },
 ]
 
-const restrictedPaths = new Set(['/gallery', '/familytree', '/donate'])
+const restrictedPaths = new Set(['/gallery', '/familytree', '/donate', '/donations'])
 const visibleLinks = computed(() => links.filter((l) => !restrictedPaths.has(l.to) || auth.isAuthenticated))
 
 // Mobile menu actions

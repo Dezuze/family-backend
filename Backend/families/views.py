@@ -342,35 +342,79 @@ class UserProfileView(APIView):
             return Response({"error": "An unexpected error occurred. Please contact the technical team for help."}, status=500)
 
 
-class FamilyTreeView(APIView):
+class FamilyTreeOverviewView(APIView):
     """
-    GET /api/families/tree/  → Return { nodes, links } for the D3 tree.
-
-    Link generation algorithm:
-        1. Collect all FamilyMembers as nodes.
-        2. Convert each Relationship into the correct link type:
-           - Father/Mother       → parent link (to_member is parent of from_member)
-           - Son/Daughter         → parent link (from_member is parent of to_member)
-           - Grandparent variants → chain through Father/Mother as intermediate
-           - Siblings             → share parent (both become children of Father)
-           - Uncle/Aunt           → child of grandparent (father's sibling)
-           - Cousin               → child of uncle/aunt
-           - In-laws              → spouse of sibling or parent of spouse
-           - Father/Mother-in-law → parent of the user's spouse
-           - Nephew/Niece         → child of sibling
-        3. Auto-detect co-parents (two parents sharing a child) and add
-           spouse links between them.
+    GET /api/families/tree/overview/
+    Returns the first ancestor, their spouse (if any), and the main family branches for the initial view.
     """
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request):
+        from django.db.models import Count
+        # Find absolute root - Chandy (id=35) or a fallback root
+        root_member = FamilyMember.objects.filter(parents__isnull=True).annotate(desc_count=Count('relationships_from')).order_by('-desc_count').first()
+        
+        root_data = None
+        root_partner_data = None
+        
+        if root_member:
+            root_data = FamilyMemberSerializer(root_member, context={'request': request}).data
+            
+            # Find partner using the same engine logic
+            members = FamilyMember.objects.all().prefetch_related('parents')
+            relationships = Relationship.objects.all()
+            engine = RelationshipEngine(members=members, relationships=relationships)
+            
+            spouses = engine.spouse_pairs
+            partner_id = None
+            for pair in spouses:
+                if root_member.id in pair:
+                    partner_id = pair[0] if pair[1] == root_member.id else pair[1]
+                    break
+                    
+            if partner_id:
+                partner_member = FamilyMember.objects.filter(id=partner_id).first()
+                if partner_member:
+                    root_partner_data = FamilyMemberSerializer(partner_member, context={'request': request}).data
+
+        # Get top 5 branches by member count
+        branches = Family.objects.exclude(branch__icontains='Test').values('branch').annotate(member_count=Count('members')).order_by('-member_count')[:5]
+        
+        branch_cards = []
+        for b in branches:
+            branch_cards.append({
+                "id": b['branch'],
+                "name": b['branch'],
+                "member_count": b['member_count'],
+            })
+            
+        return Response({
+            "root_member": root_data,
+            "root_partner": root_partner_data,
+            "branches": branch_cards
+        })
+
+
+class FamilyTreeView(APIView):
+    """
+    GET /api/families/tree/  → Return { nodes, links } for the D3 tree.
+    Supports optional ?branch= query parameter to filter by family branch.
+    """
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request):
+        branch = request.query_params.get('branch')
         viewer_member = getattr(request.user, 'member', None) if getattr(request.user, 'is_authenticated', False) else None
         root_id = getattr(viewer_member, 'id', None)
-        cached_payload = get_cached_tree_payload(root_id)
+        
+        cached_payload = get_cached_tree_payload(root_id, branch)
         if cached_payload is not None:
             return Response(cached_payload)
 
         members_qs = FamilyMember.objects.all().prefetch_related('parents')
+        if branch:
+            members_qs = members_qs.filter(family__branch=branch)
+            
         member_ids = list(members_qs.values_list('id', flat=True))
         relationships = Relationship.objects.filter(
             from_member_id__in=member_ids,
@@ -386,7 +430,7 @@ class FamilyTreeView(APIView):
             "computed_relations": payload.computed_relations,
             "generation_depth": payload.generation_depth,
         }
-        set_cached_tree_payload(root_id, response_payload)
+        set_cached_tree_payload(root_id, response_payload, branch)
 
         return Response(response_payload)
 

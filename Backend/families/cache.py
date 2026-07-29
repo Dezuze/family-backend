@@ -32,23 +32,24 @@ def get_tree_cache_version() -> int:
         return 1
 
 
-def make_tree_cache_key(root_id: int | None) -> str:
+def make_tree_cache_key(root_id: int | None, branch: str | None = None) -> str:
     root_part = root_id if root_id else "anonymous"
-    return f"{TREE_CACHE_KEY_PREFIX}:v{get_tree_cache_version()}:root:{root_part}"
+    branch_part = f":branch:{branch}" if branch else ""
+    return f"{TREE_CACHE_KEY_PREFIX}:v{get_tree_cache_version()}:root:{root_part}{branch_part}"
 
 
-def get_cached_tree_payload(root_id: int | None) -> dict | None:
+def get_cached_tree_payload(root_id: int | None, branch: str | None = None) -> dict | None:
     try:
-        return cache.get(make_tree_cache_key(root_id))
+        return cache.get(make_tree_cache_key(root_id, branch))
     except Exception:
         logger.exception("Unable to read family tree payload cache.")
         return None
 
 
-def set_cached_tree_payload(root_id: int | None, payload: dict) -> None:
+def set_cached_tree_payload(root_id: int | None, payload: dict, branch: str | None = None) -> None:
     try:
         cache.set(
-            make_tree_cache_key(root_id),
+            make_tree_cache_key(root_id, branch),
             payload,
             getattr(settings, "FAMILY_TREE_CACHE_TIMEOUT", 60 * 60 * 24 * 30),
         )

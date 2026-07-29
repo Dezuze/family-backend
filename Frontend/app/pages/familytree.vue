@@ -23,6 +23,12 @@
                 </button>
             </div>
 
+            <div v-if="activeBranch" class="pointer-events-auto shrink-0 flex items-center">
+                <button @click="backToOverview" class="px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-xl shadow hover:bg-slate-700 transition">
+                    &larr; Back to Branches
+                </button>
+            </div>
+
             <div class="flex items-center gap-2">
                 <button
                     @click="toggleEditMode"
@@ -74,9 +80,90 @@
         </div>
     </div>
 
+    <!-- Overview View -->
+    <div
+        v-if="!activeBranch"
+        class="w-full flex-1 relative flex flex-col items-center justify-center p-8 overflow-y-auto"
+    >
+        <div v-if="loading" class="text-slate-500 font-medium mt-10">Loading branches...</div>
+        <div v-else-if="overviewData" class="w-full max-w-6xl flex flex-col items-center pt-4">
+            <!-- Root Member -->
+            <div v-if="overviewData.root_member" class="flex flex-col items-center relative z-10">
+                <div class="text-xs font-bold tracking-widest text-brand-gold uppercase mb-3">Root Ancestor</div>
+                <div @click="openMember(overviewData.root_member)" class="bg-white p-5 rounded-3xl shadow-xl hover:shadow-2xl hover:border-brand-gold/60 cursor-pointer transition-all duration-300 hover:-translate-y-2 border border-brand-gold/30 flex flex-col items-center w-64 relative group">
+                    <div class="absolute inset-0 bg-gradient-to-b from-brand-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl"></div>
+                    
+                    <div v-if="overviewData.root_partner" class="flex justify-center mb-4 relative">
+                        <img v-if="overviewData.root_member.photo" :src="overviewData.root_member.photo" class="w-20 h-20 rounded-full object-cover shadow-md border-[3px] border-white relative z-10" />
+                        <div v-else class="w-20 h-20 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold shadow-inner border-[3px] border-white relative z-10">
+                            <UserIcon class="w-8 h-8" />
+                        </div>
+                        
+                        <img v-if="overviewData.root_partner.photo" :src="overviewData.root_partner.photo" class="w-20 h-20 rounded-full object-cover shadow-md border-[3px] border-white -ml-6 relative z-0" />
+                        <div v-else class="w-20 h-20 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold shadow-inner border-[3px] border-white -ml-6 relative z-0">
+                            <UserIcon class="w-8 h-8" />
+                        </div>
+                    </div>
+                    <div v-else>
+                        <img v-if="overviewData.root_member.photo" :src="overviewData.root_member.photo" class="w-24 h-24 rounded-full object-cover shadow-md mb-4 border-[3px] border-white relative z-10" />
+                        <div v-else class="w-24 h-24 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold mb-4 shadow-inner border-[3px] border-white relative z-10">
+                            <UserIcon class="w-10 h-10" />
+                        </div>
+                    </div>
+
+                    <div class="text-xl font-black text-slate-800 text-center tracking-tight relative z-10">{{ overviewData.root_member.name }}</div>
+                    <div v-if="overviewData.root_partner" class="text-sm font-bold text-slate-500 text-center tracking-tight mt-1 relative z-10">{{ overviewData.root_partner.name }}</div>
+                    <div v-else-if="overviewData.root_member.name_ml" class="text-sm font-semibold text-brand-brown/60 font-malayalam mt-1 relative z-10">{{ overviewData.root_member.name_ml }}</div>
+                </div>
+            </div>
+
+            <!-- Trunk (Desktop only) -->
+            <div class="w-[2px] h-10 bg-brand-gold/40 hidden lg:block"></div>
+
+            <!-- Branches -->
+            <div class="w-full relative mt-8 lg:mt-0">
+                <div class="text-sm font-bold tracking-widest text-slate-400 uppercase text-center mb-6 lg:hidden">Select a Branch</div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-0 w-full relative">
+                    <div 
+                        v-for="(branch, i) in overviewData.branches" 
+                        :key="branch.id"
+                        class="relative flex flex-col items-center"
+                    >
+                        <!-- Horizontal Line (Desktop) -->
+                        <div 
+                            class="absolute top-0 h-[2px] bg-brand-gold/40 hidden lg:block"
+                            :class="{
+                                'left-1/2 right-0': i === 0,
+                                'right-1/2 left-0': i === overviewData.branches.length - 1,
+                                'left-0 right-0': i > 0 && i < overviewData.branches.length - 1,
+                                'hidden': overviewData.branches.length === 1
+                            }"
+                        ></div>
+                        <!-- Vertical Drop (Desktop) -->
+                        <div class="absolute top-0 left-1/2 w-[2px] h-8 bg-brand-gold/40 -translate-x-1/2 hidden lg:block"></div>
+
+                        <!-- Card -->
+                        <div 
+                            @click="selectBranch(branch.id)"
+                            class="bg-white/95 backdrop-blur-sm p-6 rounded-3xl shadow-lg hover:shadow-2xl border border-slate-200 hover:border-brand-gold/60 cursor-pointer transition-all duration-300 hover:-translate-y-2 group flex flex-col items-center text-center relative overflow-hidden w-full lg:w-[90%] lg:mt-8"
+                        >
+                            <div class="absolute inset-0 bg-gradient-to-b from-brand-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <div class="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 text-brand-gold/80 flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                                <UsersIcon class="w-7 h-7" />
+                            </div>
+                            <h3 class="font-extrabold text-slate-700 mb-2 leading-tight text-lg">{{ branch.name }}</h3>
+                            <div class="text-xs font-bold text-slate-400 bg-slate-100/50 px-3 py-1.5 rounded-full border border-slate-200/50">{{ branch.member_count }} Members</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Visual View -->
     <div
-        v-show="viewMode === 'visual'"
+        v-show="viewMode === 'visual' && activeBranch"
         :class="['w-full flex-1 relative cursor-move touch-pan-y md:touch-none transition-all duration-300', editMode ? 'md:pr-[430px]' : '']"
         :style="isMobileView ? { touchAction: 'pan-y pinch-zoom' } : {}"
         ref="chartContainer"
@@ -153,7 +240,7 @@
     </div>
 
      <!-- Grid View -->
-     <div v-if="viewMode === 'grid'" class="max-w-7xl mx-auto px-4 pb-20 pt-6 overflow-y-auto flex-1 w-full">
+    <div v-show="viewMode === 'grid' && activeBranch" class="w-full flex-1 relative overflow-y-auto bg-slate-50/50">
 
          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <!-- Skeleton Grid -->
@@ -409,6 +496,10 @@
                         </button>
                     </div>
                 </div>
+                <div class="md:col-span-2">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Family / House Name</label>
+                    <input v-model="quickEditForm.family_name" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Family or House Name" />
+                </div>
             </div>
 
             <button
@@ -470,6 +561,7 @@
                             {{ nameLookupLoadingAdd ? 'Searching...' : 'Malayalam' }}
                         </button>
                     </div>
+                    <input v-model="addRelativeForm.family_name" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" placeholder="Family / House Name (optional)" />
                     <input v-model="addRelativeForm.nickname" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.fields.nickname')" />
                     <input v-model="addRelativeForm.member_id" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" placeholder="Member ID (optional)" />
                     <select v-model="addRelativeForm.gender" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
@@ -741,6 +833,8 @@ const isMobileViewport = () => {
 
 // View mode can be visual graph or directory grid
 const viewMode = ref<'visual' | 'grid'>(resolveInitialViewMode())
+const activeBranch = ref<string | null>(null)
+const overviewData = computed(() => familyStore.overviewData)
 const editMode = ref(resolveInitialEditMode())
 const isEditorSheetOpen = ref(true)
 const isMobileView = ref(false)
@@ -806,6 +900,7 @@ const addRelativeForm = ref({
     first_name: '',
     last_name: '',
     name_ml: '',
+    family_name: '',
     nickname: '',
     member_id: '',
     gender: 'M' as 'M' | 'F' | 'O',
@@ -876,6 +971,7 @@ const quickEditForm = ref({
     last_name: '',
     member_id: '',
     name_ml: '',
+    family_name: '',
     nickname: '',
     gender: 'M' as 'M' | 'F' | 'O',
     age: '',
@@ -1032,6 +1128,7 @@ const resetAddRelativeForm = () => {
         first_name: '',
         last_name: '',
         name_ml: '',
+        family_name: '',
         nickname: '',
         member_id: '',
         gender: 'M',
@@ -1164,7 +1261,7 @@ const lookupMalayalamNameForQuickEdit = async () => {
 // --- Computed Data ---
 // Flatten the store's tree data into a simple array of nodes and links.
 // Nodes = all FamilyMembers, Links = parent/spouse/sibling connections.
-const nodes = computed(() => familyStore.flatList())
+const nodes = ref<FamilyMember[]>([])
 const links = computed(() => familyStore.edges)
 
 // When user presses Enter in search, auto-focus the first result
@@ -1174,21 +1271,6 @@ const performSearch = () => {
     focusOnMember(searchResults.value[0])
   }
 }
-
-// Dynamic layout helpers
-const layout = ref('default')
-const minWidth = ref(250)
-const cardVariant = computed(() => layout.value === 'compact' ? 'compact' : (layout.value === 'list' ? 'list' : 'default'))
-const containerClass = computed(() => {
-  if (layout.value === 'list') return 'flex flex-col gap-3'
-  if (layout.value === 'compact') return 'grid gap-2'
-  return 'grid gap-4'
-})
-const containerStyle = computed(() => {
-  if (layout.value === 'list') return {}
-  const minVal = minWidth.value || 250
-  return { gridTemplateColumns: `repeat(auto-fit, minmax(${minVal}px, 1fr))` }
-})
 
 const sortedMembers = computed(() => {
    let list = [...nodes.value].sort((a,b) => a.name.localeCompare(b.name))
@@ -1276,14 +1358,10 @@ const selectedMemberForModal = computed(() => {
 })
 
 // --- Global D3 State ---
-// These module-scoped variables are updated each time initGraph() runs.
-// They enable the search-to-focus and auto-focus features to access
-// the last-rendered tree state.
-let globalZoom: any = null        // D3 zoom behavior for programmatic pan/zoom
-let globalSVG: any = null         // D3 selection of the <svg> element
+let globalZoom: any = null        
+let globalSVG: any = null         
 let globalNodeCoords = new Map<number, { x: number; y: number }>()
 
-// Horizontal compression state (1 = normal, <1 = compressed)
 const horizontalScale = ref(1)
 
 const applyHorizontalCompression = (scale = 1, duration = 300) => {
@@ -1298,7 +1376,6 @@ const applyHorizontalCompression = (scale = 1, duration = 300) => {
             if (el) el.style.transition = ''
         }, duration + 20)
     } catch (e) {
-        // ignore in SSR or unexpected environments
     }
 }
 
@@ -1384,12 +1461,8 @@ watch(searchQuery, (val) => {
     searchResults.value = nodes.value.filter((n: any) => n.name.toLowerCase().includes(q)).slice(0, 5)
 })
 
-/**
- * Search-to-Focus: smoothly pan/zoom the tree to center on a member.
- * Searches across ALL forest trees (not just the first).
- */
 const focusOnMember = (targetMember: any, options?: { select?: boolean }) => {
-    searchQuery.value = '' // clear search
+    searchQuery.value = '' 
     searchResults.value = []
     const shouldSelect = options?.select ?? true
     
@@ -1429,6 +1502,7 @@ const openQuickEditForSelected = () => {
         last_name: parts.slice(1).join(' ') || '',
         member_id: member.member_id || '',
         name_ml: member.name_ml || '',
+        family_name: member.family_name || '',
         nickname: member.nickname || '',
         gender: (member.gender || 'M') as 'M' | 'F' | 'O',
         age: member.age !== undefined && member.age !== null ? String(member.age) : '',
@@ -1478,6 +1552,8 @@ const saveQuickEditMember = async () => {
         fd.append('last_name', quickEditForm.value.last_name || '')
         fd.append('member_id', quickEditForm.value.member_id || '')
         fd.append('name_ml', quickEditForm.value.name_ml || '')
+        fd.append('family_name', quickEditForm.value.family_name || '')
+        fd.append('nickname', quickEditForm.value.nickname || '')
         if (!quickEditForm.value.first_name && !quickEditForm.value.last_name && fullName) fd.append('name', fullName)
         fd.append('nickname', quickEditForm.value.nickname || '')
         fd.append('gender', quickEditForm.value.gender || 'O')
@@ -1529,7 +1605,7 @@ const saveQuickEditMember = async () => {
         }
 
         quickEditSuccess.value = 'Member details updated.'
-        await familyStore.fetchFamily()
+        await familyStore.fetchFamily(activeBranch.value || '')
         await auth.fetchProfile()
         const refreshed = nodes.value.find((n: any) => n.id === quickEditMemberId.value)
         if (refreshed) {
@@ -1734,7 +1810,8 @@ const addRelativeFromPanel = async () => {
             formData.append('first_name', addRelativeForm.value.first_name)
             formData.append('last_name', addRelativeForm.value.last_name)
             if (addRelativeForm.value.name_ml) formData.append('name_ml', addRelativeForm.value.name_ml)
-            formData.append('nickname', addRelativeForm.value.nickname)
+            if (addRelativeForm.value.family_name) formData.append('family_name', addRelativeForm.value.family_name)
+            if (addRelativeForm.value.nickname) formData.append('nickname', addRelativeForm.value.nickname)
             if (addRelativeForm.value.member_id) formData.append('member_id', addRelativeForm.value.member_id)
             formData.append('gender', addRelativeForm.value.gender)
             if (addRelativeUseDob.value && addRelativeForm.value.date_of_birth) formData.append('date_of_birth', addRelativeForm.value.date_of_birth)
@@ -1787,7 +1864,7 @@ const addRelativeFromPanel = async () => {
         editorSuccess.value = addRelativeMode.value === 'create'
             ? t('familyTree.editor.success.relativeAdded')
             : t('familyTree.editor.success.existingLinked')
-        await familyStore.fetchFamily()
+        await familyStore.fetchFamily(activeBranch.value || '')
         await auth.fetchProfile()
         setTimeout(initGraph, 120)
         const anchor = nodes.value.find((n: any) => n.id === anchorMemberId)
@@ -1838,7 +1915,7 @@ const undoLastLinkedRelation = async () => {
 
         lastLinkedRelation.value = null
         editorSuccess.value = 'Last link undone.'
-        await familyStore.fetchFamily()
+        await familyStore.fetchFamily(activeBranch.value || '')
         await auth.fetchProfile()
         setTimeout(initGraph, 120)
         const refreshed = nodes.value.find((n: any) => n.id === selectedMember.value?.id)
@@ -1921,7 +1998,7 @@ const removeSelectedMember = async () => {
 
         editorSuccess.value = t('familyTree.editor.success.memberRemoved')
         selectedMember.value = null
-        await familyStore.fetchFamily()
+        await familyStore.fetchFamily(activeBranch.value || '')
         await auth.fetchProfile()
         setTimeout(initGraph, 120)
     } catch (err) {
@@ -1954,7 +2031,7 @@ const giveAccessFromPanel = async () => {
     accessUsername.value = ''
     accessPassword.value = ''
     await loadMemberContext(selectedMember.value.id)
-    await familyStore.fetchFamily()
+    await familyStore.fetchFamily(activeBranch.value || '')
 }
 
 const goIndependentFromPanel = async () => {
@@ -2013,7 +2090,7 @@ const startEditorResize = (event: PointerEvent) => {
     window.addEventListener('pointercancel', stopEditorResize)
 }
 
-const onViewportResize = () => {
+const handleResize = () => {
     isMobileView.value = isMobileViewport()
     if (!isMobileView.value) {
         showMobileTreeHelp.value = false
@@ -2055,6 +2132,25 @@ const focusFromQuery = () => {
     if (!member) return
     selectedMember.value = member as FamilyMember
     setTimeout(() => focusOnMember(member), 120)
+}
+
+const selectBranch = async (branchId: string) => {
+    activeBranch.value = branchId
+    await familyStore.fetchFamily(branchId)
+    nodes.value = [...familyStore.flatList()]
+    setTimeout(() => {
+        if (viewMode.value === 'visual') {
+            initGraph()
+        }
+    }, 50)
+}
+
+const backToOverview = () => {
+    activeBranch.value = null
+    if (svgRef.value) {
+        d3.select(svgRef.value).selectAll('*').remove()
+    }
+    familyStore.fetchOverview()
 }
 
 // --- D3 Tree Rendering Pipeline ---
@@ -2537,7 +2633,6 @@ const initGraph = () => {
         }
     }
 
-    // Group parent links by rounded horizontal endpoints to separate overlapping connectors
     const parentGroups = new Map<string, ParentOverlayLink[]>()
     for (const item of parentOverlayData) {
         const key = `${Math.round(item.source.x)}:${Math.round(item.target.x)}`
@@ -2545,7 +2640,6 @@ const initGraph = () => {
         parentGroups.get(key)!.push(item)
     }
 
-    // Assign deterministic groupIndex and groupSize to each item
     for (const group of parentGroups.values()) {
         const size = group.length
         for (let i = 0; i < group.length; i++) {
@@ -2555,15 +2649,6 @@ const initGraph = () => {
     }
 
     const spouseOverlayData = activeSpouseLinks
-        .filter((link) => getRenderCoord(link.source) && getRenderCoord(link.target))
-        .map((link) => ({
-            a: getRenderCoord(link.source)!,
-            b: getRenderCoord(link.target)!,
-            crossFamily: membersById.get(link.source)?.family_id !== membersById.get(link.target)?.family_id,
-            branchColor: branchPalette[(componentIndexByNodeId.get(link.source) || 0) % branchPalette.length],
-        }))
-
-    const siblingOverlayData = siblingLinks
         .filter((link) => getRenderCoord(link.source) && getRenderCoord(link.target))
         .map((link) => ({
             a: getRenderCoord(link.source)!,
@@ -2624,8 +2709,6 @@ const initGraph = () => {
             return `M ${startX} ${startY} C ${c1x} ${startY} ${c2x} ${endY} ${endX} ${endY}`
         })
 
-    // sibling-links rendering disabled per request (no visible sibling connector lines)
-
     const nodeGroup = g.append('g')
         .attr('class', 'nodes')
         .selectAll('.node')
@@ -2641,285 +2724,257 @@ const initGraph = () => {
 
 }
 
-      function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any, branchColor?: string) {
-          if (!d) return
-          const compact = isMobileViewport()
-          const members = Array.isArray(d.members) && d.members.length ? d.members.filter(Boolean) : [d.primary || d]
-          const primary = d.primary || members[0] || d
-          const partner = d.partner || members[1] || null
-          const isCouple = Boolean(partner)
-          const cardWidth = compact ? 128 : 164
-          const cardHeight = compact ? (isCouple ? 188 : 170) : (isCouple ? 224 : 210)
-          const cardRadius = compact ? 13 : 16
-          const avatarRadius = compact ? 30 : 40
-          const avatarClipRadius = compact ? 27 : 36
-          const avatarDiameter = avatarClipRadius * 2
-          const avatarCenterY = isCouple ? (compact ? -56 : -66) : -cardHeight/4 + 2
-          const nameFontSize = compact ? 11.5 : 13
-          const coupleNameFontSize = compact ? 10.8 : 12.2
-          const pillWidth = compact ? 62 : 72
-          const pillHeight = compact ? 20 : 22
-          const pillY = isCouple ? (compact ? 55 : 68) : (compact ? 43 : 52)
-          const pillFontSize = compact ? 9.5 : 10.5
-          const group = selection.append("g").attr("transform", `translate(${dx}, 0)`)
-          const isUser = auth.user && (primary.username === auth.user.username || partner?.username === auth.user.username)
-          const isMale = primary.gender === 'M'
-          const isFemale = primary.gender === 'F'
-          const genderSymbol = isCouple ? '2' : (isMale ? 'M' : (isFemale ? 'F' : 'O'))
-          const primaryName = getDisplayName(primary)
-          const partnerName = partner ? getDisplayName(partner) : ''
-          const displayMemberId = partner
-            ? `${primary.member_id || primary.id} / ${partner.member_id || partner.id}`
-            : `${primary.member_id || primary.id}`
+function renderCard(selection: d3.Selection<any, any, any, any>, dx=0, d: any, branchColor?: string) {
+    if (!d) return
+    const compact = isMobileViewport()
+    const members = Array.isArray(d.members) && d.members.length ? d.members.filter(Boolean) : [d.primary || d]
+    const primary = d.primary || members[0] || d
+    const partner = d.partner || members[1] || null
+    const isCouple = Boolean(partner)
+    const cardWidth = compact ? 128 : 164
+    const cardHeight = compact ? (isCouple ? 188 : 170) : (isCouple ? 224 : 210)
+    const cardRadius = compact ? 13 : 16
+    const avatarRadius = compact ? 30 : 40
+    const avatarClipRadius = compact ? 27 : 36
+    const avatarDiameter = avatarClipRadius * 2
+    const avatarCenterY = isCouple ? (compact ? -56 : -66) : -cardHeight/4 + 2
+    const nameFontSize = compact ? 11.5 : 13
+    const coupleNameFontSize = compact ? 10.8 : 12.2
+    const pillWidth = compact ? 62 : 72
+    const pillHeight = compact ? 20 : 22
+    const pillY = isCouple ? (compact ? 55 : 68) : (compact ? 43 : 52)
+    const pillFontSize = compact ? 9.5 : 10.5
+    const group = selection.append("g").attr("transform", `translate(${dx}, 0)`)
+    const isUser = auth.user && (primary.username === auth.user.username || partner?.username === auth.user.username)
+    const isMale = primary.gender === 'M'
+    const isFemale = primary.gender === 'F'
+    const genderSymbol = isCouple ? '2' : (isMale ? 'M' : (isFemale ? 'F' : 'O'))
+    const primaryName = getDisplayName(primary)
+    const partnerName = partner ? getDisplayName(partner) : ''
+    const displayMemberId = partner
+      ? `${primary.member_id || primary.id} / ${partner.member_id || partner.id}`
+      : `${primary.member_id || primary.id}`
 
-          const cardFill = isUser ? '#FDFBF7' : '#FFFFFF'
-          const cardStroke = isUser ? '#E2C881' : 'rgba(15,23,42,0.08)'
-          const accentColor = branchColor || (isUser ? '#A08050' : (isMale ? '#4A6B8A' : isFemale ? '#9C4F63' : '#596577'))
-          const avatarBg = isUser ? '#F5E6B3' : (isMale ? '#E6F0FA' : isFemale ? '#FAE6EB' : '#F1F5F9')
-          const avatarRing = '#FFFFFF' // Clean white ring for avatars
+    const cardFill = isUser ? '#FDFBF7' : '#FFFFFF'
+    const cardStroke = isUser ? '#E2C881' : 'rgba(15,23,42,0.08)'
+    const accentColor = branchColor || (isUser ? '#A08050' : (isMale ? '#4A6B8A' : isFemale ? '#9C4F63' : '#596577'))
+    const avatarBg = isUser ? '#F5E6B3' : (isMale ? '#E6F0FA' : isFemale ? '#FAE6EB' : '#F1F5F9')
+    const avatarRing = '#FFFFFF'
 
-          const clipId = `clip-${members.map((member: any) => Number(member.id)).join('-')}`
-          const gradId = `grad-${members.map((member: any) => Number(member.id)).join('-')}`
-          const avatarSource = primary.photo || partner?.photo || null
+    const clipId = `clip-${members.map((member: any) => Number(member.id)).join('-')}`
+    const avatarSource = primary.photo || partner?.photo || null
 
-          // Outer shadow for the card
-          group.append("rect")
-              .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
-              .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
-              .attr("fill", "rgba(0,0,0,0)")
-              .style("filter", "drop-shadow(0 15px 35px rgba(15,23,42,0.06)) drop-shadow(0 5px 15px rgba(15,23,42,0.03))")
+    group.append("rect")
+        .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
+        .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
+        .attr("fill", "rgba(0,0,0,0)")
+        .style("filter", "drop-shadow(0 15px 35px rgba(15,23,42,0.06)) drop-shadow(0 5px 15px rgba(15,23,42,0.03))")
 
-          // Main Card Background
-          group.append("rect")
-              .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
-              .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
-              .attr("fill", cardFill)
-              .attr("stroke", cardStroke)
-              .attr("stroke-width", isUser ? 2 : 1)
-              .attr("filter", primary.is_deceased || partner?.is_deceased ? "grayscale(100%) opacity(90%)" : "")
-              .style("cursor", "pointer")
-              .on("click", () => openMember(primary))
+    group.append("rect")
+        .attr("x", -cardWidth/2).attr("y", -cardHeight/2)
+        .attr("width", cardWidth).attr("height", cardHeight).attr("rx", cardRadius)
+        .attr("fill", cardFill)
+        .attr("stroke", cardStroke)
+        .attr("stroke-width", isUser ? 2 : 1)
+        .attr("filter", primary.is_deceased || partner?.is_deceased ? "grayscale(100%) opacity(90%)" : "")
+        .style("cursor", "pointer")
+        .on("click", () => openMember(primary))
 
-          const defs = group.append("defs")
-          
-          // Subtle glow behind avatar
-          const glowId = `glow-${members.map((member: any) => Number(member.id)).join('-')}`
-          const glowFilter = defs.append("filter").attr("id", glowId).attr("x", "-20%").attr("y", "-20%").attr("width", "140%").attr("height", "140%")
-          glowFilter.append("feGaussianBlur").attr("stdDeviation", "8").attr("result", "blur")
-          glowFilter.append("feComposite").attr("in", "SourceGraphic").attr("in2", "blur").attr("operator", "over")
+    const defs = group.append("defs")
+    
+    if (primary.is_deceased || partner?.is_deceased) {
+        const badgeR = 9
+        const badgeCx = cardWidth / 2 - 14
+        const badgeCy = -cardHeight / 2 + 14
 
-          // Deceased Badge (Sleek Dark Tag)
-          if (primary.is_deceased || partner?.is_deceased) {
-              const badgeR = 9
-              const badgeCx = cardWidth / 2 - 14
-              const badgeCy = -cardHeight / 2 + 14
+        group.append("circle")
+            .attr("cx", badgeCx)
+            .attr("cy", badgeCy)
+            .attr("r", badgeR)
+            .attr("fill", "#0f172a")
+            .style("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.15))")
 
-              group.append("circle")
-                  .attr("cx", badgeCx)
-                  .attr("cy", badgeCy)
-                  .attr("r", badgeR)
-                  .attr("fill", "#0f172a")
-                  .style("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.15))")
+        group.append("text")
+            .text("†")
+            .attr("x", badgeCx)
+            .attr("y", badgeCy + 4)
+            .attr("text-anchor", "middle")
+            .attr("fill", "#F8FAFC")
+            .attr("font-size", "13px")
+            .attr("font-weight", "800")
+            .style("pointer-events", "none")
+    }
 
-              group.append("text")
-                  .text("†")
-                  .attr("x", badgeCx)
-                  .attr("y", badgeCy + 4)
-                  .attr("text-anchor", "middle")
-                  .attr("fill", "#F8FAFC")
-                  .attr("font-size", "13px")
-                  .attr("font-weight", "800")
-                  .style("pointer-events", "none")
+    if (isCouple) {
+        const shift = avatarRadius * 0.75;
+        group.append("circle")
+            .attr("cx", shift).attr("cy", avatarCenterY)
+            .attr("r", avatarRadius)
+            .attr("fill", avatarBg)
+            .attr("stroke", avatarRing)
+            .attr("stroke-width", 3.5)
+            .style("filter", "drop-shadow(0 6px 12px rgba(15,23,42,0.08))")
 
-              group.append("title").text(String(t('memberDetailsModal.labels.deceased')))
-          }
+        defs.append("clipPath")
+            .attr("id", clipId + '-partner')
+            .append("circle")
+            .attr("cx", shift)
+            .attr("cy", avatarCenterY)
+            .attr("r", avatarClipRadius)
 
-          // Avatar Base & Ring
-          if (isCouple) {
-              const shift = avatarRadius * 0.75;
-              // Partner (underneath, shifted right)
-              group.append("circle")
-                  .attr("cx", shift).attr("cy", avatarCenterY)
-                  .attr("r", avatarRadius)
-                  .attr("fill", avatarBg)
-                  .attr("stroke", avatarRing)
-                  .attr("stroke-width", 3.5)
-                  .style("filter", "drop-shadow(0 6px 12px rgba(15,23,42,0.08))")
+        group.append("image")
+            .attr("href", resolveImage(partner?.photo || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerName)}&background=e2e8f0&color=475569&bold=true`)
+            .attr("x", shift - avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
+            .attr("preserveAspectRatio", "xMidYMid slice")
+            .attr("clip-path", `url(#${clipId}-partner)`)
+            .style("pointer-events", "none")
 
-              defs.append("clipPath")
-                  .attr("id", clipId + '-partner')
-                  .append("circle")
-                  .attr("cx", shift)
-                  .attr("cy", avatarCenterY)
-                  .attr("r", avatarClipRadius)
+        group.append("circle")
+            .attr("cx", -shift).attr("cy", avatarCenterY)
+            .attr("r", avatarRadius)
+            .attr("fill", avatarBg)
+            .attr("stroke", avatarRing)
+            .attr("stroke-width", 3.5)
+            .style("filter", "drop-shadow(0 6px 12px rgba(15,23,42,0.08))")
 
-              group.append("image")
-                  .attr("href", resolveImage(partner?.photo || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerName)}&background=e2e8f0&color=475569&bold=true`)
-                  .attr("x", shift - avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
-                  .attr("preserveAspectRatio", "xMidYMid slice")
-                  .attr("clip-path", `url(#${clipId}-partner)`)
-                  .style("pointer-events", "none")
+        defs.append("clipPath")
+            .attr("id", clipId + '-primary')
+            .append("circle")
+            .attr("cx", -shift)
+            .attr("cy", avatarCenterY)
+            .attr("r", avatarClipRadius)
 
-              // Primary (on top, shifted left)
-              group.append("circle")
-                  .attr("cx", -shift).attr("cy", avatarCenterY)
-                  .attr("r", avatarRadius)
-                  .attr("fill", avatarBg)
-                  .attr("stroke", avatarRing)
-                  .attr("stroke-width", 3.5)
-                  .style("filter", "drop-shadow(0 6px 12px rgba(15,23,42,0.08))")
+        group.append("image")
+            .attr("href", resolveImage(primary.photo || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(primaryName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
+            .attr("x", -shift - avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
+            .attr("preserveAspectRatio", "xMidYMid slice")
+            .attr("clip-path", `url(#${clipId}-primary)`)
+            .style("pointer-events", "none")
+    } else {
+        group.append("circle")
+            .attr("cx", 0).attr("cy", avatarCenterY)
+            .attr("r", avatarRadius)
+            .attr("fill", avatarBg)
+            .attr("stroke", avatarRing)
+            .attr("stroke-width", 3.5)
+            .style("filter", "drop-shadow(0 6px 12px rgba(15,23,42,0.08))")
 
-              defs.append("clipPath")
-                  .attr("id", clipId + '-primary')
-                  .append("circle")
-                  .attr("cx", -shift)
-                  .attr("cy", avatarCenterY)
-                  .attr("r", avatarClipRadius)
+        defs.append("clipPath")
+            .attr("id", clipId)
+            .append("circle")
+            .attr("cx", 0)
+            .attr("cy", avatarCenterY)
+            .attr("r", avatarClipRadius)
 
-              group.append("image")
-                  .attr("href", resolveImage(primary.photo || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(primaryName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
-                  .attr("x", -shift - avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
-                  .attr("preserveAspectRatio", "xMidYMid slice")
-                  .attr("clip-path", `url(#${clipId}-primary)`)
-                  .style("pointer-events", "none")
-          } else {
-              group.append("circle")
-                  .attr("cx", 0).attr("cy", avatarCenterY)
-                  .attr("r", avatarRadius)
-                  .attr("fill", avatarBg)
-                  .attr("stroke", avatarRing)
-                  .attr("stroke-width", 3.5)
-                  .style("filter", "drop-shadow(0 6px 12px rgba(15,23,42,0.08))")
+        group.append("image")
+            .attr("href", resolveImage(avatarSource || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(primaryName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
+            .attr("x", -avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
+            .attr("preserveAspectRatio", "xMidYMid slice")
+            .attr("clip-path", `url(#${clipId})`)
+            .style("pointer-events", "none")
+    }
 
-              defs.append("clipPath")
-                  .attr("id", clipId)
-                  .append("circle")
-                  .attr("cx", 0)
-                  .attr("cy", avatarCenterY)
-                  .attr("r", avatarClipRadius)
+    if (isCouple) {
+      group.append("text")
+          .text(primaryName)
+          .attr("x", 0).attr("y", compact ? 24 : 30)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#0f172a")
+          .attr("font-weight", "800")
+          .attr("font-size", `${coupleNameFontSize + 0.5}px`)
+          .style("pointer-events", "none")
 
-              group.append("image")
-                  .attr("href", resolveImage(avatarSource || null) || `https://ui-avatars.com/api/?name=${encodeURIComponent(primaryName)}&background=${avatarBg.replace('#','')}&color=${accentColor.replace('#','')}&bold=true`)
-                  .attr("x", -avatarClipRadius).attr("y", avatarCenterY - avatarClipRadius).attr("width", avatarDiameter).attr("height", avatarDiameter)
-                  .attr("preserveAspectRatio", "xMidYMid slice")
-                  .attr("clip-path", `url(#${clipId})`)
-                  .style("pointer-events", "none")
-          }
+      group.append("text")
+          .text(partnerName)
+          .attr("x", 0).attr("y", compact ? 40 : 48)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#334155")
+          .attr("font-weight", "600")
+          .attr("font-size", `${coupleNameFontSize - 0.5}px`)
+          .style("pointer-events", "none")
 
-          // Names & Pills
-          if (isCouple) {
-            group.append("text")
-                .text(primaryName)
-                .attr("x", 0).attr("y", compact ? 24 : 30)
-                .attr("text-anchor", "middle")
-                .attr("fill", "#0f172a") // Slate-900
-                .attr("font-weight", "800")
-                .attr("font-size", `${coupleNameFontSize + 0.5}px`)
-                .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
-                .style("pointer-events", "none")
+      group.append("rect")
+        .attr("x", -Math.min(82, cardWidth * 0.62)).attr("y", pillY - pillHeight/2)
+        .attr("width", Math.min(164, cardWidth * 1.24)).attr("height", pillHeight).attr("rx", pillHeight/2)
+        .attr("fill", 'rgba(241,245,249,0.7)')
+        .attr("stroke", 'rgba(226,232,240,0.8)')
 
-            group.append("text")
-                .text(partnerName)
-                .attr("x", 0).attr("y", compact ? 40 : 48)
-                .attr("text-anchor", "middle")
-                .attr("fill", "#334155") // Slate-700
-                .attr("font-weight", "600")
-                .attr("font-size", `${coupleNameFontSize - 0.5}px`)
-                .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
-                .style("pointer-events", "none")
+      group.append("text")
+          .text(`ID ${displayMemberId}`)
+          .attr("x", 0).attr("y", pillY + 3.5)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#64748b")
+          .attr("font-size", `${pillFontSize}px`)
+          .attr("font-weight", "700")
+    } else {
+      group.append("text")
+          .text(primaryName)
+          .attr("x", 0).attr("y", 26)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#0f172a")
+          .attr("font-weight", "800")
+          .attr("font-size", `${nameFontSize + 0.5}px`)
+          .style("pointer-events", "none")
 
-            // Minimalist capsule for ID
-            group.append("rect")
-              .attr("x", -Math.min(82, cardWidth * 0.62)).attr("y", pillY - pillHeight/2)
-              .attr("width", Math.min(164, cardWidth * 1.24)).attr("height", pillHeight).attr("rx", pillHeight/2)
-              .attr("fill", 'rgba(241,245,249,0.7)') // slate-100/70
-              .attr("stroke", 'rgba(226,232,240,0.8)') // slate-200/80
+      group.append("rect")
+        .attr("x", -pillWidth/2).attr("y", pillY - pillHeight/2)
+        .attr("width", pillWidth).attr("height", pillHeight).attr("rx", pillHeight/2)
+        .attr("fill", 'rgba(241,245,249,0.7)')
+        .attr("stroke", 'rgba(226,232,240,0.8)')
 
-            group.append("text")
-                .text(`ID ${displayMemberId}`)
-                .attr("x", 0).attr("y", pillY + 3.5)
-                .attr("text-anchor", "middle")
-                .attr("fill", "#64748b") // slate-500
-                .attr("font-size", `${pillFontSize}px`)
-                .attr("font-weight", "700")
-                .attr("letter-spacing", "0.5px")
-          } else {
-            group.append("text")
-                .text(primaryName)
-                .attr("x", 0).attr("y", 26)
-                .attr("text-anchor", "middle")
-                .attr("fill", "#0f172a") // Slate-900
-                .attr("font-weight", "800")
-                .attr("font-size", `${nameFontSize + 0.5}px`)
-                .attr("font-family", "'Inter', 'Segoe UI', sans-serif")
-                .style("pointer-events", "none")
-
-            // Minimalist capsule for Age/Gender
-            group.append("rect")
-              .attr("x", -pillWidth/2).attr("y", pillY - pillHeight/2)
-              .attr("width", pillWidth).attr("height", pillHeight).attr("rx", pillHeight/2)
-              .attr("fill", 'rgba(241,245,249,0.7)')
-              .attr("stroke", 'rgba(226,232,240,0.8)')
-
-            group.append("text")
-                .text(t('familyTree.labels.agePill', { symbol: genderSymbol, age: getDisplayAge(primary) }))
-                .attr("x", 0).attr("y", pillY + 3.5)
-                .attr("text-anchor", "middle")
-                .attr("fill", "#64748b") // slate-500
-                .attr("font-size", `${pillFontSize}px`)
-                .attr("font-weight", "700")
-                .attr("letter-spacing", "0.5px")
-          }
-      }
+      group.append("text")
+          .text(t('familyTree.labels.agePill', { symbol: genderSymbol, age: getDisplayAge(primary) }))
+          .attr("x", 0).attr("y", pillY + 3.5)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#64748b")
+          .attr("font-size", `${pillFontSize}px`)
+          .attr("font-weight", "700")
+    }
+}
 
 onMounted(async () => {
-    window.addEventListener('resize', onViewportResize)
-    onViewportResize()
+    window.addEventListener('resize', handleResize)
+    handleResize()
     if (isMobileViewport() && editMode.value) {
         isEditorSheetOpen.value = false
     }
-    // Ensure user is authenticated before loading this page. Redirect to login modal if not.
     const profile = await auth.fetchProfile()
     if (!profile) {
         auth.clearAuth()
-        // Open site-wide login modal (Login component opens when ?login=1)
         router.replace({ path: '/', query: { login: '1', next: route.path } })
         return
     }
     await Promise.all([
-        familyStore.fetchFamily(),
+        familyStore.fetchOverview(),
         fetchCommunityRoles(),
     ])
-    initGraph()
-    focusFromQuery()
+    nodes.value = [...familyStore.flatList()]
+    mobileEditorSheetVh.value = clampMobileEditorHeight(MOBILE_EDITOR_DEFAULT_VH)
 })
 
 onUnmounted(() => {
     stopEditorResize()
-    window.removeEventListener('resize', onViewportResize)
+    window.removeEventListener('resize', handleResize)
     globalNodeCoords = new Map<number, { x: number; y: number }>()
     if (linkSearchDebounce) {
         clearTimeout(linkSearchDebounce)
     }
 })
 
-// Re-init graph when data or view changes
 watch([nodes, links], () => {
-    if (viewMode.value === 'visual') {
+    if (viewMode.value === 'visual' && activeBranch.value) {
         setTimeout(initGraph, 100)
-        focusFromQuery()
     }
 }, { deep: true })
 
-watch(viewMode, (val) => {
-    showMobileTreeHelp.value = false
-    if (val === 'visual') {
-        setTimeout(initGraph, 100) 
+watch(viewMode, (newVal) => {
+    if (newVal === 'visual' && activeBranch.value) {
+        setTimeout(initGraph, 50)
     }
 })
 
 watch(locale, () => {
-    if (viewMode.value === 'visual') {
+    if (viewMode.value === 'visual' && activeBranch.value) {
         setTimeout(initGraph, 100)
     }
 })

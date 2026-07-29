@@ -54,6 +54,7 @@ class FamilyMember(models.Model):
 
     name = models.CharField(max_length=100)
     name_ml = models.CharField(max_length=255, blank=True, null=True)
+    family_name = models.CharField(max_length=150, blank=True, null=True)
     nickname = models.CharField(max_length=50, blank=True, null=True)
     age = models.PositiveIntegerField(blank=True, null=True)
     gender = models.CharField(max_length=1, choices=[("M", "Male"), ("F", "Female"), ("O", "Other")], default="M")

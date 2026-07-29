@@ -8,12 +8,38 @@ export const useFamilyStore = defineStore('family', {
     edges: [] as any[],
     computedRelations: [] as any[],
     generationDepth: 0,
+    overviewData: null as { root_member: FamilyMember | null, root_partner: FamilyMember | null, branches: any[] } | null,
     loading: false,
     error: null as string | null
   }),
 
   actions: {
-    async fetchFamily() {
+    async fetchOverview() {
+      this.loading = true
+      this.error = null
+      
+      const config = useRuntimeConfig()
+      const apiBase = config.public.apiBase || 'http://localhost:8000'
+
+      try {
+        const response = await fetch(`${apiBase}/api/families/tree/overview/`, {
+           credentials: 'include'
+        })
+        if (response.ok) {
+            const data = await response.json()
+            this.overviewData = data
+        } else {
+            this.error = 'Failed to load family overview'
+        }
+      } catch (err) {
+        this.error = 'Error loading family overview'
+        console.error(err)
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchFamily(branch?: string) {
 
       this.loading = true
       this.error = null
@@ -22,7 +48,8 @@ export const useFamilyStore = defineStore('family', {
       const apiBase = config.public.apiBase || 'http://localhost:8000'
 
       try {
-        const response = await fetch(`${apiBase}/api/families/tree/`, {
+        const url = branch ? `${apiBase}/api/families/tree/?branch=${encodeURIComponent(branch)}` : `${apiBase}/api/families/tree/`
+        const response = await fetch(url, {
            credentials: 'include'
         })
         if (response.ok) {
