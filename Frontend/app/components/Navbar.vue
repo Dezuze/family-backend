@@ -53,7 +53,7 @@ const links = [
   { name: 'Gallery', to: '/gallery' },
   { name: 'Family History', to: '/history' },
   { name: 'Committee Members', to: '/committee' },
-  { name: 'Donations', to: '/donations' },
+  // { name: 'Donations', to: '/donations' },
   { name: 'Contact', to: '/contact' },
 ]
 

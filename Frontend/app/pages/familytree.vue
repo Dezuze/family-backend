@@ -2195,8 +2195,8 @@ const initGraph = () => {
     const isCompactMobileCard = isMobileViewport()
     const cardWidth = isCompactMobileCard ? 128 : 164
     const cardHeight = isCompactMobileCard ? 170 : 210
-    const siblingGap = isCompactMobileCard ? 50 : 80
-    const levelGap = isCompactMobileCard ? 210 : 250
+    const siblingGap = isCompactMobileCard ? 20 : 40
+    const levelGap = isCompactMobileCard ? 260 : 320
     const topOffset = isCompactMobileCard ? 96 : 120
     const spouseGap = isCompactMobileCard ? 32 : 48
     const cardHalfWidth = cardWidth / 2
@@ -2430,9 +2430,9 @@ const initGraph = () => {
         const treeLayout = d3.tree<LayoutUnit>()
             .nodeSize([nodeSpacingX, levelGap])
             .separation((a, b) => {
-                const aWidth = a.data.memberIds.length > 1 ? 1.25 : 1
-                const bWidth = b.data.memberIds.length > 1 ? 1.25 : 1
-                const siblingMultiplier = a.parent === b.parent ? 1.05 : 1.35
+                const aWidth = 1
+                const bWidth = 1
+                const siblingMultiplier = a.parent === b.parent ? 1.05 : 1.15
                 return siblingMultiplier * Math.max(aWidth, bWidth)
             })
 
