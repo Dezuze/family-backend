@@ -4,5 +4,6 @@
   "extraPaths": [
     "c:/Users/wesly/OneDrive/Documents/Coding/Project/Backend",
     "c:/Users/wesly/OneDrive/Documents/Coding/Project/Backend/.venv/Lib/site-packages"
-  ]
+  ],
+  "reportMissingTypeStubs": false
 }

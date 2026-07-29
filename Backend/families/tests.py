@@ -8,6 +8,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 import datetime
+from django.db.models import Q
 from families.models import Family, FamilyMember, Relationship
 from families.serializers import FamilyMemberSerializer
 from profiles.models import CommunityRole
@@ -783,6 +784,32 @@ class TreeEditEndpointsTests(TestCase):
                 from_member=self.guardian_member,
                 to_member_id=parent_id,
                 relation_type='PARENT'
+            ).exists()
+        )
+
+    def test_add_spouse_from_tree_edit(self):
+        self.client.force_authenticate(user=self.guardian)
+        res = self.client.post(
+            f'/api/families/tree-edit/{self.guardian_member.id}/add-relative/',
+            {
+                "name": "Tree Spouse",
+                "relation_type": "SPOUSE",
+                "gender": "F",
+                "wedding_anniversary": "2018-06-15",
+            },
+            format='json',
+        )
+        self.assertEqual(res.status_code, 201)
+        spouse_id = res.data['member']['id']
+        spouse = FamilyMember.objects.get(id=spouse_id)
+        self.assertEqual(str(spouse.wedding_anniversary), "2018-06-15")
+        self.guardian_member.refresh_from_db()
+        self.assertEqual(str(self.guardian_member.wedding_anniversary), "2018-06-15")
+        self.assertTrue(
+            Relationship.objects.filter(
+                Q(from_member=self.guardian_member, to_member_id=spouse_id) |
+                Q(from_member_id=spouse_id, to_member=self.guardian_member),
+                relation_type='SPOUSE'
             ).exists()
         )
 

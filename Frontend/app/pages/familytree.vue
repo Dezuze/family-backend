@@ -5,7 +5,7 @@
     <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23A08050&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
     
     <!-- Floating Unified Controls Area -->
-    <div class="w-full px-4 sm:px-6 lg:px-8 shrink-0 z-[100] mt-4 mb-2 pointer-events-none">
+    <div class="w-full px-4 sm:px-6 lg:px-8 shrink-0 z-40 mt-4 mb-2 pointer-events-none">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 bg-white/90 backdrop-blur-xl p-3 px-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white pointer-events-auto">
             <!-- View Mode Toggle -->
             <div class="bg-slate-100 rounded-xl p-1 flex border border-slate-200 shadow-inner relative z-40 pointer-events-auto">
@@ -2736,7 +2736,7 @@ const initGraph = () => {
 
           // Avatar Base & Ring
           if (isCouple) {
-              const shift = avatarRadius * 0.45;
+              const shift = avatarRadius * 0.75;
               // Partner (underneath, shifted right)
               group.append("circle")
                   .attr("cx", shift).attr("cy", avatarCenterY)

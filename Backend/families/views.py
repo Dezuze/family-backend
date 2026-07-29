@@ -598,18 +598,13 @@ def _apply_relation_link(anchor_member, target_member, relation, anniversary_dat
         # to prevent bidirectional duplicates
         if anchor_member.id < target_member.id:
             _safe_create_base_relationship(anchor_member, target_member, 'SPOUSE')
-            Relationship.objects.filter(
-                from_member=anchor_member,
-                to_member=target_member,
-                relation_type='SPOUSE',
-            ).update(anniversary_date=anniversary_date)
         else:
             _safe_create_base_relationship(target_member, anchor_member, 'SPOUSE')
-            Relationship.objects.filter(
-                from_member=target_member,
-                to_member=anchor_member,
-                relation_type='SPOUSE',
-            ).update(anniversary_date=anniversary_date)
+        if anniversary_date:
+            anchor_member.wedding_anniversary = anniversary_date
+            anchor_member.save(update_fields=['wedding_anniversary'])
+            target_member.wedding_anniversary = anniversary_date
+            target_member.save(update_fields=['wedding_anniversary'])
     elif relation == 'SIBLING':
         _safe_create_base_relationship(anchor_member, target_member, 'SIBLING')
         _safe_create_base_relationship(target_member, anchor_member, 'SIBLING')
@@ -801,7 +796,8 @@ class FamilyTreeAddRelativeView(APIView):
         )
 
         try:
-            anniversary_date = _parse_optional_date_or_error(data.get('anniversary_date'), label='anniversary_date')
+            anniv_raw = data.get('anniversary_date') or data.get('wedding_anniversary')
+            anniversary_date = _parse_optional_date_or_error(anniv_raw, label='anniversary_date')
         except ValueError as e:
             return Response({'error': str(e)}, status=400)
 
@@ -855,7 +851,8 @@ class FamilyTreeLinkExistingMemberView(APIView):
             return Response({"error": constraint_error}, status=400)
 
         try:
-            anniversary_date = _parse_optional_date_or_error(data.get('anniversary_date'), label='anniversary_date')
+            anniv_raw = data.get('anniversary_date') or data.get('wedding_anniversary')
+            anniversary_date = _parse_optional_date_or_error(anniv_raw, label='anniversary_date')
         except ValueError as e:
             return Response({'error': str(e)}, status=400)
 
