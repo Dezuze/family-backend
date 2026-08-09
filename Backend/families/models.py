@@ -48,13 +48,13 @@ class FamilyMember(models.Model):
     ]
 
     BRANCH_CHOICES = [
-        ('Thazhe branch', 'Kollamparampil Thazhe branch'),
-        ('Karottu branch', 'Kollamparampil Karottu branch'),
-        ('Tharavadu branch', 'Kollamparampil Tharavadu branch'),
-        ('Kulathamackal branch', 'Kollamparampil Kulathamackal branch'),
-        ('Akkare branch', 'Kollamparampil Akkare branch'),
-        ('Mulekkunnu branch', 'Kollamparampil Mulekkunnu branch'),
-        ('Kuttickal branch', 'Kollamparampil Kuttickal branch'),
+        ('Thazhe branch', 'Thazhe branch'),
+        ('Karottu branch', 'Karottu branch'),
+        ('Tharavadu branch', 'Tharavadu branch'),
+        ('Kulathamackal branch', 'Kulathamackal branch'),
+        ('Akkare branch', 'Akkare branch'),
+        ('Mulekkunnu branch', 'Mulekkunnu branch'),
+        ('Kuttickal branch', 'Kuttickal branch'),
     ]
 
     family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name="members")

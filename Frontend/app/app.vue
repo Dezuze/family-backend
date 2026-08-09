@@ -15,12 +15,14 @@ onMounted(() => {
 })
 
 useHead(() => ({
-  titleTemplate: (title: string | undefined) => title ? `${title} | ${t('app.siteName')}` : t('app.siteName'),
+  titleTemplate: (title: string | undefined) => {
+    return (title && title !== t('app.siteName')) ? `${title} | ${t('app.siteName')}` : t('app.siteName')
+  },
   title: t('app.siteName'),
   link: [
-    { rel: 'icon', type: 'image/png', href: '/favicon.png?v=3' },
-    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico?v=3' },
-    { rel: 'shortcut icon', href: '/favicon.ico?v=3' },
+    { rel: 'icon', type: 'image/png', href: '/favicon.png?v=4' },
+    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico?v=4' },
+    { rel: 'shortcut icon', href: '/favicon.ico?v=4' },
     { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap' },
     { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Fleur+De+Leah&display=swap' },
     { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' },

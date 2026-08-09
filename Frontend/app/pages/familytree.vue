@@ -83,7 +83,7 @@
     <!-- Overview View -->
     <div
         v-if="!activeBranch"
-        class="w-full flex-1 relative flex flex-col items-center justify-center p-8 overflow-y-auto"
+        class="w-full flex-1 relative flex flex-col items-center justify-start p-8 overflow-y-auto"
     >
         <div v-if="loading" class="text-slate-500 font-medium mt-10">Loading branches...</div>
         <div v-else-if="overviewData" class="w-full max-w-6xl flex flex-col items-center pt-4">
@@ -124,11 +124,11 @@
             <div class="w-full relative mt-8 lg:mt-0">
                 <div class="text-sm font-bold tracking-widest text-slate-400 uppercase text-center mb-6 lg:hidden">Select a Branch</div>
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-0 w-full relative">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 lg:gap-0 w-full relative items-stretch">
                     <div 
                         v-for="(branch, i) in overviewData.branches" 
                         :key="branch.id"
-                        class="relative flex flex-col items-center"
+                        class="relative flex flex-col items-center h-full"
                     >
                         <!-- Horizontal Line (Desktop) -->
                         <div 
@@ -146,14 +146,14 @@
                         <!-- Card -->
                         <div 
                             @click="selectBranch(branch.id)"
-                            class="bg-white/95 backdrop-blur-sm p-6 rounded-3xl shadow-lg hover:shadow-2xl border border-slate-200 hover:border-brand-gold/60 cursor-pointer transition-all duration-300 hover:-translate-y-2 group flex flex-col items-center text-center relative overflow-hidden w-full lg:w-[90%] lg:mt-8"
+                            class="bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-lg hover:shadow-2xl border border-slate-200 hover:border-brand-gold/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 group flex flex-col items-center justify-between text-center relative overflow-hidden w-full lg:w-[95%] h-full lg:mt-8"
                         >
                             <div class="absolute inset-0 bg-gradient-to-b from-brand-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div class="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 text-brand-gold/80 flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform duration-300">
-                                <UsersIcon class="w-7 h-7" />
+                            <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 text-brand-gold/80 flex items-center justify-center mb-2 shadow-sm group-hover:scale-110 transition-transform duration-300 shrink-0">
+                                <UsersIcon class="w-5 h-5" />
                             </div>
-                            <h3 class="font-extrabold text-slate-700 mb-2 leading-tight text-lg">{{ branch.name }}</h3>
-                            <div class="text-xs font-bold text-slate-400 bg-slate-100/50 px-3 py-1.5 rounded-full border border-slate-200/50">{{ branch.member_count }} Members</div>
+                            <h3 class="font-extrabold text-slate-700 mb-2 leading-tight text-sm md:text-xs xl:text-sm flex-1 flex items-center">{{ branch.name }}</h3>
+                            <div class="text-[10px] font-bold text-slate-400 bg-slate-100/50 px-2.5 py-1 rounded-full border border-slate-200/50 shrink-0">{{ branch.member_count }} Members</div>
                         </div>
                     </div>
                 </div>

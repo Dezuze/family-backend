@@ -382,17 +382,17 @@ class FamilyTreeOverviewView(APIView):
                 if partner_member:
                     root_partner_data = FamilyMemberSerializer(partner_member, context={'request': request}).data
 
-        # Get top 5 branches by member count
-        branches = Family.objects.exclude(branch__icontains='Test').values('branch').annotate(member_count=Count('members')).order_by('-member_count')[:5]
+        # Get branch member counts for the defined branches
+        branches_counts = FamilyMember.objects.exclude(branch__isnull=True).exclude(branch='').values('branch').annotate(member_count=Count('id'))
+        counts_dict = {b['branch']: b['member_count'] for b in branches_counts}
         
         branch_cards = []
-        for b in branches:
+        for choice_val, choice_label in FamilyMember.BRANCH_CHOICES:
             branch_cards.append({
-                "id": b['branch'],
-                "name": b['branch'],
-                "member_count": b['member_count'],
+                "id": choice_val,
+                "name": choice_label,
+                "member_count": counts_dict.get(choice_val, 0)
             })
-            
         return Response({
             "root_member": root_data,
             "root_partner": root_partner_data,
@@ -418,7 +418,7 @@ class FamilyTreeView(APIView):
 
         members_qs = FamilyMember.objects.all().prefetch_related('parents')
         if branch:
-            members_qs = members_qs.filter(family__branch=branch)
+            members_qs = members_qs.filter(branch=branch)
             
         member_ids = list(members_qs.values_list('id', flat=True))
         relationships = Relationship.objects.filter(
