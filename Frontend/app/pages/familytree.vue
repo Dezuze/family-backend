@@ -190,15 +190,15 @@
                     <div class="absolute -top-12 left-1/2 w-[2px] h-12 bg-brand-gold/40 -translate-x-1/2 hidden lg:block"></div>
                     
                     <div 
-                        @click="selectBranch('')"
+                        @click="selectBranch('Unassigned')"
                         class="bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow border border-slate-200 hover:border-brand-gold/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 group flex flex-col items-center justify-between text-center relative overflow-hidden w-[200px] sm:w-[220px] h-[90px] z-10"
                     >
                         <div class="absolute inset-0 bg-gradient-to-b from-brand-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 text-brand-gold/80 flex items-center justify-center mb-1 shadow-sm group-hover:scale-110 transition-transform duration-300 shrink-0">
                             <UsersIcon class="w-4 h-4" />
                         </div>
-                        <h3 class="font-extrabold text-slate-700 leading-tight text-xs md:text-sm flex-1 flex items-center">All Members</h3>
-                        <div class="text-[9px] font-bold text-slate-400 bg-slate-100/50 px-2 py-0.5 rounded-full border border-slate-200/50 shrink-0">View Entire Tree (Including Unassigned)</div>
+                        <h3 class="font-extrabold text-slate-700 leading-tight text-xs md:text-sm flex-1 flex items-center">Unassigned Members</h3>
+                        <div class="text-[9px] font-bold text-slate-400 bg-slate-100/50 px-2 py-0.5 rounded-full border border-slate-200/50 shrink-0">View members without a branch</div>
                     </div>
                 </div>
             </div>

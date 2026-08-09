@@ -418,7 +418,10 @@ class FamilyTreeView(APIView):
 
         members_qs = FamilyMember.objects.all().prefetch_related('parents')
         if branch:
-            members_qs = members_qs.filter(branch=branch)
+            if branch == 'Unassigned':
+                members_qs = members_qs.filter(Q(branch__isnull=True) | Q(branch=''))
+            else:
+                members_qs = members_qs.filter(branch=branch)
             
         member_ids = list(members_qs.values_list('id', flat=True))
         relationships = Relationship.objects.filter(
