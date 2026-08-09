@@ -290,232 +290,10 @@
         <div class="quick-edit-sheet relative w-full max-h-[90vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-4 pb-5 shadow-2xl md:max-w-2xl md:rounded-2xl md:p-5">
             <div class="sticky top-0 z-10 mb-4 flex items-center justify-between border-b border-slate-100 bg-white pb-3 pt-1">
                 <div>
-                    <h3 class="text-lg font-black text-slate-900">Edit Member</h3>
-                    <p class="text-xs text-slate-500">Update selected member details</p>
+                    <h3 class="text-lg font-black text-slate-900">Add Relative</h3>
+                    <p class="text-xs text-slate-500">Create a new relative or link an existing one</p>
                 </div>
                 <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 hover:bg-slate-100" @click="quickEditOpen = false">Close</button>
-            </div>
-
-            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2">
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">First name</label>
-                    <input v-model="quickEditForm.first_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="First name" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Last name</label>
-                    <input v-model="quickEditForm.last_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Last name" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Member ID</label>
-                    <input v-model="quickEditForm.member_id" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Member ID" />
-                </div>
-                <div class="md:col-span-2">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Malayalam name</label>
-                    <div class="flex gap-2">
-                        <input v-model="quickEditForm.name_ml" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Malayalam name" />
-                        <button
-                            type="button"
-                            class="shrink-0 rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold hover:bg-brand-gold/10 disabled:opacity-50"
-                            :disabled="nameLookupLoadingQuick"
-                            @click="lookupMalayalamNameForQuickEdit"
-                        >
-                            {{ nameLookupLoadingQuick ? 'Searching...' : 'Malayalam' }}
-                        </button>
-                    </div>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Nickname</label>
-                    <input v-model="quickEditForm.nickname" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Nickname" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Gender</label>
-                    <select v-model="quickEditForm.gender" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                        <option value="M">Male</option>
-                        <option value="F">Female</option>
-                        <option value="O">Other</option>
-                    </select>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Generation</label>
-                    <select v-model="quickEditForm.generation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                        <option :value="null">Auto</option>
-                        <option :value="0">I</option>
-                        <option :value="1">II</option>
-                        <option :value="2">III</option>
-                        <option :value="3">IV</option>
-                        <option :value="4">V</option>
-                        <option :value="5">VI</option>
-                        <option :value="6">VII</option>
-                        <option :value="7">VIII</option>
-                        <option :value="8">IX</option>
-                        <option :value="9">X</option>
-                    </select>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of birth</label>
-                    <input v-model="quickEditForm.date_of_birth" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Age</label>
-                    <input v-model="quickEditForm.age" type="number" min="0" max="150" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Age" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Blood group</label>
-                    <input v-model="quickEditForm.blood_group" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Blood group" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Occupation</label>
-                    <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Place of Work</label>
-                    <input v-model="quickEditForm.place_of_work" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Place of work" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Education</label>
-                    <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Parish</label>
-                    <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</label>
-                    <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</label>
-                    <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
-                </div>
-                <div class="md:col-span-2 flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Wedding anniversary</label>
-                    <input v-model="quickEditForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                </div>
-                <div class="md:col-span-2 flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</label>
-                    <textarea v-model="quickEditForm.address" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address"></textarea>
-                </div>
-                <div class="md:col-span-2 flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Bio</label>
-                    <textarea v-model="quickEditForm.bio" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Bio"></textarea>
-                </div>
-                <div class="md:col-span-2 flex flex-col gap-1 rounded-xl border border-slate-200 px-3 py-2">
-                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Is deceased</div>
-                    <label class="flex items-center gap-2 text-sm text-slate-700">
-                        <input v-model="quickEditForm.is_deceased" type="checkbox" class="accent-brand-gold" />
-                        Yes
-                    </label>
-                </div>
-                <div v-if="quickEditForm.is_deceased" class="md:col-span-2 flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of death</label>
-                    <input v-model="quickEditForm.date_of_death" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                </div>
-                <div class="md:col-span-2 flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Profile picture</label>
-                    <input type="file" accept="image/*" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" @change="onQuickEditAvatarChange" />
-                </div>
-            </div>
-
-            <p v-if="quickEditError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{{ quickEditError }}</p>
-            <p v-if="quickEditSuccess" class="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">{{ quickEditSuccess }}</p>
-
-            <div class="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-100 bg-white pt-3">
-                <button class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700" @click="quickEditOpen = false">Cancel</button>
-                <button class="rounded-xl bg-brand-gold px-3 py-2 text-xs font-black text-white disabled:opacity-50" :disabled="quickEditLoading" @click="saveQuickEditMember">
-                    {{ quickEditLoading ? 'Saving...' : 'Save Changes' }}
-                </button>
-            </div>
-        </div>
-     </div>
-
-      <div
-          v-if="editMode && isEditorSheetOpen"
-          class="fixed inset-0 z-30 pointer-events-none bg-slate-900/10 backdrop-blur-[0.5px] md:hidden"
-      ></div>
-
-      <button
-          v-if="editMode && !isEditorSheetOpen"
-          class="fixed bottom-4 right-4 z-40 rounded-2xl border border-brand-gold/40 bg-white px-4 py-2 text-xs font-black text-brand-gold shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl active:scale-95 md:hidden"
-          @click="openEditorSheet"
-      >
-          {{ t('familyTree.editor.openTreeEditor') }}
-      </button>
-
-      <Transition name="slide-up-editor">
-      <div
-          v-if="editMode && isEditorSheetOpen"
-          class="editor-sheet fixed inset-x-0 bottom-0 z-40 max-h-[72vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white/96 px-4 pt-0 pb-6 shadow-2xl backdrop-blur transition-all duration-300 md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[410px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl md:p-5"
-          :style="mobileEditorSheetStyle"
-          :class="isResizingEditorSheet ? 'duration-0' : ''"
-      >
-          <div class="mb-2 flex justify-center md:hidden">
-                <button
-                    type="button"
-                    class="h-8 w-24 touch-none rounded-full border border-slate-200 bg-white/90"
-                    aria-label="Resize editor panel"
-                    @pointerdown.prevent="startEditorResize"
-                >
-                    <span class="mx-auto block h-1.5 w-10 rounded-full bg-slate-300"></span>
-                </button>
-          </div>
-          <div class="sticky top-0 z-20 mb-3 flex items-center justify-between border-b border-slate-100 bg-white/95 pb-3 pt-3 backdrop-blur">
-                <div>
-                     <h3 class="text-lg font-black text-slate-900">{{ t('familyTree.editor.title') }}</h3>
-                     <p class="text-xs font-medium text-slate-500">{{ t('familyTree.editor.subtitle') }}</p>
-                </div>
-                <div class="flex items-center gap-2">
-                     <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100 md:hidden" @click="closeEditorSheet">{{ t('familyTree.editor.hide') }}</button>
-                     <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100" @click="toggleEditMode">{{ t('familyTree.editor.close') }}</button>
-                </div>
-          </div>
-
-        <div v-if="selectedMember" class="space-y-4">
-            <div class="rounded-2xl border border-slate-200 bg-linear-to-br from-white to-slate-50 p-3 shadow-sm">
-                <div class="space-y-2">
-                    <div class="text-base font-black text-slate-900">
-                        {{ householdTitle }}
-                    </div>
-                    <div class="text-[11px] text-slate-500">
-                        {{ selectedMember.relation || selectedMember.role || t('familyTree.labels.member') }}
-                    </div>
-                    <div v-if="selectedMemberHouseholdMembers.length > 1" class="grid gap-2 sm:grid-cols-2">
-                        <button
-                            v-for="person in selectedMemberHouseholdMembers"
-                            :key="person.id"
-                            type="button"
-                            @click="selectHouseholdMember(person)"
-                            :class="['rounded-xl border p-3 text-left transition duration-200', person.id === selectedMember.id ? 'border-brand-gold bg-brand-gold/10 shadow-inner' : 'border-slate-200 bg-white hover:border-brand-gold/40 hover:bg-slate-50']"
-                        >
-                            <div class="flex items-center justify-between gap-2">
-                                <div class="text-sm font-black text-slate-900">{{ person.name }}</div>
-                                <span v-if="person.id === selectedMember.id" class="rounded-full bg-brand-gold/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-gold">Selected</span>
-                            </div>
-                            <div class="mt-2 text-[11px] text-slate-500">
-                                {{ person.member_id || person.id || t('memberDetailsModal.labels.notAvailable') }}
-                            </div>
-                        </button>
-                    </div>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Family / House Name</label>
-                    <input v-model="quickEditForm.family_name" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Family or House Name" />
-                </div>
-            </div>
-
-            <button
-                class="w-full rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="!canEditSelected"
-                :class="canEditSelected ? 'border-brand-gold/40 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/15' : 'border-slate-200 text-slate-400'"
-                @click="openQuickEditForSelected"
-            >
-                Edit Profile
-            </button>
-
-            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_parent" :class="addRelationType === 'PARENT' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('PARENT')">{{ t('familyTree.editor.actions.parent') }}</button>
-                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!canAddSpouseNow" :class="addRelationType === 'SPOUSE' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SPOUSE')">{{ t('familyTree.editor.actions.spouse') }}</button>
-                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_sibling" :class="addRelationType === 'SIBLING' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SIBLING')">{{ t('familyTree.editor.actions.sibling') }}</button>
-                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_child" :class="addRelationType === 'CHILD' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('CHILD')">{{ t('familyTree.editor.actions.child') }}</button>
             </div>
 
             <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-3.5">
@@ -653,6 +431,218 @@
                     @click="addRelativeFromPanel"
                 >
                     {{ editorLoading ? t('familyTree.editor.saving') : t('familyTree.editor.addRelative') }}
+                </button>
+            </div>
+        </div>
+     </div>
+
+      <div
+          v-if="editMode && isEditorSheetOpen"
+          class="fixed inset-0 z-30 pointer-events-none bg-slate-900/10 backdrop-blur-[0.5px] md:hidden"
+      ></div>
+
+      <button
+          v-if="editMode && !isEditorSheetOpen"
+          class="fixed bottom-4 right-4 z-40 rounded-2xl border border-brand-gold/40 bg-white px-4 py-2 text-xs font-black text-brand-gold shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl active:scale-95 md:hidden"
+          @click="openEditorSheet"
+      >
+          {{ t('familyTree.editor.openTreeEditor') }}
+      </button>
+
+      <Transition name="slide-up-editor">
+      <div
+          v-if="editMode && isEditorSheetOpen"
+          class="editor-sheet fixed inset-x-0 bottom-0 z-40 max-h-[72vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white/96 px-4 pt-0 pb-6 shadow-2xl backdrop-blur transition-all duration-300 md:inset-x-auto md:bottom-4 md:right-4 md:top-28 md:w-[410px] md:max-h-[calc(100vh-8rem)] md:rounded-2xl md:p-5"
+          :style="mobileEditorSheetStyle"
+          :class="isResizingEditorSheet ? 'duration-0' : ''"
+      >
+          <div class="mb-2 flex justify-center md:hidden">
+                <button
+                    type="button"
+                    class="h-8 w-24 touch-none rounded-full border border-slate-200 bg-white/90"
+                    aria-label="Resize editor panel"
+                    @pointerdown.prevent="startEditorResize"
+                >
+                    <span class="mx-auto block h-1.5 w-10 rounded-full bg-slate-300"></span>
+                </button>
+          </div>
+          <div class="sticky top-0 z-20 mb-3 flex items-center justify-between border-b border-slate-100 bg-white/95 pb-3 pt-3 backdrop-blur">
+                <div>
+                     <h3 class="text-lg font-black text-slate-900">{{ t('familyTree.editor.title') }}</h3>
+                     <p class="text-xs font-medium text-slate-500">{{ t('familyTree.editor.subtitle') }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                     <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100 md:hidden" @click="closeEditorSheet">{{ t('familyTree.editor.hide') }}</button>
+                     <button class="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 transition-colors duration-200 hover:bg-slate-100" @click="toggleEditMode">{{ t('familyTree.editor.close') }}</button>
+                </div>
+          </div>
+
+        <div v-if="selectedMember" class="space-y-4">
+            <div class="rounded-2xl border border-slate-200 bg-linear-to-br from-white to-slate-50 p-3 shadow-sm">
+                <div class="space-y-2">
+                    <div class="text-base font-black text-slate-900">
+                        {{ householdTitle }}
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        {{ selectedMember.relation || selectedMember.role || t('familyTree.labels.member') }}
+                    </div>
+                    <div v-if="selectedMemberHouseholdMembers.length > 1" class="grid gap-2 sm:grid-cols-2">
+                        <button
+                            v-for="person in selectedMemberHouseholdMembers"
+                            :key="person.id"
+                            type="button"
+                            @click="selectHouseholdMember(person)"
+                            :class="['rounded-xl border p-3 text-left transition duration-200', person.id === selectedMember.id ? 'border-brand-gold bg-brand-gold/10 shadow-inner' : 'border-slate-200 bg-white hover:border-brand-gold/40 hover:bg-slate-50']"
+                        >
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="text-sm font-black text-slate-900">{{ person.name }}</div>
+                                <span v-if="person.id === selectedMember.id" class="rounded-full bg-brand-gold/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-gold">Selected</span>
+                            </div>
+                            <div class="mt-2 text-[11px] text-slate-500">
+                                {{ person.member_id || person.id || t('memberDetailsModal.labels.notAvailable') }}
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+
+
+            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_parent" :class="addRelationType === 'PARENT' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('PARENT')">{{ t('familyTree.editor.actions.parent') }}</button>
+                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!canAddSpouseNow" :class="addRelationType === 'SPOUSE' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SPOUSE')">{{ t('familyTree.editor.actions.spouse') }}</button>
+                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_sibling" :class="addRelationType === 'SIBLING' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SIBLING')">{{ t('familyTree.editor.actions.sibling') }}</button>
+                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_child" :class="addRelationType === 'CHILD' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('CHILD')">{{ t('familyTree.editor.actions.child') }}</button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">First name</label>
+                    <input v-model="quickEditForm.first_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="First name" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Last name</label>
+                    <input v-model="quickEditForm.last_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Last name" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Member ID</label>
+                    <input v-model="quickEditForm.member_id" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Member ID" />
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Malayalam name</label>
+                    <div class="flex gap-2">
+                        <input v-model="quickEditForm.name_ml" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Malayalam name" />
+                        <button
+                            type="button"
+                            class="shrink-0 rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold hover:bg-brand-gold/10 disabled:opacity-50"
+                            :disabled="nameLookupLoadingQuick"
+                            @click="lookupMalayalamNameForQuickEdit"
+                        >
+                            {{ nameLookupLoadingQuick ? 'Searching...' : 'Malayalam' }}
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Nickname</label>
+                    <input v-model="quickEditForm.nickname" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Nickname" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Gender</label>
+                    <select v-model="quickEditForm.gender" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Generation</label>
+                    <select v-model="quickEditForm.generation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                        <option :value="null">Auto</option>
+                        <option :value="0">I</option>
+                        <option :value="1">II</option>
+                        <option :value="2">III</option>
+                        <option :value="3">IV</option>
+                        <option :value="4">V</option>
+                        <option :value="5">VI</option>
+                        <option :value="6">VII</option>
+                        <option :value="7">VIII</option>
+                        <option :value="8">IX</option>
+                        <option :value="9">X</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of birth</label>
+                    <input v-model="quickEditForm.date_of_birth" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Age</label>
+                    <input v-model="quickEditForm.age" type="number" min="0" max="150" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Age" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Blood group</label>
+                    <input v-model="quickEditForm.blood_group" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Blood group" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Occupation</label>
+                    <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Place of Work</label>
+                    <input v-model="quickEditForm.place_of_work" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Place of work" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Education</label>
+                    <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Parish</label>
+                    <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</label>
+                    <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</label>
+                    <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
+                </div>
+                <div class="md:col-span-2 flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Wedding anniversary</label>
+                    <input v-model="quickEditForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </div>
+                <div class="md:col-span-2 flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</label>
+                    <textarea v-model="quickEditForm.address" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address"></textarea>
+                </div>
+                <div class="md:col-span-2 flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Bio</label>
+                    <textarea v-model="quickEditForm.bio" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Bio"></textarea>
+                </div>
+                <div class="md:col-span-2 flex flex-col gap-1 rounded-xl border border-slate-200 px-3 py-2">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Is deceased</div>
+                    <label class="flex items-center gap-2 text-sm text-slate-700">
+                        <input v-model="quickEditForm.is_deceased" type="checkbox" class="accent-brand-gold" />
+                        Yes
+                    </label>
+                </div>
+                <div v-if="quickEditForm.is_deceased" class="md:col-span-2 flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of death</label>
+                    <input v-model="quickEditForm.date_of_death" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </div>
+                <div class="md:col-span-2 flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Profile picture</label>
+                    <input type="file" accept="image/*" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" @change="onQuickEditAvatarChange" />
+                </div>
+            </div>
+
+            <p v-if="quickEditError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{{ quickEditError }}</p>
+            <p v-if="quickEditSuccess" class="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">{{ quickEditSuccess }}</p>
+
+            <div class="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-100 bg-white pt-3">
+                
+                <button class="rounded-xl bg-brand-gold px-3 py-2 text-xs font-black text-white disabled:opacity-50" :disabled="quickEditLoading" @click="saveQuickEditMember">
+                    {{ quickEditLoading ? 'Saving...' : 'Save Changes' }}
                 </button>
             </div>
 
@@ -1490,7 +1480,12 @@ const focusOnMember = (targetMember: any, options?: { select?: boolean }) => {
     }
 }
 
-const openMember = (m: FamilyMember) => { selectedMember.value = m }
+const openMember = (m: FamilyMember) => { 
+    selectedMember.value = m
+    if (editMode.value) {
+        openQuickEditForSelected()
+    }
+}
 
 const openQuickEditForSelected = () => {
     if (!selectedMember.value || !editMode.value || !canEditSelected.value) return
@@ -1525,7 +1520,7 @@ const openQuickEditForSelected = () => {
     quickEditError.value = ''
     quickEditSuccess.value = ''
     quickEditAvatar.value = null
-    quickEditOpen.value = true
+    // quickEditOpen.value = true
 }
 
 const onQuickEditAvatarChange = (event: Event) => {

@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     'families.apps.FamiliesConfig',
     'news',
     'profiles',
+    'payments',
 ]
 
 REST_FRAMEWORK = {

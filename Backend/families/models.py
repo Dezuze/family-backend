@@ -47,6 +47,16 @@ class FamilyMember(models.Model):
         ('Other', 'Other'),
     ]
 
+    BRANCH_CHOICES = [
+        ('Thazhe branch', 'Kollamparampil Thazhe branch'),
+        ('Karottu branch', 'Kollamparampil Karottu branch'),
+        ('Tharavadu branch', 'Kollamparampil Tharavadu branch'),
+        ('Kulathamackal branch', 'Kollamparampil Kulathamackal branch'),
+        ('Akkare branch', 'Kollamparampil Akkare branch'),
+        ('Mulekkunnu branch', 'Kollamparampil Mulekkunnu branch'),
+        ('Kuttickal branch', 'Kollamparampil Kuttickal branch'),
+    ]
+
     family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name="members")
 
     # temporary id for unregistered persons
@@ -58,6 +68,7 @@ class FamilyMember(models.Model):
     nickname = models.CharField(max_length=50, blank=True, null=True)
     age = models.PositiveIntegerField(blank=True, null=True)
     gender = models.CharField(max_length=1, choices=[("M", "Male"), ("F", "Female"), ("O", "Other")], default="M")
+    branch = models.CharField(max_length=50, choices=BRANCH_CHOICES, blank=True, null=True)
 
     # Kept as free text so users can enter custom labels like
     # "great great great grandfather" from the frontend.

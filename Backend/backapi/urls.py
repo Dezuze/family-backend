@@ -21,6 +21,8 @@ urlpatterns = [
     path('api/profiles/', include('profiles.urls')),
     # CSRF init endpoint expected by frontend
     path('api/csrf/', CsrfInitView.as_view()),
+    # payments endpoints
+    path('api/payments/', include('payments.urls')),
     # Serve uploaded media files in both development and production Docker setup
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]

@@ -1,7 +1,7 @@
 {
   "app": {
-    "siteName": "Kollamparampil Family",
-    "metaDescription": "Kollamparampil Family Association - connecting our heritage and future.",
+    "siteName": "Kollamparampil Family Association",
+    "metaDescription": "Official website of the Kollamparampil Family Association. Connect with our heritage, explore our family tree, and stay updated with events.",
     "themeColor": "#A08050",
     "language": {
       "en": "English",
@@ -95,8 +95,8 @@
       "deleteFailed": "Failed to delete"
     },
     "meta": {
-      "title": "Home",
-      "description": "Kollamparampil Family Association - connecting our heritage and future. Find events, news, and family history."
+      "title": "Welcome",
+      "description": "Welcome to the official website of the Kollamparampil Family Association. Explore our family history, genealogy tree, and stay updated with our latest news and upcoming gatherings."
     }
   },
   "events": {
@@ -402,7 +402,8 @@
       "placeOfWork": "Place of Work",
       "education": "Education",
       "parishChurch": "Parish / Church",
-      "relation": "Relation"
+      "relation": "Relation",
+      "branch": "Family Branch"
     },
     "placeholders": {
       "firstName": "First name",
@@ -418,7 +419,8 @@
       "placeOfWork": "Place of work",
       "education": "Education",
       "parishChurch": "Parish / Church",
-      "relation": "Relation"
+      "relation": "Relation",
+      "selectBranch": "Select family branch"
     },
     "gender": {
       "male": "Male",
@@ -427,6 +429,15 @@
     },
     "bloodGroup": {
       "unknown": "Unknown"
+    },
+    "branches": {
+      "Thazhe branch": "Kollamparampil Thazhe branch",
+      "Karottu branch": "Kollamparampil Karottu branch",
+      "Tharavadu branch": "Kollamparampil Tharavadu branch",
+      "Kulathamackal branch": "Kollamparampil Kulathamackal branch",
+      "Akkare branch": "Kollamparampil Akkare branch",
+      "Mulekkunnu branch": "Kollamparampil Mulekkunnu branch",
+      "Kuttickal branch": "Kollamparampil Kuttickal branch"
     },
     "relationships": {
       "connectRelatives": "Connect your Relatives",

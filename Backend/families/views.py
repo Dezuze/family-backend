@@ -217,6 +217,11 @@ class UserProfileView(APIView):
             if 'phone_no' in data: member.phone_no = data['phone_no']
             if 'email_id' in data: member.email_id = data['email_id']
             if 'church_parish' in data: member.church_parish = data['church_parish']
+            if 'family_name' in data:
+                new_family_name = data.get('family_name')
+                member.family_name = new_family_name
+                from families.models import FamilyMember
+                FamilyMember.objects.filter(family=member.family).update(family_name=new_family_name)
             if 'committee_role' in data:
                 try:
                     member.committee_role = _normalize_committee_role_or_error(data.get('committee_role'))
@@ -1176,6 +1181,11 @@ class ManagedMemberDetailView(APIView):
             if 'nickname' in data: member.nickname = data['nickname']
             if 'name_ml' in data: member.name_ml = (data.get('name_ml') or '').strip() or None
             if 'church_parish' in data: member.church_parish = data['church_parish']
+            if 'family_name' in data:
+                new_family_name = data.get('family_name')
+                member.family_name = new_family_name
+                # Bulk update all members in the same family tree
+                FamilyMember.objects.filter(family=member.family).update(family_name=new_family_name)
             if 'generation' in data:
                 generation_input = data.get('generation')
                 if generation_input in [None, '', 'null']:

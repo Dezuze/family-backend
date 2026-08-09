@@ -93,14 +93,34 @@
                             </div>
                         </div>
 
-                        <div class="group">
-                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.bloodGroup') }}</label>
-                            <div class="relative">
-                                 <select v-model="form.blood_group" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all appearance-none cursor-pointer">
-                                     <option value="" disabled>{{ t('onboarding.placeholders.selectBloodGroup') }}</option><option value="Unknown">{{ t('onboarding.bloodGroup.unknown') }}</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
-                                 </select>
-                                <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="group">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.bloodGroup') }}</label>
+                                <div class="relative">
+                                     <select v-model="form.blood_group" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all appearance-none cursor-pointer">
+                                         <option value="" disabled>{{ t('onboarding.placeholders.selectBloodGroup') }}</option><option value="Unknown">{{ t('onboarding.bloodGroup.unknown') }}</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="O+">O+</option><option value="O-">O-</option><option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                     </select>
+                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="group">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">{{ t('onboarding.fields.branch') }}</label>
+                                <div class="relative">
+                                     <select v-model="form.branch" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 font-medium focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all appearance-none cursor-pointer">
+                                         <option value="" disabled>{{ t('onboarding.placeholders.selectBranch') }}</option>
+                                         <option value="Thazhe branch">{{ t('onboarding.branches[\'Thazhe branch\']') }}</option>
+                                         <option value="Karottu branch">{{ t('onboarding.branches[\'Karottu branch\']') }}</option>
+                                         <option value="Tharavadu branch">{{ t('onboarding.branches[\'Tharavadu branch\']') }}</option>
+                                         <option value="Kulathamackal branch">{{ t('onboarding.branches[\'Kulathamackal branch\']') }}</option>
+                                         <option value="Akkare branch">{{ t('onboarding.branches[\'Akkare branch\']') }}</option>
+                                         <option value="Mulekkunnu branch">{{ t('onboarding.branches[\'Mulekkunnu branch\']') }}</option>
+                                         <option value="Kuttickal branch">{{ t('onboarding.branches[\'Kuttickal branch\']') }}</option>
+                                     </select>
+                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -534,6 +554,22 @@
                                 </select>
                             </div>
                             <div>
+                                <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.fields.branch') }}</label>
+                                <select v-model="managedForm.branch" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
+                                    <option value="" disabled>{{ t('onboarding.placeholders.selectBranch') }}</option>
+                                    <option value="Thazhe branch">{{ t('onboarding.branches[\'Thazhe branch\']') }}</option>
+                                    <option value="Karottu branch">{{ t('onboarding.branches[\'Karottu branch\']') }}</option>
+                                    <option value="Tharavadu branch">{{ t('onboarding.branches[\'Tharavadu branch\']') }}</option>
+                                    <option value="Kulathamackal branch">{{ t('onboarding.branches[\'Kulathamackal branch\']') }}</option>
+                                    <option value="Akkare branch">{{ t('onboarding.branches[\'Akkare branch\']') }}</option>
+                                    <option value="Mulekkunnu branch">{{ t('onboarding.branches[\'Mulekkunnu branch\']') }}</option>
+                                    <option value="Kuttickal branch">{{ t('onboarding.branches[\'Kuttickal branch\']') }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
                                 <label class="block text-sm font-bold text-slate-500 uppercase mb-2 ml-1">{{ t('onboarding.managedModal.occupationSchool') }}</label>
                                 <input v-model="managedForm.occupation" type="text" :placeholder="t('onboarding.managedModal.occupationSchool')" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:border-brand-gold outline-none transition-all text-lg font-bold">
                             </div>
@@ -950,6 +986,7 @@ const managedForm = ref({
     member_id: '',
     generation: '',
     gender: '',
+    branch: '',
     relation: '',
     age: '',
     date_of_birth: '',
