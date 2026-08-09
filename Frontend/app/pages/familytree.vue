@@ -121,39 +121,66 @@
             <div class="w-[2px] h-10 bg-brand-gold/40 hidden lg:block"></div>
 
             <!-- Branches -->
-            <div class="w-full relative mt-8 lg:mt-0">
-                <div class="text-sm font-bold tracking-widest text-slate-400 uppercase text-center mb-6 lg:hidden">Select a Branch</div>
+            <div class="w-full relative mt-8 lg:mt-6 flex flex-col items-center">
+                <div class="text-sm font-bold tracking-widest text-slate-400 uppercase text-center mb-4 lg:hidden">Select a Branch</div>
                 
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 lg:gap-0 w-full relative items-stretch">
+                <div class="flex flex-col lg:flex-row justify-center items-start gap-8 lg:gap-4 xl:gap-8 w-full max-w-7xl relative">
+                    <!-- Main Branch Connecting Line (Desktop) -->
+                    <div class="absolute top-0 left-[16.66%] right-[16.66%] h-[2px] bg-brand-gold/40 hidden lg:block"></div>
+                    
                     <div 
-                        v-for="(branch, i) in overviewData.branches" 
-                        :key="branch.id"
-                        class="relative flex flex-col items-center h-full"
+                        v-for="(mainBranch, i) in hierarchicalBranches" 
+                        :key="mainBranch.id"
+                        class="relative flex flex-col items-center w-full lg:w-1/3 h-full"
                     >
-                        <!-- Horizontal Line (Desktop) -->
+                        <!-- Vertical Drop from Main Line (Desktop) -->
+                        <div class="absolute top-0 left-1/2 w-[2px] h-6 bg-brand-gold/40 -translate-x-1/2 hidden lg:block"></div>
+                        
+                        <!-- Main Branch Card -->
                         <div 
-                            class="absolute top-0 h-[2px] bg-brand-gold/40 hidden lg:block"
-                            :class="{
-                                'left-1/2 right-0': i === 0,
-                                'right-1/2 left-0': i === overviewData.branches.length - 1,
-                                'left-0 right-0': i > 0 && i < overviewData.branches.length - 1,
-                                'hidden': overviewData.branches.length === 1
-                            }"
-                        ></div>
-                        <!-- Vertical Drop (Desktop) -->
-                        <div class="absolute top-0 left-1/2 w-[2px] h-8 bg-brand-gold/40 -translate-x-1/2 hidden lg:block"></div>
-
-                        <!-- Card -->
-                        <div 
-                            @click="selectBranch(branch.id)"
-                            class="bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-lg hover:shadow-2xl border border-slate-200 hover:border-brand-gold/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 group flex flex-col items-center justify-between text-center relative overflow-hidden w-full lg:w-[95%] h-full lg:mt-8"
+                            @click="selectBranch(mainBranch.id)"
+                            class="bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg hover:shadow-2xl border border-slate-200 hover:border-brand-gold/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 group flex flex-col items-center justify-between text-center relative overflow-hidden w-[200px] sm:w-[220px] h-[100px] z-10 lg:mt-6"
                         >
                             <div class="absolute inset-0 bg-gradient-to-b from-brand-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 text-brand-gold/80 flex items-center justify-center mb-2 shadow-sm group-hover:scale-110 transition-transform duration-300 shrink-0">
-                                <UsersIcon class="w-5 h-5" />
+                            <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 text-brand-gold/80 flex items-center justify-center mb-1 shadow-sm group-hover:scale-110 transition-transform duration-300 shrink-0">
+                                <UsersIcon class="w-4 h-4" />
                             </div>
-                            <h3 class="font-extrabold text-slate-700 mb-2 leading-tight text-sm md:text-xs xl:text-sm flex-1 flex items-center">{{ branch.name }}</h3>
-                            <div class="text-[10px] font-bold text-slate-400 bg-slate-100/50 px-2.5 py-1 rounded-full border border-slate-200/50 shrink-0">{{ branch.member_count }} Members</div>
+                            <h3 class="font-extrabold text-slate-700 leading-tight text-xs md:text-sm flex-1 flex items-center">{{ mainBranch.cleanName }}</h3>
+                            <div class="text-[9px] font-bold text-slate-400 bg-slate-100/50 px-2 py-0.5 rounded-full border border-slate-200/50 shrink-0">{{ mainBranch.member_count }} Members</div>
+                        </div>
+
+                        <!-- Sub-branches -->
+                        <div v-if="mainBranch.subBranches && mainBranch.subBranches.length > 0" class="flex flex-col items-center relative w-full mt-4">
+                            <!-- Vertical Line connecting main to sub-branches -->
+                            <div class="w-[2px] h-6 bg-brand-gold/40"></div>
+                            
+                            <div class="flex flex-row justify-center gap-3 w-full relative">
+                                <!-- Horizontal line connecting sub-branches if more than 1 -->
+                                <div v-if="mainBranch.subBranches.length > 1" class="absolute top-0 h-[2px] bg-brand-gold/40" 
+                                     :style="{ left: `calc(50% / ${mainBranch.subBranches.length})`, right: `calc(50% / ${mainBranch.subBranches.length})` }"></div>
+
+                                <div 
+                                    v-for="(subBranch, j) in mainBranch.subBranches" 
+                                    :key="subBranch.id"
+                                    class="relative flex flex-col items-center flex-1"
+                                >
+                                    <!-- Vertical drop for each sub-branch -->
+                                    <div v-if="mainBranch.subBranches.length > 1" class="w-[2px] h-4 bg-brand-gold/40"></div>
+                                    
+                                    <!-- Sub Branch Card -->
+                                    <div 
+                                        @click="selectBranch(subBranch.id)"
+                                        class="bg-white/95 backdrop-blur-sm p-2 rounded-xl shadow hover:shadow-md border border-slate-200 hover:border-brand-gold/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 group flex flex-col items-center justify-between text-center relative overflow-hidden w-[100px] sm:w-[120px] h-[90px]"
+                                    >
+                                        <div class="absolute inset-0 bg-gradient-to-b from-brand-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        <div class="w-6 h-6 rounded-md bg-slate-50 border border-slate-100 text-brand-gold/80 flex items-center justify-center mb-1 shadow-sm group-hover:scale-110 transition-transform duration-300 shrink-0">
+                                            <UsersIcon class="w-3 h-3" />
+                                        </div>
+                                        <h3 class="font-extrabold text-slate-600 leading-tight text-[10px] sm:text-xs flex-1 flex items-center justify-center w-full break-words">{{ subBranch.cleanName }}</h3>
+                                        <div class="text-[8px] font-bold text-slate-400 bg-slate-100/50 px-1.5 py-0.5 rounded-full border border-slate-200/50 shrink-0">{{ subBranch.member_count }} Members</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -556,6 +583,19 @@
                     </select>
                 </div>
                 <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Branch</label>
+                    <select v-model="quickEditForm.branch" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                        <option value="">Select branch</option>
+                        <option value="Thazhe branch">Thazhe branch</option>
+                        <option value="Karottu branch">Karottu branch</option>
+                        <option value="Tharavadu branch">Tharavadu branch</option>
+                        <option value="Kulathamackal branch">Kulathamackal branch</option>
+                        <option value="Akkare branch">Akkare branch</option>
+                        <option value="Mulekkunnu branch">Mulekkunnu branch</option>
+                        <option value="Kuttickal branch">Kuttickal branch</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
                     <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Generation</label>
                     <select v-model="quickEditForm.generation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
                         <option :value="null">Auto</option>
@@ -919,8 +959,54 @@ const addRelativeTempImage = ref<string | null>(null)
 const addRelativeCropperRef = ref<any>(null)
 const linkSearchQuery = ref('')
 const linkSearchResults = ref<any[]>([])
-const linkSearchLoading = ref(false)
-const selectedLinkTarget = ref<any | null>(null)
+const isAddingConnection = ref(false)
+const selectedConnectionNodeId = ref<string | null>(null)
+const selectedConnectionDir = ref<'top' | 'bottom' | 'left' | 'right' | null>(null)
+
+// Hierarchical branches computed property
+const hierarchicalBranches = computed(() => {
+    if (!overviewData.value?.branches) return [];
+    
+    // Create a lookup for branch data and clean the name
+    const cleanName = (name: string) => name.replace(/Kollamparampil\s*/i, '').trim();
+    
+    const branchMap = new Map(overviewData.value.branches.map(b => [b.name, { ...b, cleanName: cleanName(b.name) }]));
+    
+    const getBranch = (name: string) => {
+        // Try exact match or match ignoring Kollamparampil
+        let b = branchMap.get(name);
+        if (!b) {
+            const possibleNames = Array.from(branchMap.keys()).filter(k => k.includes(name));
+            if (possibleNames.length > 0) b = branchMap.get(possibleNames[0]);
+        }
+        return b || { id: name, name: name, cleanName: cleanName(name), member_count: 0 };
+    };
+
+    const thazhe = getBranch('Thazhe branch');
+    const karottu = getBranch('Karottu branch');
+    const tharavadu = getBranch('Tharavadu branch');
+    
+    return [
+        {
+            ...thazhe,
+            subBranches: [
+                getBranch('Kulathamackal branch')
+            ].filter(b => b.member_count !== undefined) // keep even if 0, but only if it's a real branch object
+        },
+        {
+            ...karottu,
+            subBranches: [
+                getBranch('Akkare branch'),
+                getBranch('Mulekkunnu branch'),
+                getBranch('Kuttickal branch')
+            ]
+        },
+        {
+            ...tharavadu,
+            subBranches: []
+        }
+    ];
+});
 const nameLookupLoadingAdd = ref(false)
 const nameLookupLoadingQuick = ref(false)
 let linkSearchDebounce: ReturnType<typeof setTimeout> | null = null
@@ -980,6 +1066,7 @@ const quickEditForm = ref({
     is_deceased: false,
     date_of_death: '',
     generation: null as number | null,
+    branch: '',
 })
 const lastLinkedRelation = ref<null | { anchorId: number; targetId: number; relationType: 'PARENT' | 'SPOUSE' | 'SIBLING' | 'CHILD' }>(null)
 
@@ -1516,6 +1603,7 @@ const openQuickEditForSelected = () => {
         is_deceased: Boolean(member.is_deceased),
         date_of_death: member.date_of_death || '',
         generation: member.generation !== undefined ? member.generation : null,
+        branch: member.branch || '',
     }
     quickEditError.value = ''
     quickEditSuccess.value = ''
@@ -1570,13 +1658,13 @@ const saveQuickEditMember = async () => {
         fd.append('bio', quickEditForm.value.bio || '')
         fd.append('is_deceased', quickEditForm.value.is_deceased ? 'true' : 'false')
         fd.append('date_of_death', quickEditForm.value.is_deceased ? (quickEditForm.value.date_of_death || '') : '')
+        if (quickEditForm.value.generation !== null) {
+            fd.append('generation', String(quickEditForm.value.generation))
+        } else {
+            fd.append('generation', '')
+        }
+        fd.append('branch', quickEditForm.value.branch || '')
         if (quickEditAvatar.value) fd.append('profile_pic', quickEditAvatar.value)
-        fd.append(
-            'generation',
-            quickEditForm.value.generation === null || quickEditForm.value.generation === undefined
-                ? ''
-                : String(quickEditForm.value.generation)
-        )
 
         let endpoint = `${apiBase}/api/families/managed/${quickEditMemberId.value}/`
         let method: 'PUT' | 'POST' = 'PUT'
