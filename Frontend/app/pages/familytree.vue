@@ -553,229 +553,276 @@
 
 
 
-            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_parent" :class="addRelationType === 'PARENT' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('PARENT')">{{ t('familyTree.editor.actions.parent') }}</button>
-                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!canAddSpouseNow" :class="addRelationType === 'SPOUSE' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SPOUSE')">{{ t('familyTree.editor.actions.spouse') }}</button>
-                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_sibling" :class="addRelationType === 'SIBLING' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SIBLING')">{{ t('familyTree.editor.actions.sibling') }}</button>
-                <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_child" :class="addRelationType === 'CHILD' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('CHILD')">{{ t('familyTree.editor.actions.child') }}</button>
+            <!-- Tabs -->
+            <div class="flex items-center gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
+                <button
+                    v-for="tab in ['profile', 'details', 'contact', 'relationships', 'settings']"
+                    :key="tab"
+                    @click="editorTab = tab as any"
+                    :class="[
+                        'flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition-all duration-200',
+                        editorTab === tab
+                            ? 'bg-white text-brand-gold shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                    ]"
+                >
+                    {{ tab }}
+                </button>
             </div>
 
-            <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2">
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">First name</label>
-                    <input v-model="quickEditForm.first_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="First name" />
+            <!-- Tab Content: Profile -->
+            <div v-show="editorTab === 'profile'" class="space-y-3.5 mt-4">
+                <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">First name</label>
+                        <input v-model="quickEditForm.first_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="First name" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Last name</label>
+                        <input v-model="quickEditForm.last_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Last name" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Member ID</label>
+                        <input v-model="quickEditForm.member_id" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Member ID" />
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Malayalam name</label>
+                        <div class="flex gap-2">
+                            <input v-model="quickEditForm.name_ml" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Malayalam name" />
+                            <button
+                                type="button"
+                                class="shrink-0 rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold hover:bg-brand-gold/10 disabled:opacity-50"
+                                :disabled="nameLookupLoadingQuick"
+                                @click="lookupMalayalamNameForQuickEdit"
+                            >
+                                {{ nameLookupLoadingQuick ? 'Searching...' : 'Malayalam' }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Nickname</label>
+                        <input v-model="quickEditForm.nickname" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Nickname" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Gender</label>
+                        <select v-model="quickEditForm.gender" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                            <option value="O">Other</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of birth</label>
+                        <input v-model="quickEditForm.date_of_birth" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Age</label>
+                        <input v-model="quickEditForm.age" type="number" min="0" max="150" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Age" />
+                    </div>
+                    <div class="md:col-span-2 flex flex-col gap-1 rounded-xl border border-slate-200 px-3 py-2">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Is deceased</div>
+                        <label class="flex items-center gap-2 text-sm text-slate-700">
+                            <input v-model="quickEditForm.is_deceased" type="checkbox" class="accent-brand-gold" />
+                            Yes
+                        </label>
+                    </div>
+                    <div v-if="quickEditForm.is_deceased" class="md:col-span-2 flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of death</label>
+                        <input v-model="quickEditForm.date_of_death" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    </div>
+                    <div class="md:col-span-2 flex flex-col gap-2">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Profile picture</label>
+                        <div class="flex items-center gap-4">
+                            <div v-if="quickEditAvatarPreview" class="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-slate-200">
+                                <img :src="quickEditAvatarPreview" alt="Member preview" class="h-full w-full object-cover" />
+                            </div>
+                            <div class="flex flex-col gap-1 w-full">
+                                <input type="file" accept="image/*" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" @change="onQuickEditAvatarChange" />
+                                <button v-if="quickEditAvatarPreview" type="button" class="text-xs font-semibold text-red-500 text-left hover:underline" @click="clearQuickEditAvatar">Remove selected photo</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Last name</label>
-                    <input v-model="quickEditForm.last_name" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Last name" />
+            </div>
+
+            <!-- Tab Content: Details -->
+            <div v-show="editorTab === 'details'" class="space-y-3.5 mt-4">
+                <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Branch</label>
+                        <select v-model="quickEditForm.branch" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <option value="">Select branch</option>
+                            <option value="Thazhe branch">Thazhe branch</option>
+                            <option value="Karottu branch">Karottu branch</option>
+                            <option value="Tharavadu branch">Tharavadu branch</option>
+                            <option value="Kulathamackal branch">Kulathamackal branch</option>
+                            <option value="Akkare branch">Akkare branch</option>
+                            <option value="Mulekkunnu branch">Mulekkunnu branch</option>
+                            <option value="Kuttickal branch">Kuttickal branch</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Generation</label>
+                        <select v-model="quickEditForm.generation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <option :value="null">Auto</option>
+                            <option :value="0">I</option>
+                            <option :value="1">II</option>
+                            <option :value="2">III</option>
+                            <option :value="3">IV</option>
+                            <option :value="4">V</option>
+                            <option :value="5">VI</option>
+                            <option :value="6">VII</option>
+                            <option :value="7">VIII</option>
+                            <option :value="8">IX</option>
+                            <option :value="9">X</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Blood group</label>
+                        <input v-model="quickEditForm.blood_group" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Blood group" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Occupation</label>
+                        <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Place of Work</label>
+                        <input v-model="quickEditForm.place_of_work" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Place of work" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Education</label>
+                        <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
+                    </div>
+                    <div class="md:col-span-2 flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Bio</label>
+                        <textarea v-model="quickEditForm.bio" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Bio"></textarea>
+                    </div>
                 </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Member ID</label>
-                    <input v-model="quickEditForm.member_id" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Member ID" />
+            </div>
+
+            <!-- Tab Content: Contact -->
+            <div v-show="editorTab === 'contact'" class="space-y-3.5 mt-4">
+                <div class="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</label>
+                        <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</label>
+                        <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Parish</label>
+                        <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Wedding anniversary</label>
+                        <input v-model="quickEditForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    </div>
+                    <div class="md:col-span-2 flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</label>
+                        <textarea v-model="quickEditForm.address" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address"></textarea>
+                    </div>
                 </div>
-                <div class="md:col-span-2">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Malayalam name</label>
-                    <div class="flex gap-2">
-                        <input v-model="quickEditForm.name_ml" class="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Malayalam name" />
+            </div>
+
+            <!-- Tab Content: Relationships -->
+            <div v-show="editorTab === 'relationships'" class="space-y-4 mt-4">
+                <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                    <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_parent" :class="addRelationType === 'PARENT' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('PARENT')">{{ t('familyTree.editor.actions.parent') }}</button>
+                    <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!canAddSpouseNow" :class="addRelationType === 'SPOUSE' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SPOUSE')">{{ t('familyTree.editor.actions.spouse') }}</button>
+                    <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_sibling" :class="addRelationType === 'SIBLING' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('SIBLING')">{{ t('familyTree.editor.actions.sibling') }}</button>
+                    <button class="rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!allowedActions.can_add_child" :class="addRelationType === 'CHILD' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-gold' : 'border-slate-200 text-slate-700 hover:border-brand-gold/40 hover:text-brand-gold'" @click="setRelationType('CHILD')">{{ t('familyTree.editor.actions.child') }}</button>
+                </div>
+                <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-xs text-slate-500 text-center">
+                    Click a button above to add a new relative or link an existing one.
+                </div>
+                <button
+                    v-if="lastLinkedRelation"
+                    class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-all duration-300 hover:bg-slate-50 active:scale-95 disabled:opacity-50"
+                    :disabled="editorLoading"
+                    @click="undoLastLinkedRelation"
+                >
+                    Undo last link
+                </button>
+            </div>
+
+            <!-- Tab Content: Settings -->
+            <div v-show="editorTab === 'settings'" class="space-y-4 mt-4">
+                <div class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ t('familyTree.editor.accessOwnership') }}</div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-600" v-if="contextOwnership.has_account">{{ t('familyTree.editor.badges.hasAccount') }}</span>
+                        <span class="rounded-full bg-green-100 px-2 py-1 text-[10px] font-bold uppercase text-green-700" v-if="contextOwnership.is_independent">{{ t('familyTree.editor.badges.independent') }}</span>
+                        <span class="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase text-amber-700" v-if="contextOwnership.created_by_me">{{ t('familyTree.editor.badges.managedByYou') }}</span>
+                    </div>
+
+                    <div v-if="canShowGiveAccess" class="space-y-2 mt-2">
+                        <input v-model="accessUsername" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.giveAccess.username')" />
+                        <input v-model="accessPassword" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.giveAccess.password')" />
+                        <button
+                            class="w-full rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold transition-all duration-300 hover:bg-brand-gold/5 active:scale-95 disabled:opacity-50"
+                            :disabled="accessLoading"
+                            @click="giveAccessFromPanel"
+                        >
+                            {{ accessLoading ? t('onboarding.giveAccess.creating') : t('onboarding.managed.giveAccess') }}
+                        </button>
+                    </div>
+
+                    <button
+                        v-if="canGoIndependent"
+                        class="w-full mt-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-all duration-300 hover:bg-slate-50 active:scale-95 disabled:opacity-50"
+                        :disabled="accessLoading"
+                        @click="goIndependentFromPanel"
+                    >
+                        {{ t('familyTree.editor.becomeIndependent') }}
+                    </button>
+
+                    <button
+                        class="w-full mt-2 rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold transition-all duration-300 hover:bg-brand-gold/5 active:scale-95 disabled:opacity-50"
+                        :disabled="inviteLoading"
+                        @click="generateInviteLink"
+                    >
+                        {{ inviteLoading ? t('onboarding.giveAccess.creating') : t('nav.inviteMember') }}
+                    </button>
+                    <div v-if="inviteLink" class="mt-2 rounded-xl border border-slate-200 bg-white p-2">
+                        <p class="break-all text-[11px] font-medium text-slate-600">{{ inviteLink }}</p>
                         <button
                             type="button"
-                            class="shrink-0 rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold hover:bg-brand-gold/10 disabled:opacity-50"
-                            :disabled="nameLookupLoadingQuick"
-                            @click="lookupMalayalamNameForQuickEdit"
+                            class="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50"
+                            @click="copyInviteLink"
                         >
-                            {{ nameLookupLoadingQuick ? 'Searching...' : 'Malayalam' }}
+                            {{ t('familyTree.editor.copyLink', 'Copy Link') }}
                         </button>
                     </div>
                 </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Nickname</label>
-                    <input v-model="quickEditForm.nickname" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Nickname" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Gender</label>
-                    <select v-model="quickEditForm.gender" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                        <option value="M">Male</option>
-                        <option value="F">Female</option>
-                        <option value="O">Other</option>
-                    </select>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Branch</label>
-                    <select v-model="quickEditForm.branch" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                        <option value="">Select branch</option>
-                        <option value="Thazhe branch">Thazhe branch</option>
-                        <option value="Karottu branch">Karottu branch</option>
-                        <option value="Tharavadu branch">Tharavadu branch</option>
-                        <option value="Kulathamackal branch">Kulathamackal branch</option>
-                        <option value="Akkare branch">Akkare branch</option>
-                        <option value="Mulekkunnu branch">Mulekkunnu branch</option>
-                        <option value="Kuttickal branch">Kuttickal branch</option>
-                    </select>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Generation</label>
-                    <select v-model="quickEditForm.generation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                        <option :value="null">Auto</option>
-                        <option :value="0">I</option>
-                        <option :value="1">II</option>
-                        <option :value="2">III</option>
-                        <option :value="3">IV</option>
-                        <option :value="4">V</option>
-                        <option :value="5">VI</option>
-                        <option :value="6">VII</option>
-                        <option :value="7">VIII</option>
-                        <option :value="8">IX</option>
-                        <option :value="9">X</option>
-                    </select>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of birth</label>
-                    <input v-model="quickEditForm.date_of_birth" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Age</label>
-                    <input v-model="quickEditForm.age" type="number" min="0" max="150" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Age" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Blood group</label>
-                    <input v-model="quickEditForm.blood_group" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Blood group" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Occupation</label>
-                    <input v-model="quickEditForm.occupation" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Occupation" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Place of Work</label>
-                    <input v-model="quickEditForm.place_of_work" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Place of work" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Education</label>
-                    <input v-model="quickEditForm.education" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Education" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Parish</label>
-                    <input v-model="quickEditForm.church_parish" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Parish" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</label>
-                    <input v-model="quickEditForm.phone_no" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</label>
-                    <input v-model="quickEditForm.email_id" type="email" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
-                </div>
-                <div class="md:col-span-2 flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Wedding anniversary</label>
-                    <input v-model="quickEditForm.wedding_anniversary" type="date" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                </div>
-                <div class="md:col-span-2 flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</label>
-                    <textarea v-model="quickEditForm.address" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address"></textarea>
-                </div>
-                <div class="md:col-span-2 flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Bio</label>
-                    <textarea v-model="quickEditForm.bio" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Bio"></textarea>
-                </div>
-                <div class="md:col-span-2 flex flex-col gap-1 rounded-xl border border-slate-200 px-3 py-2">
-                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Is deceased</div>
-                    <label class="flex items-center gap-2 text-sm text-slate-700">
-                        <input v-model="quickEditForm.is_deceased" type="checkbox" class="accent-brand-gold" />
-                        Yes
-                    </label>
-                </div>
-                <div v-if="quickEditForm.is_deceased" class="md:col-span-2 flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Date of death</label>
-                    <input v-model="quickEditForm.date_of_death" type="date" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                </div>
-                <div class="md:col-span-2 flex flex-col gap-1">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Profile picture</label>
-                    <input type="file" accept="image/*" class="rounded-xl border border-slate-200 px-3 py-2 text-sm" @change="onQuickEditAvatarChange" />
-                </div>
+
+                <button
+                    class="w-full rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600 transition-all duration-300 hover:bg-red-50 active:scale-95 disabled:opacity-50"
+                    :disabled="editorLoading || !allowedActions.can_remove"
+                    @click="removeSelectedMember"
+                >
+                    {{ t('familyTree.editor.removeSelected') }}
+                </button>
             </div>
 
             <p v-if="quickEditError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{{ quickEditError }}</p>
             <p v-if="quickEditSuccess" class="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">{{ quickEditSuccess }}</p>
 
-            <div class="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-100 bg-white pt-3">
-                
-                <button class="rounded-xl bg-brand-gold px-3 py-2 text-xs font-black text-white disabled:opacity-50" :disabled="quickEditLoading" @click="saveQuickEditMember">
+            <div v-show="editorTab !== 'settings' && editorTab !== 'relationships'" class="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-slate-100 bg-white/95 backdrop-blur pt-3">
+                <button class="rounded-xl bg-brand-gold px-3 py-2 text-xs font-black text-white disabled:opacity-50 transition-all duration-300 hover:brightness-110 shadow-lg" :disabled="quickEditLoading" @click="saveQuickEditMember">
                     {{ quickEditLoading ? 'Saving...' : 'Save Changes' }}
                 </button>
             </div>
 
-            <div class="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
-                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ t('familyTree.editor.accessOwnership') }}</div>
-                <div class="flex flex-wrap gap-2">
-                    <span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-600" v-if="contextOwnership.has_account">{{ t('familyTree.editor.badges.hasAccount') }}</span>
-                    <span class="rounded-full bg-green-100 px-2 py-1 text-[10px] font-bold uppercase text-green-700" v-if="contextOwnership.is_independent">{{ t('familyTree.editor.badges.independent') }}</span>
-                    <span class="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase text-amber-700" v-if="contextOwnership.created_by_me">{{ t('familyTree.editor.badges.managedByYou') }}</span>
-                </div>
-
-                <div v-if="canShowGiveAccess" class="space-y-2">
-                    <input v-model="accessUsername" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.giveAccess.username')" />
-                    <input v-model="accessPassword" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" :placeholder="t('onboarding.giveAccess.password')" />
-                    <button
-                        class="w-full rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold transition-all duration-300 hover:bg-brand-gold/5 active:scale-95 disabled:opacity-50"
-                        :disabled="accessLoading"
-                        @click="giveAccessFromPanel"
-                    >
-                        {{ accessLoading ? t('onboarding.giveAccess.creating') : t('onboarding.managed.giveAccess') }}
-                    </button>
-                </div>
-
-                <button
-                    v-if="canGoIndependent"
-                    class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-all duration-300 hover:bg-slate-50 active:scale-95 disabled:opacity-50"
-                    :disabled="accessLoading"
-                    @click="goIndependentFromPanel"
-                >
-                    {{ t('familyTree.editor.becomeIndependent') }}
-                </button>
-
-                <button
-                    class="w-full rounded-xl border border-brand-gold/40 px-3 py-2 text-xs font-bold text-brand-gold transition-all duration-300 hover:bg-brand-gold/5 active:scale-95 disabled:opacity-50"
-                    :disabled="inviteLoading"
-                    @click="generateInviteLink"
-                >
-                    {{ inviteLoading ? t('onboarding.giveAccess.creating') : t('nav.inviteMember') }}
-                </button>
-                <div v-if="inviteLink" class="rounded-xl border border-slate-200 bg-white p-2">
-                    <p class="break-all text-[11px] font-medium text-slate-600">{{ inviteLink }}</p>
-                    <button
-                        type="button"
-                        class="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50"
-                        @click="copyInviteLink"
-                    >
-                        {{ t('familyTree.editor.copyLink', 'Copy Link') }}
-                    </button>
-                </div>
-            </div>
-
-            <button
-                class="w-full rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600 transition-all duration-300 hover:bg-red-50 active:scale-95 disabled:opacity-50"
-                :disabled="editorLoading || !allowedActions.can_remove"
-                @click="removeSelectedMember"
-            >
-                {{ t('familyTree.editor.removeSelected') }}
-            </button>
-
-            <button
-                v-if="lastLinkedRelation"
-                class="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-all duration-300 hover:bg-slate-50 active:scale-95 disabled:opacity-50"
-                :disabled="editorLoading"
-                @click="undoLastLinkedRelation"
-            >
-                Undo last link
-            </button>
-
             <Transition name="fade-slide">
-                <p v-if="!allowedActions.can_manage" class="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">{{ t('familyTree.editor.permissionHint') }}</p>
+                <p v-if="!allowedActions.can_manage" class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">{{ t('familyTree.editor.permissionHint') }}</p>
             </Transition>
             <Transition name="fade-slide">
-                <p v-if="editorError" class="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{{ editorError }}</p>
+                <p v-if="editorError" class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{{ editorError }}</p>
             </Transition>
             <Transition name="fade-slide">
-                <p v-if="editorSuccess" class="rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">{{ editorSuccess }}</p>
+                <p v-if="editorSuccess" class="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">{{ editorSuccess }}</p>
             </Transition>
         </div>
 
@@ -787,26 +834,26 @@
 
             <ClientOnly>
                 <Teleport to="body">
-                    <div v-if="showAddRelativeCropper" class="fixed inset-0 z-60 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+                    <div v-if="showCropperModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
                         <div class="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
                             <div class="flex items-center justify-between border-b border-gray-100 bg-slate-50 p-4">
                                 <h3 class="font-bold text-slate-800">Crop profile photo</h3>
-                                <button class="text-slate-400 hover:text-slate-600" @click="cancelAddRelativeCrop">
+                                <button class="text-slate-400 hover:text-slate-600" @click="cancelCrop">
                                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                 </button>
                             </div>
                             <div class="flex justify-center bg-slate-900 p-4">
                                 <Cropper
-                                    ref="addRelativeCropperRef"
+                                    ref="cropperRef"
                                     class="h-96 w-full"
-                                    :src="addRelativeTempImage || ''"
+                                    :src="cropperTempImage || ''"
                                     :stencil-component="CircleStencil"
                                     :stencil-props="{ aspectRatio: 1 / 1 }"
                                 />
                             </div>
                             <div class="flex justify-end gap-3 border-t border-gray-100 bg-white p-4">
-                                <button class="rounded-xl px-6 py-2.5 font-bold text-slate-600 transition-colors hover:bg-slate-100" @click="cancelAddRelativeCrop">Cancel</button>
-                                <button class="rounded-xl bg-brand-gold px-6 py-2.5 font-bold text-white shadow-lg shadow-brand-gold/30 transition-all hover:brightness-110" @click="cropAddRelativeImage">Set photo</button>
+                                <button class="rounded-xl px-6 py-2.5 font-bold text-slate-600 transition-colors hover:bg-slate-100" @click="cancelCrop">Cancel</button>
+                                <button class="rounded-xl bg-brand-gold px-6 py-2.5 font-bold text-white shadow-lg shadow-brand-gold/30 transition-all hover:brightness-110" @click="cropImage">Set photo</button>
                             </div>
                         </div>
                     </div>
@@ -883,6 +930,7 @@ const viewMode = ref<'visual' | 'grid'>(resolveInitialViewMode())
 const activeBranch = ref<string | null>(null)
 const overviewData = computed(() => familyStore.overviewData)
 const editMode = ref(resolveInitialEditMode())
+const editorTab = ref<'profile' | 'details' | 'contact' | 'relationships' | 'settings'>('profile')
 const isEditorSheetOpen = ref(true)
 const isMobileView = ref(false)
 const showMobileTreeHelp = ref(false)
@@ -971,11 +1019,14 @@ const addRelativeForm = ref({
 const addRelativeAvatar = ref<File | null>(null)
 const addRelativeAvatarPreview = ref<string | null>(null)
 const addRelativeUseDob = ref(true)
-const showAddRelativeCropper = ref(false)
-const addRelativeTempImage = ref<string | null>(null)
-const addRelativeCropperRef = ref<any>(null)
+const showCropperModal = ref(false)
+const cropperTempImage = ref<string | null>(null)
+const cropperRef = ref<any>(null)
+const cropperTarget = ref<'addRelative' | 'quickEdit'>('addRelative')
 const linkSearchQuery = ref('')
+const linkSearchLoading = ref(false)
 const linkSearchResults = ref<any[]>([])
+const selectedLinkTarget = ref<any>(null)
 const isAddingConnection = ref(false)
 const selectedConnectionNodeId = ref<string | null>(null)
 const selectedConnectionDir = ref<'top' | 'bottom' | 'left' | 'right' | null>(null)
@@ -1059,6 +1110,12 @@ const quickEditError = ref('')
 const quickEditSuccess = ref('')
 const quickEditMemberId = ref<number | null>(null)
 const quickEditAvatar = ref<File | null>(null)
+const quickEditAvatarPreview = ref<string | null>(null)
+
+const clearQuickEditAvatar = () => {
+    quickEditAvatar.value = null
+    quickEditAvatarPreview.value = null
+}
 const quickEditForm = ref({
     first_name: '',
     last_name: '',
@@ -1133,9 +1190,8 @@ const canEditSelected = computed(() => {
     return editMode.value && selectedMember.value !== null && (allowedActions.value.can_manage || contextOwnership.value.is_self)
 })
 
-const selectHouseholdMember = async (member: any) => {
+const selectHouseholdMember = (member: any) => {
     selectedMember.value = member
-    await loadMemberContext(member.id)
 }
 
 const selectedMemberParents = computed(() => {
@@ -1247,16 +1303,20 @@ const resetAddRelativeForm = () => {
     addRelativeAvatarPreview.value = null
 }
 
+const openCropper = (file: File, target: 'addRelative' | 'quickEdit') => {
+    cropperTarget.value = target
+    if (cropperTempImage.value) {
+        URL.revokeObjectURL(cropperTempImage.value)
+    }
+    cropperTempImage.value = URL.createObjectURL(file)
+    showCropperModal.value = true
+}
+
 const onAddRelativeAvatarChange = (event: Event) => {
     const target = event.target as HTMLInputElement
     const file = target.files?.[0] || null
     if (!file) return
-
-    if (addRelativeTempImage.value) {
-        URL.revokeObjectURL(addRelativeTempImage.value)
-    }
-    addRelativeTempImage.value = URL.createObjectURL(file)
-    showAddRelativeCropper.value = true
+    openCropper(file, 'addRelative')
     target.value = ''
 }
 
@@ -1265,28 +1325,35 @@ const clearAddRelativeAvatar = () => {
     addRelativeAvatarPreview.value = null
 }
 
-const cropAddRelativeImage = () => {
-    const result = addRelativeCropperRef.value?.getResult?.()
+const cropImage = () => {
+    const result = cropperRef.value?.getResult?.()
     if (!result?.canvas) return
 
     result.canvas.toBlob((blob: Blob | null) => {
         if (!blob) return
         const file = new File([blob], 'member_profile.jpg', { type: 'image/jpeg' })
-        addRelativeAvatar.value = file
-        addRelativeAvatarPreview.value = URL.createObjectURL(file)
-        showAddRelativeCropper.value = false
-        if (addRelativeTempImage.value) {
-            URL.revokeObjectURL(addRelativeTempImage.value)
-            addRelativeTempImage.value = null
+        
+        if (cropperTarget.value === 'addRelative') {
+            addRelativeAvatar.value = file
+            addRelativeAvatarPreview.value = URL.createObjectURL(file)
+        } else {
+            quickEditAvatar.value = file
+            quickEditAvatarPreview.value = URL.createObjectURL(file)
+        }
+        
+        showCropperModal.value = false
+        if (cropperTempImage.value) {
+            URL.revokeObjectURL(cropperTempImage.value)
+            cropperTempImage.value = null
         }
     }, 'image/jpeg')
 }
 
-const cancelAddRelativeCrop = () => {
-    showAddRelativeCropper.value = false
-    if (addRelativeTempImage.value) {
-        URL.revokeObjectURL(addRelativeTempImage.value)
-        addRelativeTempImage.value = null
+const cancelCrop = () => {
+    showCropperModal.value = false
+    if (cropperTempImage.value) {
+        URL.revokeObjectURL(cropperTempImage.value)
+        cropperTempImage.value = null
     }
 }
 
@@ -1586,9 +1653,6 @@ const focusOnMember = (targetMember: any, options?: { select?: boolean }) => {
 
 const openMember = (m: FamilyMember) => { 
     selectedMember.value = m
-    if (editMode.value) {
-        openQuickEditForSelected()
-    }
 }
 
 const openQuickEditForSelected = () => {
@@ -1625,12 +1689,16 @@ const openQuickEditForSelected = () => {
     quickEditError.value = ''
     quickEditSuccess.value = ''
     quickEditAvatar.value = null
+    quickEditAvatarPreview.value = member.profile_pic || null
     // quickEditOpen.value = true
 }
 
 const onQuickEditAvatarChange = (event: Event) => {
     const target = event.target as HTMLInputElement
-    quickEditAvatar.value = target.files?.[0] || null
+    const file = target.files?.[0] || null
+    if (!file) return
+    openCropper(file, 'quickEdit')
+    target.value = ''
 }
 
 const saveQuickEditMember = async () => {
@@ -1727,6 +1795,11 @@ const setRelationType = (value: 'PARENT' | 'SPOUSE' | 'SIBLING' | 'CHILD') => {
         return
     }
     addRelationType.value = value
+    resetAddRelativeForm()
+    if (selectedMember.value) {
+        quickEditMemberId.value = selectedMember.value.id
+        quickEditOpen.value = true
+    }
 }
 
 function getCookie(name: string) {
@@ -3082,14 +3155,17 @@ watch(locale, () => {
 
 watch(
     () => selectedMember.value?.id,
-    (memberId) => {
+    async (memberId) => {
         if (lastLinkedRelation.value && memberId !== lastLinkedRelation.value.anchorId) {
             lastLinkedRelation.value = null
         }
         linkSearchQuery.value = ''
         resetLinkTarget()
         if (!memberId) return
-        loadMemberContext(memberId)
+        await loadMemberContext(memberId)
+        if (editMode.value) {
+            openQuickEditForSelected()
+        }
     }
 )
 
