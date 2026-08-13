@@ -1780,7 +1780,12 @@ const saveQuickEditMember = async () => {
             selectedMember.value = refreshed as FamilyMember
             await loadMemberContext(refreshed.id)
         }
-        setTimeout(initGraph, 120)
+        setTimeout(() => {
+            initGraph()
+            if (refreshed) {
+                focusOnMember(refreshed, { select: true })
+            }
+        }, 120)
     } catch (err) {
         quickEditError.value = friendlyErrorMessage(err)
         console.error(err)
@@ -2039,12 +2044,17 @@ const addRelativeFromPanel = async () => {
             : t('familyTree.editor.success.existingLinked')
         await familyStore.fetchFamily(activeBranch.value || '')
         await auth.fetchProfile()
-        setTimeout(initGraph, 120)
         const anchor = nodes.value.find((n: any) => n.id === anchorMemberId)
         if (anchor) {
             selectedMember.value = anchor as FamilyMember
             await loadMemberContext(anchorMemberId)
         }
+        setTimeout(() => {
+            initGraph()
+            if (anchor) {
+                focusOnMember(anchor, { select: true })
+            }
+        }, 120)
     } catch (err) {
         editorError.value = t('familyTree.editor.errors.addRelativeFailed')
         console.error(err)
@@ -2090,12 +2100,17 @@ const undoLastLinkedRelation = async () => {
         editorSuccess.value = 'Last link undone.'
         await familyStore.fetchFamily(activeBranch.value || '')
         await auth.fetchProfile()
-        setTimeout(initGraph, 120)
         const refreshed = nodes.value.find((n: any) => n.id === selectedMember.value?.id)
         if (refreshed) {
             selectedMember.value = refreshed as FamilyMember
             await loadMemberContext(refreshed.id)
         }
+        setTimeout(() => {
+            initGraph()
+            if (refreshed) {
+                focusOnMember(refreshed, { select: true })
+            }
+        }, 120)
     } catch (err) {
         editorError.value = 'Unable to undo the last link.'
         console.error(err)
